@@ -1,4 +1,7 @@
-datasets/*
 .venv
 
+datasets/*
+models/*
+
 !datasets/README.md
+!models/README.md

@@ -1,6 +1,6 @@
 # Dataset Storage Directory
 
-This directory is designated for storing dataset files that will be downloaded and processed during the execution of the code. **It does not currently contain any datasets unless listed below.**
+This directory is designated for storing dataset files that will be downloaded and processed during the execution of the code.
 
 ## Currently Downloaded Datasets
 
