@@ -1,8 +1,10 @@
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 
 # Tokenizer and Model nucleotide-transformer-v2-500m-multi-species
-AutoTokenizer.from_pretrained("InstaDeepAI/nucleotide-transformer-v2-500m-multi-species", cache_dir="/cluster/customapps/biomed/grlab/users/salsil/msc_thesis/models/nt-500m", trust_remote_code=True)
+tok_500 = AutoTokenizer.from_pretrained("InstaDeepAI/nucleotide-transformer-v2-500m-multi-species", cache_dir="/cluster/customapps/biomed/grlab/users/salsil/msc_thesis/models/nt-500m", trust_remote_code=True)
 AutoModelForMaskedLM.from_pretrained("InstaDeepAI/nucleotide-transformer-v2-500m-multi-species", cache_dir="/cluster/customapps/biomed/grlab/users/salsil/msc_thesis/models/nt-500m", trust_remote_code=True)
+
+print(tok_500)
 
 # Tokenizer and Model nucleotide-transformer-v2-250m-multi-species
 AutoTokenizer.from_pretrained("InstaDeepAI/nucleotide-transformer-v2-250m-multi-species", cache_dir="/cluster/customapps/biomed/grlab/users/salsil/msc_thesis/models/nt-250m", trust_remote_code=True)
