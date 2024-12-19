@@ -6,7 +6,7 @@ def show_data(repo, dataset):
     print("==============================================")
 
 # Cache directory
-cache_dir = "/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/euler/msc_thesis/datasets"
+cache_dir = "/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/datasets"
 
 # Dataset
 #d1 = load_dataset("InstaDeepAI/multi_species_genomes", cache_dir=cache_dir, trust_remote_code=True)
