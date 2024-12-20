@@ -1,21 +1,27 @@
 
+# Datasets and Models
 
-### Currently Downloaded Models
+Datasets are downloaded using the [Hugging Face `datasets` library](https://huggingface.co/docs/datasets/). Models and tokenizers are downloaded using
+the [Hugging Face `transformers` library](https://huggingface.co/docs/transformers/).
+When the relevant code is executed, the library will automatically fetch and store the required datasets in this directory.
 
-The following datasets are currently present in this directory:
+It is important to create a file called `config.py` in the root of the project which defines the following variables
+
+```python
+models_cache_dir = "<PATH_TO_MODELS>"
+datasets_cache_dir = "<PATH_TO_DATASETS>"
+```
+When `preload_models.py` and `preload_datasets.py` are executed for the first time, all necessary data is downloaded
+to the paths specified in `config.py`. Splits are generated and stored for future use.
+
+### Used Models
 
 1. **[InstaDeepAI/nucleotide-transformer-v2-50m-multi-species](https://huggingface.co/InstaDeepAI/nucleotide-transformer-v2-50m-multi-species)**
 2. **[InstaDeepAI/nucleotide-transformer-v2-100m-multi-species](https://huggingface.co/InstaDeepAI/nucleotide-transformer-v2-100m-multi-species)**
 3. **[InstaDeepAI/nucleotide-transformer-v2-250m-multi-species](https://huggingface.co/InstaDeepAI/nucleotide-transformer-v2-250m-multi-species)**
 4. **[InstaDeepAI/nucleotide-transformer-v2-500m-multi-species](https://huggingface.co/InstaDeepAI/nucleotide-transformer-v2-500m-multi-species)**
 
-### Dataset Storage Directory
-
-This directory is designated for storing dataset files that will be downloaded and processed during the execution of the code.
-
-### Currently Downloaded Datasets
-
-The following datasets are currently present in this directory:
+### Used Datasets
 
 1. **[InstaDeepAI/multi_species_genomes](https://huggingface.co/datasets/InstaDeepAI/multi_species_genomes)**
 2. **[InstaDeepAI/nucleotide_transformer_downstream_tasks_revised](https://huggingface.co/datasets/InstaDeepAI/multi_species_genomes)**
@@ -29,6 +35,4 @@ The following datasets are currently present in this directory:
 10. **[katarinagresova/Genomic_Benchmarks_human_enhancers_cohn](https://huggingface.co/datasets/katarinagresova/Genomic_Benchmarks_human_enhancers_cohn)**
 11. **[katarinagresova/Genomic_Benchmarks_human_nontata_promoters](https://huggingface.co/datasets/katarinagresova/Genomic_Benchmarks_human_nontata_promoters)**
 
-## How Datasets Are Managed
 
-Datasets are downloaded using the [Hugging Face `datasets` library](https://huggingface.co/docs/datasets/). When the relevant code is executed, the library will automatically fetch and store the required datasets in this directory.
