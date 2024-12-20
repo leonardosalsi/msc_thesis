@@ -6,10 +6,10 @@ def show_data(repo, dataset):
     print("==============================================")
 
 # Cache directory
-cache_dir = "/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/datasets"
+cache_dir = "./datasets"
 
 # Dataset
-#d1 = load_dataset("InstaDeepAI/multi_species_genomes", cache_dir=cache_dir, trust_remote_code=True)
+d1 = load_dataset("InstaDeepAI/multi_species_genomes", cache_dir=cache_dir, trust_remote_code=True)
 d2 = load_dataset("InstaDeepAI/nucleotide_transformer_downstream_tasks_revised", cache_dir=cache_dir, trust_remote_code=True)
 d3 = load_dataset("katarinagresova/Genomic_Benchmarks_human_ensembl_regulatory", cache_dir=cache_dir, trust_remote_code=True)
 d4 = load_dataset("katarinagresova/Genomic_Benchmarks_demo_human_or_worm", cache_dir=cache_dir, trust_remote_code=True)
@@ -21,7 +21,7 @@ d9 = load_dataset("katarinagresova/Genomic_Benchmarks_human_enhancers_ensembl", 
 d10 = load_dataset("katarinagresova/Genomic_Benchmarks_human_enhancers_cohn", cache_dir=cache_dir, trust_remote_code=True)
 d11 = load_dataset("katarinagresova/Genomic_Benchmarks_human_nontata_promoters", cache_dir=cache_dir, trust_remote_code=True)
 
-#show_data("InstaDeepAI/multi_species_genomes", d1)
+show_data("InstaDeepAI/multi_species_genomes", d1)
 show_data("InstaDeepAI/nucleotide_transformer_downstream_tasks_revised", d2)
 show_data("katarinagresova/Genomic_Benchmarks_human_ensembl_regulatory", d3)
 show_data("katarinagresova/Genomic_Benchmarks_demo_human_or_worm", d4)
