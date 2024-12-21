@@ -8,7 +8,7 @@
 
 source ~/.bashrc
 enable_modules
-export LD_LIBRARY_PATH=/cvmfs/soft.computecanada.ca/gentoo/2020/usr/lib64:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/cvmfs/soft.computecanada.ca/gentoo/2023/x86-64-v3/usr/lib64:$LD_LIBRARY_PATH
 
 module purge
 module load gcc/9.3.0
