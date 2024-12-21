@@ -5,6 +5,8 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --time=12:00:00
 #SBATCH --mem-per-cpu=2G
+#SBATCH -p gpu
+#SBATCH --gres=gpu:1
 
 source ~/.bashrc
 enable_modules
