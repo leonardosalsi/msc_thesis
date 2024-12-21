@@ -21,7 +21,7 @@ for task in tasks:
         # Generate a random number for this model under the current task
 
         mcc = finetune_model_by_task_mcc(device, model_name, task)
-        print(mcc)
+        print(f"MCC of {model_name} on {task}: {mcc}")
         task_results[model_name] = mcc
 
     # Append the task and its results as a tuple (task, task_results)
