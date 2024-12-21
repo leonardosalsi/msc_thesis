@@ -1,0 +1,125 @@
+from datasets import load_dataset, Dataset
+from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification
+from sklearn.metrics import matthews_corrcoef
+from sklearn.model_selection import train_test_split
+from config import models_cache_dir, datasets_cache_dir
+import numpy as np
+
+def compute_metrics_mcc(eval_pred):
+    """Computes Matthews correlation coefficient (MCC score) for binary classification"""
+    predictions = np.argmax(eval_pred.predictions, axis=-1)
+    references = eval_pred.label_ids
+    r={'mcc_score': matthews_corrcoef(references, predictions)}
+    return r
+
+def finetune_model_by_task_mcc(device, model_name, task):
+    """Load dataset splits"""
+    dataset_train = load_dataset(
+        task["repo"],
+        name=task["name"],
+        cache_dir=datasets_cache_dir,
+        trust_remote_code=True,
+        split='train'
+    )
+
+    dataset_test = load_dataset(
+        task["repo"],
+        name=task["name"],
+        cache_dir=datasets_cache_dir,
+        trust_remote_code=True,
+        split='train'
+    )
+
+    """Load model and move to device"""
+    model = AutoModelForSequenceClassification.from_pretrained(
+        model_name,
+        cache_dir=models_cache_dir,
+        num_labels=task["num_labels"],
+        trust_remote_code=True
+    )
+    model = model.to(device)
+
+    """Get correspnding feature name and load"""
+    sequence_feature = task["sequence_feature"]
+    label_feature = task["label_feature"]
+
+    train_sequences = dataset_train[sequence_feature]
+    train_labels = dataset_train[label_feature]
+
+    test_sequences = dataset_test[sequence_feature]
+    test_labels = dataset_test[label_feature]
+
+    """Generate validation splits"""
+    train_sequences, validation_sequences, train_labels, validation_labels = train_test_split(train_sequences, train_labels, test_size=0.05, random_state=42)
+
+    """Load model tokenizer"""
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name,
+        cache_dir=models_cache_dir,
+        trust_remote_code=True
+    )
+
+    """Repack splits"""
+    _ds_train = Dataset.from_dict({"data": train_sequences,'labels':train_labels})
+    _ds_validation = Dataset.from_dict({"data": validation_sequences,'labels':validation_labels})
+    _ds_test = Dataset.from_dict({"data": test_sequences,'labels':test_labels})
+
+    """Tokenizer function"""
+    def tokenize_function(examples):
+        outputs = tokenizer(examples["data"])
+        return outputs
+
+    """Tokenize splits"""
+    tokenized_train_sequences = _ds_train.map(
+        tokenize_function,
+        batched=True,
+        remove_columns=["data"],
+    )
+    tokenized_validation_sequences = _ds_validation.map(
+        tokenize_function,
+        batched=True,
+        remove_columns=["data"],
+    )
+    tokenized_test_sequences = _ds_test.map(
+        tokenize_function,
+        batched=True,
+        remove_columns=["data"],
+    )
+
+    """Configure trainer"""
+    batch_size = 32
+    training_args = TrainingArguments(
+        f"{model_name}_finetuned_{task['name']}",
+        remove_unused_columns=False,
+        eval_strategy="steps",
+        save_strategy="steps",
+        learning_rate=1e-5,
+        per_device_train_batch_size=batch_size,
+        gradient_accumulation_steps= 1,
+        per_device_eval_batch_size= 64,
+        num_train_epochs= 2,
+        logging_steps= 100,
+        load_best_model_at_end=True,  # Keep the best model according to the evaluation
+        metric_for_best_model="mcc_score",
+        label_names=["labels"],
+        dataloader_drop_last=True,
+        max_steps= 1000
+    )
+
+    trainer = Trainer(
+        model,
+        training_args,
+        train_dataset= tokenized_train_sequences,
+        eval_dataset= tokenized_validation_sequences,
+        tokenizer=tokenizer,
+        compute_metrics=compute_metrics_mcc,
+    )
+
+    """Finetune pre-trained model"""
+    train_results = trainer.train()
+
+    """Get MCC score"""
+    mcc = trainer.predict(tokenized_test_sequences).metrics['test_mcc_score']
+
+    return mcc
+

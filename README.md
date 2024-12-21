@@ -24,7 +24,7 @@ to the paths specified in `config.py`. Splits are generated and stored for futur
 ### Used Datasets
 
 1. **[InstaDeepAI/multi_species_genomes](https://huggingface.co/datasets/InstaDeepAI/multi_species_genomes)**
-2. **[InstaDeepAI/nucleotide_transformer_downstream_tasks_revised](https://huggingface.co/datasets/InstaDeepAI/multi_species_genomes)**
+2. **[InstaDeepAI/nucleotide_transformer_downstream_tasks_revised](https://huggingface.co/datasets/InstaDeepAI/nucleotide_transformer_downstream_tasks_revised)**
 3. **[katarinagresova/Genomic_Benchmarks_human_ensembl_regulatory](https://huggingface.co/datasets/katarinagresova/Genomic_Benchmarks_human_ensembl_regulatory)**
 4. **[katarinagresova/Genomic_Benchmarks_demo_human_or_worm](https://huggingface.co/datasets/katarinagresova/Genomic_Benchmarks_demo_human_or_worm)**
 5. **[katarinagresova/Genomic_Benchmarks_human_ocr_ensembl](https://huggingface.co/datasets/katarinagresova/Genomic_Benchmarks_human_ocr_ensembl)**
