@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=nucleotide-get-datasets
-#SBATCH --output=get-datasets.txt
+#SBATCH --job-name=evaluate-mcc
+#SBATCH --output=out-mcc.txt
 #SBATCH --cpus-per-task=2
 #SBATCH --time=12:00:00
 #SBATCH --mem-per-cpu=2G
