@@ -8,11 +8,7 @@
 
 source ~/.bashrc
 enable_modules
-export LD_LIBRARY_PATH=/cvmfs/soft.computecanada.ca/gentoo/2020/usr/lib64:$LD_LIBRARY_PATH
-
-module purge
-module load gcc/9.3.0
-module load python/3.10.2 scipy-stack/2023b arrow
+module load python scipy-stack gcc arrow
 module list
 
 VENV=/cluster/home/salsil/venv
