@@ -36,6 +36,7 @@ def finetune_model_by_task_mcc(device, model_name, task):
     )
 
     """Load model and move to device"""
+    print(f"Loading model {model_name}")
     model = AutoModelForSequenceClassification.from_pretrained(
         model_name,
         cache_dir=models_cache_dir,
