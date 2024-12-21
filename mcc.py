@@ -1,9 +1,13 @@
 from datasets import load_dataset, Dataset
-from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification
+from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification, logging
 from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
 from config import models_cache_dir, datasets_cache_dir
+from datasets.utils.logging import disable_progress_bar
 import numpy as np
+
+disable_progress_bar()
+logging.set_verbosity_error()
 
 def compute_metrics_mcc(eval_pred):
     """Computes Matthews correlation coefficient (MCC score) for binary classification"""
@@ -13,6 +17,7 @@ def compute_metrics_mcc(eval_pred):
     return r
 
 def finetune_model_by_task_mcc(device, model_name, task):
+
     """Load dataset splits"""
     dataset_train = load_dataset(
         task["repo"],
@@ -73,12 +78,12 @@ def finetune_model_by_task_mcc(device, model_name, task):
     tokenized_train_sequences = _ds_train.map(
         tokenize_function,
         batched=True,
-        remove_columns=["data"],
+        remove_columns=["data"]
     )
     tokenized_validation_sequences = _ds_validation.map(
         tokenize_function,
         batched=True,
-        remove_columns=["data"],
+        remove_columns=["data"]
     )
     tokenized_test_sequences = _ds_test.map(
         tokenize_function,
@@ -103,7 +108,9 @@ def finetune_model_by_task_mcc(device, model_name, task):
         metric_for_best_model="mcc_score",
         label_names=["labels"],
         dataloader_drop_last=True,
-        max_steps= 1000
+        max_steps= 1000,
+        logging_dir='/dev/null',
+        disable_tqdm=True,
     )
 
     trainer = Trainer(
@@ -111,7 +118,7 @@ def finetune_model_by_task_mcc(device, model_name, task):
         training_args,
         train_dataset= tokenized_train_sequences,
         eval_dataset= tokenized_validation_sequences,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         compute_metrics=compute_metrics_mcc,
     )
 
