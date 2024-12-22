@@ -6,7 +6,7 @@
 #SBATCH --time=12:00:00
 #SBATCH --mem-per-cpu=6G
 #SBATCH -p gpu
-#SBATCH --gres=gpu:0
+#SBATCH --gres=gpu:rtx4090:4
 
 source ~/.bashrc
 enable_modules
