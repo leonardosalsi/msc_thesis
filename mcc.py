@@ -41,7 +41,8 @@ def finetune_model_by_task_mcc(device, model_name, task):
         model_name,
         cache_dir=models_cache_dir,
         num_labels=task["num_labels"],
-        trust_remote_code=True
+        trust_remote_code=True,
+        local_files_only = True
     )
     model = model.to(device)
 
@@ -62,7 +63,8 @@ def finetune_model_by_task_mcc(device, model_name, task):
     tokenizer = AutoTokenizer.from_pretrained(
         model_name,
         cache_dir=models_cache_dir,
-        trust_remote_code=True
+        trust_remote_code=True,
+        local_files_only = True
     )
 
     """Repack splits"""

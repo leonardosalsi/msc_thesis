@@ -29,15 +29,15 @@ cache_dir = config.datasets_cache_dir
 #load_dataset("InstaDeepAI/multi_species_genomes", cache_dir=cache_dir, trust_remote_code=True)
 #for task in TASKS:
 #    load_dataset("InstaDeepAI/nucleotide_transformer_downstream_tasks_revised", name=task, cache_dir=cache_dir, trust_remote_code=True)
-d1 = load_dataset("katarinagresova/Genomic_Benchmarks_human_ensembl_regulatory", name="", cache_dir=cache_dir, trust_remote_code=True) #3
-d2 = load_dataset("katarinagresova/Genomic_Benchmarks_demo_human_or_worm", cache_dir=cache_dir, trust_remote_code=True)
-d3 = load_dataset("katarinagresova/Genomic_Benchmarks_human_ocr_ensembl", cache_dir=cache_dir, trust_remote_code=True)
-d4 = load_dataset("katarinagresova/Genomic_Benchmarks_drosophila_enhancers_stark", cache_dir=cache_dir, trust_remote_code=True)
-d5 = load_dataset("katarinagresova/Genomic_Benchmarks_dummy_mouse_enhancers_ensembl", cache_dir=cache_dir, trust_remote_code=True)
-d6 = load_dataset("katarinagresova/Genomic_Benchmarks_demo_coding_vs_intergenomic_seqs", cache_dir=cache_dir, trust_remote_code=True)
-d7 = load_dataset("katarinagresova/Genomic_Benchmarks_human_enhancers_ensembl", cache_dir=cache_dir, trust_remote_code=True)
-d8 = load_dataset("katarinagresova/Genomic_Benchmarks_human_enhancers_cohn", cache_dir=cache_dir, trust_remote_code=True)
-d9 = load_dataset("katarinagresova/Genomic_Benchmarks_human_nontata_promoters", cache_dir=cache_dir, trust_remote_code=True)
+d1 = load_dataset("katarinagresova/Genomic_Benchmarks_human_ensembl_regulatory", name="", cache_dir=cache_dir, trust_remote_code=True, local_files_only=True) #3
+d2 = load_dataset("katarinagresova/Genomic_Benchmarks_demo_human_or_worm", cache_dir=cache_dir, trust_remote_code=True, local_files_only=True)
+d3 = load_dataset("katarinagresova/Genomic_Benchmarks_human_ocr_ensembl", cache_dir=cache_dir, trust_remote_code=True, local_files_only=True)
+d4 = load_dataset("katarinagresova/Genomic_Benchmarks_drosophila_enhancers_stark", cache_dir=cache_dir, trust_remote_code=True, local_files_only=True)
+d5 = load_dataset("katarinagresova/Genomic_Benchmarks_dummy_mouse_enhancers_ensembl", cache_dir=cache_dir, trust_remote_code=True, local_files_only=True)
+d6 = load_dataset("katarinagresova/Genomic_Benchmarks_demo_coding_vs_intergenomic_seqs", cache_dir=cache_dir, trust_remote_code=True, local_files_only=True)
+d7 = load_dataset("katarinagresova/Genomic_Benchmarks_human_enhancers_ensembl", cache_dir=cache_dir, trust_remote_code=True, local_files_only=True)
+d8 = load_dataset("katarinagresova/Genomic_Benchmarks_human_enhancers_cohn", cache_dir=cache_dir, trust_remote_code=True, local_files_only=True)
+d9 = load_dataset("katarinagresova/Genomic_Benchmarks_human_nontata_promoters", cache_dir=cache_dir, trust_remote_code=True, local_files_only=True)
 
 def get_info(ds):
     lengths = []
