@@ -1,34 +1,43 @@
 import torch
+import logging
 from downstream_tasks import TASKS as tasks, MODELS as model_names
 from mcc import finetune_model_by_task_mcc
-import random
 import json
+from config import LOGLEVEL
 
+logging.basicConfig(
+    filename="eval_mcc.log",
+    filemode="w",                 # Overwrite log file on each run
+    level=LOGLEVEL,           # Log level
+    format="%(message)s"
+)
+logger = logging.getLogger()
+
+console_handler = logging.StreamHandler()
+console_handler.setLevel(LOGLEVEL)
+console_handler.setFormatter(logging.Formatter("%(message)s"))
+logger.addHandler(console_handler)
 result_matrix = []
-print("Getting device...")
+
+logger.log(LOGLEVEL, "Getting device...")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if device.type == "cuda":
-    print(f"Using GPU: {torch.cuda.get_device_name(0)}")
+    logger.log(LOGLEVEL, f"Using GPU: {torch.cuda.get_device_name(0)}")
 else:
-    print("GPU not available. Using CPU instead.")
-
+    logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
 
 for task in tasks:
-    # Create a dictionary to hold results for this task
     task_results = {}
 
     for model_name in model_names:
-        # Generate a random number for this model under the current task
-        print(f"============= {model_name} on {task['repo']}=>{task['name']} ===================")
-        mcc = finetune_model_by_task_mcc(device, model_name, task)
-        print(f"MCC of {model_name} on {task['name']}=>{task['name']}: {mcc}")
+        logger.log(LOGLEVEL, f"{model_name} on {task['repo']}=>{task['name']}")
+        mcc = finetune_model_by_task_mcc(console_handler, device, model_name, task)
+        logger.log(LOGLEVEL, f"MCC of {model_name} on {task['name']}=>{task['name']}: {mcc}")
         task_results[model_name] = mcc
 
-    # Append the task and its results as a tuple (task, task_results)
     result_matrix.append({task['name']: task_results})
 
-
-# Save the result_matrix to a JSON file
-with open('result_matrix.json', 'w') as f:
+output_file = 'result_matrix.json'
+with open(output_file, 'w') as f:
     json.dump(result_matrix, f, indent=4)
-
+logger.info(f"Results saved to {output_file}")

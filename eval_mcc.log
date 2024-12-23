@@ -1,0 +1,5 @@
+Getting device...
+Using GPU: NVIDIA GeForce RTX 4060 Ti
+InstaDeepAI/nucleotide-transformer-v2-50m-multi-species on InstaDeepAI/nucleotide_transformer_downstream_tasks_revised=>promoter_all
+MCC of InstaDeepAI/nucleotide-transformer-v2-50m-multi-species on promoter_all=>promoter_all: 0.7855776374429482
+InstaDeepAI/nucleotide-transformer-v2-100m-multi-species on InstaDeepAI/nucleotide_transformer_downstream_tasks_revised=>promoter_all

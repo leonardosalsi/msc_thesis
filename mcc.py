@@ -3,11 +3,9 @@ from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelFor
 from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
 from config import models_cache_dir, datasets_cache_dir
-from datasets.utils.logging import disable_progress_bar
+from datasets.utils.logging import disable_progress_bar, set_verbosity
+from config import LOGLEVEL
 import numpy as np
-
-disable_progress_bar()
-logging.set_verbosity_error()
 
 def compute_metrics_mcc(eval_pred):
     """Computes Matthews correlation coefficient (MCC score) for binary classification"""
@@ -16,8 +14,10 @@ def compute_metrics_mcc(eval_pred):
     r={'mcc_score': matthews_corrcoef(references, predictions)}
     return r
 
-def finetune_model_by_task_mcc(device, model_name, task):
-
+def finetune_model_by_task_mcc(logger, device, model_name, task):
+    disable_progress_bar()
+    set_verbosity(logging.ERROR)
+    logging.set_verbosity_error()
     """Load dataset splits"""
     dataset_train = load_dataset(
         task["repo"],
@@ -36,7 +36,6 @@ def finetune_model_by_task_mcc(device, model_name, task):
     )
 
     """Load model and move to device"""
-    print(f"Loading model {model_name}")
     model = AutoModelForSequenceClassification.from_pretrained(
         model_name,
         cache_dir=models_cache_dir,
@@ -113,7 +112,7 @@ def finetune_model_by_task_mcc(device, model_name, task):
         dataloader_drop_last=True,
         max_steps= 1000,
         logging_dir='/dev/null',
-        disable_tqdm=True,
+        disable_tqdm=True
     )
 
     trainer = Trainer(
@@ -127,6 +126,7 @@ def finetune_model_by_task_mcc(device, model_name, task):
 
     """Finetune pre-trained model"""
     train_results = trainer.train()
+    logger.log(LOGLEVEL, trainer.state.log_history)
 
     """Get MCC score"""
     mcc = trainer.predict(tokenized_test_sequences).metrics['test_mcc_score']
