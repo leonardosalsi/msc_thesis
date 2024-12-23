@@ -9,11 +9,6 @@
 #SBATCH --gres=gpu:1
 
 source ~/.bashrc
-enable_modules
-module load python scipy-stack gcc arrow
-module list
-
-VENV=/cluster/home/salsil/gpu_venv
-source $VENV/bin/activate
+conda activate gpu_env
 
 python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/eval_mcc.py
