@@ -5,7 +5,7 @@ import random
 import json
 
 result_matrix = []
-
+print("Getting device...")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if device.type == "cuda":
     print(f"Using GPU: {torch.cuda.get_device_name(0)}")
