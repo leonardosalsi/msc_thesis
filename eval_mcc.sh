@@ -2,11 +2,11 @@
 
 #SBATCH --job-name=evaluate-mcc
 #SBATCH --output=out-mcc.txt
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=30
 #SBATCH --time=12:00:00
-#SBATCH --mem-per-cpu=2G
+#SBATCH --mem-per-cpu=8G
 #SBATCH -p gpu
-#SBATCH --gres=gpu:rtx4090:4
+#SBATCH --gres=gpu:0
 
 source ~/.bashrc
 enable_modules
