@@ -14,7 +14,7 @@ def compute_metrics_mcc(eval_pred):
     r={'mcc_score': matthews_corrcoef(references, predictions)}
     return r
 
-def finetune_model_by_task_mcc(logger, device, model_name, task):
+def finetune_model_by_task_mcc(device, model_name, task):
     disable_progress_bar()
     set_verbosity(logging.ERROR)
     logging.set_verbosity_error()
@@ -126,7 +126,6 @@ def finetune_model_by_task_mcc(logger, device, model_name, task):
 
     """Finetune pre-trained model"""
     train_results = trainer.train()
-    logger.log(LOGLEVEL, trainer.state.log_history)
 
     """Get MCC score"""
     mcc = trainer.predict(tokenized_test_sequences).metrics['test_mcc_score']

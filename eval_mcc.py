@@ -31,7 +31,7 @@ for task in tasks:
 
     for model_name in model_names:
         logger.log(LOGLEVEL, f"{model_name} on {task['repo']}=>{task['name']}")
-        mcc = finetune_model_by_task_mcc(console_handler, device, model_name, task)
+        mcc = finetune_model_by_task_mcc(device, model_name, task)
         logger.log(LOGLEVEL, f"MCC of {model_name} on {task['name']}=>{task['name']}: {mcc}")
         task_results[model_name] = mcc
 
