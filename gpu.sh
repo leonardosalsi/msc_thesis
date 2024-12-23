@@ -13,7 +13,7 @@ enable_modules
 module load python scipy-stack gcc arrow
 module list
 
-VENV=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/gpu_venv
+VENV=/cluster/home/salsil/gpu_venv
 source $VENV/bin/activate
 
 python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/gpu.py
