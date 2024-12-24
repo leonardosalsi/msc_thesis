@@ -1,0 +1,344 @@
+{
+    "promoter_all": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.7793159782647268
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.7971892568770383
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.8509481717034562
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.85620122902434
+        }
+    ],
+    "promoter_tata": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.9877380372772312
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.9889243341221721
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.994066527899068
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.9932753815405467
+        }
+    ],
+    "promoter_no_tata": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.7974111983849049
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.8020654779116824
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.8317812411399573
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.855112857279586
+        }
+    ],
+    "enhancers": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.542830773926087
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.5598262449516419
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.5910969020064878
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.6083099530499685
+        }
+    ],
+    "enhancers_types": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.5088432719094452
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.520926753760519
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.5490417121758885
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.6026764542649177
+        }
+    ],
+    "splice_sites_all": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.8821162508893332
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.8731007843763424
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.9362039669598413
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.9754199129979934
+        }
+    ],
+    "splice_sites_acceptors": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.9101264669880502
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.9048609900139922
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.9503742389888732
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.9728438458378715
+        }
+    ],
+    "splice_sites_donors": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.9321810652247301
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.9186586361560986
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.9467501819353749
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.9827308846284837
+        }
+    ],
+    "H2AFZ": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.5544554201715677
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.559818019856065
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.5825851290807214
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.5992272851046279
+        }
+    ],
+    "H3K27ac": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.5362646461626615
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.5402737591192555
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.5728581855725572
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.6067785168922889
+        }
+    ],
+    "H3K27me3": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.6394353624142051
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.6501960482760193
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.6762890046243965
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.6842941139203379
+        }
+    ],
+    "H3K36me3": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.6698110622437092
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.6863861244146876
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.7242432549119526
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.7327875847185756
+        }
+    ],
+    "H3K4me1": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.5222955885137606
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.5396220356036429
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.5568547520545432
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.5695950722060629
+        }
+    ],
+    "H3K4me2": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.5996846432874866
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.6133411998513586
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.6394072132338765
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.6448989897985523
+        }
+    ],
+    "H3K4me3": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.7353866201957154
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.7559747216712082
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.784441025599162
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.7890649856156853
+        }
+    ],
+    "H3K9ac": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.5860080097637341
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.6132233918708443
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.6349666574163837
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.6344032414996087
+        }
+    ],
+    "H3K9me3": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.4866308020307104
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.5107161169344968
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.5670178213887042
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.5576124912523545
+        }
+    ],
+    "H4K20me1": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.6874774679096255
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.7001965083076803
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.7267985786068945
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.7401901760792667
+        }
+    ],
+    "genomic_benchmarks_human_ensembl_regulatory": [
+        {
+            "model": "nucleotide-transformer-v2-50m-multi-species",
+            "mcc": 0.8529857103383839
+        },
+        {
+            "model": "nucleotide-transformer-v2-100m-multi-species",
+            "mcc": 0.8603419444834803
+        },
+        {
+            "model": "nucleotide-transformer-v2-250m-multi-species",
+            "mcc": 0.8706656397824376
+        },
+        {
+            "model": "nucleotide-transformer-v2-500m-multi-species",
+            "mcc": 0.8658839646015799
+        }
+    ]
+}

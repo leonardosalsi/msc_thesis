@@ -96,7 +96,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, task):
     """Configure trainer"""
     batch_size = 32
     training_args = TrainingArguments(
-        f"{model_name}_finetuned_{task['name']}",
+        f"{model_name}_finetuned_{task['alias']}",
         remove_unused_columns=False,
         eval_strategy="steps",
         save_strategy="steps",
