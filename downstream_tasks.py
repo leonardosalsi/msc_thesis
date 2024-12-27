@@ -28,12 +28,11 @@ TASKS = [
     {'repo': "katarinagresova/Genomic_Benchmarks_human_nontata_promoters", 'name': "", 'alias': "Genomic_Benchmarks_human_nontata_promoters", 'len': 251, 'sequence_feature': 'seq', 'label_feature': 'label', 'num_labels': 2}
 ]
 
-
 MODELS = [
-    #"InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
-    #"InstaDeepAI/nucleotide-transformer-v2-100m-multi-species",
-    #"InstaDeepAI/nucleotide-transformer-v2-250m-multi-species",
-    #"InstaDeepAI/nucleotide-transformer-v2-500m-multi-species",
+    "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+    "InstaDeepAI/nucleotide-transformer-v2-100m-multi-species",
+    "InstaDeepAI/nucleotide-transformer-v2-250m-multi-species",
+    "InstaDeepAI/nucleotide-transformer-v2-500m-multi-species",
     "InstaDeepAI/nucleotide-transformer-500m-1000g",
     "InstaDeepAI/nucleotide-transformer-500m-human-ref"
 ]

@@ -12,14 +12,18 @@ aliases = {
     'nucleotide-transformer-v2-100m-multi-species': 'NT-Multispecies V2 (100M)',
     'nucleotide-transformer-v2-250m-multi-species': 'NT-Multispecies V2 (250M)',
     'nucleotide-transformer-v2-500m-multi-species': 'NT-Multispecies V2 (500M)',
+    "nucleotide-transformer-500m-1000g": "NT-1000g (500M)",
+    "nucleotide-transformer-500m-human-ref": "NT-Human-Ref. (500M)",
 }
 
-colors = {
-    'nucleotide-transformer-v2-50m-multi-species': 'firebrick',
-    'nucleotide-transformer-v2-100m-multi-species': 'darkorange',
-    'nucleotide-transformer-v2-250m-multi-species': 'orchid',
-    'nucleotide-transformer-v2-500m-multi-species': 'darkslateblue',
-}
+colors = [
+    'firebrick',
+    'darkorange',
+    'orchid',
+    'darkslateblue',
+    "mediumvioletred",
+    "saddlebrown",
+]
 
 num_subgroups = len(data)
 cols = 3
@@ -31,9 +35,9 @@ axes = axes.flatten()
 
 for idx, (key, models) in enumerate(data.items()):
     ax = axes[idx]
-    model_names = [aliases[model["model"]] for model in models]
+    model_names = [model["model"] for model in models]
     mcc_values = [model["mcc"] for model in models]
-    bar_color = [colors[model["model"]] for model in models]
+    bar_color = colors
 
     # Bar plot
     x = np.arange(len(model_names))
