@@ -1,6 +1,7 @@
+import os
 from datasets import load_dataset, Dataset
 from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification, logging, \
-    AutoConfig
+    AutoConfig, EsmConfig
 from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
 from config import models_cache_dir, datasets_cache_dir
@@ -44,18 +45,10 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
 
     """Load model and move to device"""
     if random_weights:
-        config = AutoConfig.from_pretrained(
-            model_name,
-            cache_dir=models_cache_dir,
-            num_labels=task["num_labels"],
-            trust_remote_code=True,
-            local_files_only=True
-        )
-        model = AutoModelForSequenceClassification.from_config(
-            config
-        )
+        _model_name = model_name.split('/')[-1]
+        config = EsmConfig.from_pretrained(f"{models_cache_dir}config-{_model_name}.json", local_files_only=True, trust_remote_code=True)
+        model = AutoModelForSequenceClassification.from_config(config)
     else:
-        # Load the pre-trained model
         model = AutoModelForSequenceClassification.from_pretrained(
             model_name,
             cache_dir=models_cache_dir,
@@ -65,7 +58,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
         )
     model = model.to(device)
 
-    """Get correspnding feature name and load"""
+    """Get corresponding feature name and load"""
     sequence_feature = task["sequence_feature"]
     label_feature = task["label_feature"]
 
@@ -170,6 +163,7 @@ import json
 from config import LOGLEVEL
 
 def init_logger(logfile):
+    logfile = logfile.split('/')[-1]
     pyLogging.basicConfig(
         filename=f"{logfile}.log",
         filemode="w",  # Overwrite log file on each run
@@ -214,16 +208,24 @@ if __name__ == "__main__":
         logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
 
     results = {}
-    output_file = f'{model_name + mode}.json'
+    _model_name = model_name.split('/')[-1]
+    output_file = f'data/{_model_name + mode}.json'
+
+    if os.path.exists(output_file):
+        with open(output_file, "r") as file:
+            results = json.load(file)
 
     try:
         for task in tasks:
+            if task['alias'] in results:
+                continue
             logger.log(LOGLEVEL, f"{model_name}{mode} on {task['alias']}")
             mcc = finetune_model_by_task_mcc(logger, device, model_name, task, random_weight)
             results[task['alias']] = mcc
             logger.log(LOGLEVEL, f"MCC of {model_name}{mode} on {task['alias']} => mean: {mcc['mean']}, std: {mcc['std']}")
     except:
         pass
+
     with open(output_file, 'w') as f:
         json.dump(results, f, indent=4)
     logger.info(f"Results saved to {output_file}")
