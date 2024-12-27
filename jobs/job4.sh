@@ -1,4 +1,4 @@
-job1.sh#!/bin/bash
+#!/bin/bash
 
 #SBATCH --job-name=InstaDeepAI/nucleotide-transformer-v2-250m-multi-species
 #SBATCH --output=out-nucleotide-transformer-v2-250m-multi-species.txt

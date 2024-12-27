@@ -192,17 +192,19 @@ if __name__ == "__main__":
 
     values = sys.argv[1:]
     model_name = values[0]
-
-    random_weights = 0
+    print(values)
+    random_weight = 0
     if len(values) > 1:
         random_weight = values[1]
 
-    if random_weights == 1:
-        random_weights = True
+    if random_weight == "1":
+        random_weight = True
         mode = "-with-random-weights"
     else:
-        random_weights = False
+        random_weight = False
         mode = ""
+
+    print(model_name+mode)
 
     logger = init_logger(model_name+mode)
 
@@ -215,5 +217,5 @@ if __name__ == "__main__":
 
     for task in tasks:
         logger.log(LOGLEVEL, f"{model_name}{mode} on {task['alias']}")
-        mcc = finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
+        mcc = finetune_model_by_task_mcc(logger, device, model_name, task, random_weight)
         logger.log(LOGLEVEL, f"MCC of {model_name}{mode} on {task['alias']}: {mcc}")
