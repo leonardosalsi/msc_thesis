@@ -44,7 +44,6 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
 
     """Load model and move to device"""
     if random_weights:
-        # Create a random configuration
         config = AutoConfig.from_pretrained(
             model_name,
             cache_dir=models_cache_dir,
@@ -53,8 +52,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
             local_files_only=True
         )
         model = AutoModelForSequenceClassification.from_config(
-            config,
-            trust_remote_code=True
+            config
         )
     else:
         # Load the pre-trained model
@@ -215,7 +213,19 @@ if __name__ == "__main__":
     else:
         logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
 
-    for task in tasks:
-        logger.log(LOGLEVEL, f"{model_name}{mode} on {task['alias']}")
-        mcc = finetune_model_by_task_mcc(logger, device, model_name, task, random_weight)
-        logger.log(LOGLEVEL, f"MCC of {model_name}{mode} on {task['alias']}: {mcc}")
+    results = {}
+    output_file = f'{model_name + mode}.json'
+
+    try:
+        for task in tasks:
+            logger.log(LOGLEVEL, f"{model_name}{mode} on {task['alias']}")
+            mcc = finetune_model_by_task_mcc(logger, device, model_name, task, random_weight)
+            results[task['alias']] = mcc
+            logger.log(LOGLEVEL, f"MCC of {model_name}{mode} on {task['alias']} => mean: {mcc['mean']}, std: {mcc['std']}")
+    except:
+        pass
+    with open(output_file, 'w') as f:
+        json.dump(results, f, indent=4)
+    logger.info(f"Results saved to {output_file}")
+
+
