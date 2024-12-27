@@ -184,7 +184,6 @@ if __name__ == "__main__":
 
     values = sys.argv[1:]
     model_name = values[0]
-    print(values)
     random_weight = 0
     if len(values) > 1:
         random_weight = values[1]
@@ -196,10 +195,8 @@ if __name__ == "__main__":
         random_weight = False
         mode = ""
 
-    print(model_name+mode)
 
     logger = init_logger(model_name+mode)
-
     logger.log(LOGLEVEL, "Getting device...")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == "cuda":
