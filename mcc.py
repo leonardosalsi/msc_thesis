@@ -1,5 +1,6 @@
 from datasets import load_dataset, Dataset
-from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification, logging
+from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification, logging, \
+    AutoConfig
 from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
 from config import models_cache_dir, datasets_cache_dir
@@ -14,10 +15,16 @@ def compute_metrics_mcc(eval_pred):
     r={'mcc_score': matthews_corrcoef(references, predictions)}
     return r
 
-def finetune_model_by_task_mcc(logger, device, model_name, task):
+def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights):
     disable_progress_bar()
     set_verbosity(logging.ERROR)
     logging.set_verbosity_error()
+
+    if random_weights:
+        mode = "-with-random-weights"
+    else:
+        mode = ""
+
     """Load dataset splits"""
     dataset_train = load_dataset(
         task["repo"],
@@ -36,13 +43,28 @@ def finetune_model_by_task_mcc(logger, device, model_name, task):
     )
 
     """Load model and move to device"""
-    model = AutoModelForSequenceClassification.from_pretrained(
-        model_name,
-        cache_dir=models_cache_dir,
-        num_labels=task["num_labels"],
-        trust_remote_code=True,
-        local_files_only = True
-    )
+    if random_weights:
+        # Create a random configuration
+        config = AutoConfig.from_pretrained(
+            model_name,
+            cache_dir=models_cache_dir,
+            num_labels=task["num_labels"],
+            trust_remote_code=True,
+            local_files_only=True
+        )
+        model = AutoModelForSequenceClassification.from_config(
+            config,
+            trust_remote_code=True
+        )
+    else:
+        # Load the pre-trained model
+        model = AutoModelForSequenceClassification.from_pretrained(
+            model_name,
+            cache_dir=models_cache_dir,
+            num_labels=task["num_labels"],
+            trust_remote_code=True,
+            local_files_only=True
+        )
     model = model.to(device)
 
     """Get correspnding feature name and load"""
@@ -96,7 +118,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, task):
     """Configure trainer"""
     batch_size = 32
     training_args = TrainingArguments(
-        f"{model_name}_finetuned_{task['alias']}",
+        f"{model_name}{mode}_finetuned_{task['alias']}",
         remove_unused_columns=False,
         eval_strategy="steps",
         save_strategy="steps",
@@ -128,7 +150,70 @@ def finetune_model_by_task_mcc(logger, device, model_name, task):
     train_results = trainer.train()
     logger.log(LOGLEVEL, trainer.state.log_history)
     """Get MCC score"""
-    mcc = trainer.predict(tokenized_test_sequences).metrics['test_mcc_score']
+    preduction_results = trainer.predict(tokenized_test_sequences)
+    predictions = np.argmax(preduction_results.predictions, axis=-1)
+    labels = preduction_results.label_ids
+    mcc = preduction_results.metrics['test_mcc_score']
 
-    return mcc
+    scores = []
 
+    for _ in range(10000):
+        idx = np.random.choice(len(predictions), size=len(predictions), replace=True)
+        score = matthews_corrcoef(predictions[idx], labels[idx])
+        scores.append(score)
+
+    return {'mean': np.mean(scores), 'std': np.std(scores), 'scores': scores}
+
+import sys
+import torch
+import logging as pyLogging
+from downstream_tasks import TASKS as tasks, MODELS as model_names
+import json
+from config import LOGLEVEL
+
+def init_logger(logfile):
+    pyLogging.basicConfig(
+        filename=f"{logfile}.log",
+        filemode="w",  # Overwrite log file on each run
+        level=LOGLEVEL,  # Log level
+        format="%(message)s"
+    )
+    logger = pyLogging.getLogger()
+    console_handler = pyLogging.StreamHandler()
+    console_handler.setLevel(LOGLEVEL)
+    console_handler.setFormatter(pyLogging.Formatter("%(message)s"))
+    logger.addHandler(console_handler)
+    return logger
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Specify model name (optionally if with random weights)")
+        sys.exit(1)
+
+    values = sys.argv[1:]
+    model_name = values[0]
+
+    random_weights = 0
+    if len(values) > 1:
+        random_weight = values[1]
+
+    if random_weights == 1:
+        random_weights = True
+        mode = "-with-random-weights"
+    else:
+        random_weights = False
+        mode = ""
+
+    logger = init_logger(model_name+mode)
+
+    logger.log(LOGLEVEL, "Getting device...")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device.type == "cuda":
+        logger.log(LOGLEVEL, f"Using GPU: {torch.cuda.get_device_name(0)}")
+    else:
+        logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
+
+    for task in tasks:
+        logger.log(LOGLEVEL, f"{model_name}{mode} on {task['alias']}")
+        mcc = finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
+        logger.log(LOGLEVEL, f"MCC of {model_name}{mode} on {task['alias']}: {mcc}")

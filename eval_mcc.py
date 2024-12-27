@@ -29,10 +29,16 @@ else:
 for task in tasks:
     task_results = {}
 
-    for model_name in model_names:
-        logger.log(LOGLEVEL, f"{model_name} on {task['repo']}=>{task['name']}")
-        mcc = finetune_model_by_task_mcc(logger, device, model_name, task)
-        logger.log(LOGLEVEL, f"MCC of {model_name} on {task['name']}=>{task['name']}: {mcc}")
+    for _model in model_names:
+        model_name = _model["name"]
+        random_weights = _model["random_weights"]
+        if random_weights:
+            mode = "-with-random-weights"
+        else:
+            mode = ""
+        logger.log(LOGLEVEL, f"{model_name}{mode} on {task['repo']}=>{task['name']}")
+        mcc = finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
+        logger.log(LOGLEVEL, f"MCC of {model_name}{mode} on {task['name']}=>{task['name']}: {mcc}")
         task_results[model_name] = mcc
 
     result_matrix.append({task['name']: task_results})

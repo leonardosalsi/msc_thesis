@@ -29,10 +29,12 @@ TASKS = [
 ]
 
 MODELS = [
-    "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
-    "InstaDeepAI/nucleotide-transformer-v2-100m-multi-species",
-    "InstaDeepAI/nucleotide-transformer-v2-250m-multi-species",
-    "InstaDeepAI/nucleotide-transformer-v2-500m-multi-species",
-    "InstaDeepAI/nucleotide-transformer-500m-1000g",
-    "InstaDeepAI/nucleotide-transformer-500m-human-ref"
+    {'name': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'random_weights': True},
+    {'name': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'random_weights': False},
+    {'name': "InstaDeepAI/nucleotide-transformer-v2-100m-multi-species", 'random_weights': False},
+    {'name': "InstaDeepAI/nucleotide-transformer-v2-250m-multi-species", 'random_weights': False},
+    {'name': "InstaDeepAI/nucleotide-transformer-v2-500m-multi-species", 'random_weights': False},
+    {'name': "InstaDeepAI/nucleotide-transformer-500m-1000g", 'random_weights': False},
+    {'name': "InstaDeepAI/nucleotide-transformer-500m-human-ref", 'random_weights': False},
+    {'name': "InstaDeepAI/nucleotide-transformer-v2-500m-multi-species", 'random_weights': True}
 ]
