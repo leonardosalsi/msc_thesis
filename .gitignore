@@ -2,4 +2,4 @@
 InstaDeepAI
 config.py
 data/*.json
-out/*/*
+out/*/*.txt
