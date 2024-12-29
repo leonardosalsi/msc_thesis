@@ -150,7 +150,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
 
     for _ in range(10000):
         idx = np.random.choice(len(predictions), size=len(predictions), replace=True)
-        score = matthews_corrcoef(predictions[idx], labels[idx])
+        score = matthews_corrcoef(labels[idx], predictions[idx])
         scores.append(score)
 
     return {'mean': np.mean(scores), 'std': np.std(scores), 'scores': scores}
