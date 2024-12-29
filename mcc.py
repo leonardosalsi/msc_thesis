@@ -46,7 +46,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
     """Load model and move to device"""
     if random_weights:
         _model_name = model_name.split('/')[-1]
-        config = EsmConfig.from_pretrained(f"{models_cache_dir}config-{_model_name}.json", local_files_only=True, trust_remote_code=True)
+        config = EsmConfig.from_pretrained(f"{models_cache_dir}/config-{_model_name}.json", num_labels=task["num_labels"], local_files_only=True, trust_remote_code=True)
         model = AutoModelForSequenceClassification.from_config(config)
     else:
         model = AutoModelForSequenceClassification.from_pretrained(
@@ -107,7 +107,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
     )
 
     """Configure trainer"""
-    batch_size = 32
+    batch_size = 4
     training_args = TrainingArguments(
         f"{model_name}{mode}_finetuned_{task['alias']}",
         remove_unused_columns=False,
@@ -116,7 +116,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
         learning_rate=1e-5,
         per_device_train_batch_size=batch_size,
         gradient_accumulation_steps= 1,
-        per_device_eval_batch_size= 64,
+        per_device_eval_batch_size= 4,
         num_train_epochs= 2,
         logging_steps= 100,
         load_best_model_at_end=True,  # Keep the best model according to the evaluation
@@ -165,7 +165,7 @@ from config import LOGLEVEL
 def init_logger(logfile):
     logfile = logfile.split('/')[-1]
     pyLogging.basicConfig(
-        filename=f"{logfile}.log",
+        filename=f"log/{logfile}.log",
         filemode="w",  # Overwrite log file on each run
         level=LOGLEVEL,  # Log level
         format="%(message)s"
@@ -195,7 +195,6 @@ if __name__ == "__main__":
         random_weight = False
         mode = ""
 
-
     logger = init_logger(model_name+mode)
     logger.log(LOGLEVEL, "Getting device...")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -220,7 +219,8 @@ if __name__ == "__main__":
             mcc = finetune_model_by_task_mcc(logger, device, model_name, task, random_weight)
             results[task['alias']] = mcc
             logger.log(LOGLEVEL, f"MCC of {model_name}{mode} on {task['alias']} => mean: {mcc['mean']}, std: {mcc['std']}")
-    except:
+    except Exception as e:
+        print(e)
         pass
 
     with open(output_file, 'w') as f:

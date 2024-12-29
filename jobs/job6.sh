@@ -1,10 +1,10 @@
 #!/bin/bash
 
-#SBATCH --job-name=InstaDeepAI/nucleotide-transformer-v2-500m-multi-species-random
-#SBATCH --output=out-InstaDeepAI/nucleotide-transformer-v2-500m-multi-species-random.txt
-#SBATCH --cpus-per-task=4
+#SBATCH --job-name=500m-multi-species-random
+#SBATCH --output=out/run_eval/out-nucleotide-transformer-v2-500m-multi-species-random.txt
+#SBATCH --cpus-per-task=8
 #SBATCH --time=20:00:00
-#SBATCH --mem-per-cpu=40G
+#SBATCH --mem-per-cpu=80G
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
 

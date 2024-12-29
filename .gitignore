@@ -1,3 +1,5 @@
 .venv
 InstaDeepAI
 config.py
+data
+out/*/*
