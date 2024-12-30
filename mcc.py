@@ -138,16 +138,14 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
     )
 
     """Finetune pre-trained model"""
-    train_results = trainer.train()
+    _ = trainer.train()
     logger.log(LOGLEVEL, trainer.state.log_history)
     """Get MCC score"""
     preduction_results = trainer.predict(tokenized_test_sequences)
     predictions = np.argmax(preduction_results.predictions, axis=-1)
     labels = preduction_results.label_ids
-    mcc = preduction_results.metrics['test_mcc_score']
-
+    """Apply Bootstrapping"""
     scores = []
-
     for _ in range(10000):
         idx = np.random.choice(len(predictions), size=len(predictions), replace=True)
         score = matthews_corrcoef(labels[idx], predictions[idx])

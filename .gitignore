@@ -1,5 +1,4 @@
 .venv
 InstaDeepAI
 config.py
-data/*.json
 out/*/*.txt
