@@ -278,7 +278,7 @@ if __name__ == "__main__":
     if not validate_data():
         print('Data validation failed.')
     data = prepare_data_for_visualization()
-    with open('mcc_data.json', 'w') as f:
+    with open('mcc_data_all.json', 'w') as f:
         json.dump(data, f, indent=4)
     visualize_mcc_per_task(data)
     visualize_mcc_across_tasks(data)
