@@ -8,6 +8,8 @@ from config import models_cache_dir, datasets_cache_dir
 from datasets.utils.logging import disable_progress_bar, set_verbosity
 from config import LOGLEVEL
 import numpy as np
+from peft import LoraConfig, TaskType
+
 
 def compute_metrics_mcc(eval_pred):
     """Computes Matthews correlation coefficient (MCC score) for binary classification"""
@@ -164,7 +166,7 @@ def init_logger(logfile):
     logfile = logfile.split('/')[-1]
     pyLogging.basicConfig(
         filename=f"log/{logfile}.log",
-        filemode="w",  # Overwrite log file on each run
+        filemode="a",
         level=LOGLEVEL,  # Log level
         format="%(message)s"
     )

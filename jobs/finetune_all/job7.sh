@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=500m-human-ref
-#SBATCH --output=out/run_eval/out-nucleotide-transformer-500m-human-ref.txt
+#SBATCH --job-name=500m-human-ref-all
+#SBATCH --output=out/finetune_all/out-nucleotide-transformer-500m-human-ref.txt
 #SBATCH --cpus-per-task=8
 #SBATCH --time=20:00:00
 #SBATCH --mem-per-cpu=80G
@@ -11,4 +11,4 @@
 source ~/.bashrc
 conda activate gpu_env
 
-python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/mcc.py InstaDeepAI/nucleotide-transformer-500m-human-ref
+python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/mcc_finetune_all.py InstaDeepAI/nucleotide-transformer-500m-human-ref
