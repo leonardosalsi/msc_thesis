@@ -65,6 +65,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
         # modules_to_save=["intermediate"] # modules that are not frozen and updated during the training
     )
 
+    """Employ LoRA """
     lora_classifier = get_peft_model(model, peft_config)
     lora_classifier.to(device)
 
