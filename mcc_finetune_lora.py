@@ -229,7 +229,7 @@ if __name__ == "__main__":
             results[task['alias']] = mcc
             logger.log(LOGLEVEL, f"MCC of {model_name}{mode} on {task['alias']} => mean: {mcc['mean']}, std: {mcc['std']}")
     except Exception as e:
-        print(e)
+        print(e.with_traceback())
         pass
 
     with open(output_file, 'w') as f:
