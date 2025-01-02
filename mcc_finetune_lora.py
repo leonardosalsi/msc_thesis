@@ -8,8 +8,7 @@ from config import models_cache_dir, datasets_cache_dir
 from datasets.utils.logging import disable_progress_bar, set_verbosity
 from config import LOGLEVEL
 import numpy as np
-from peft import LoraConfig, TaskType
-
+from peft import LoraConfig, TaskType, get_peft_model
 
 def compute_metrics_mcc(eval_pred):
     """Computes Matthews correlation coefficient (MCC score) for binary classification"""
@@ -60,6 +59,15 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
         )
     model = model.to(device)
 
+    peft_config = LoraConfig(
+        task_type=TaskType.SEQ_CLS, inference_mode=False, r=1, lora_alpha=32, lora_dropout=0.1,
+        target_modules=["query", "value"],
+        # modules_to_save=["intermediate"] # modules that are not frozen and updated during the training
+    )
+
+    lora_classifier = get_peft_model(model, peft_config)
+    lora_classifier.to(device)
+
     """Get corresponding feature name and load"""
     sequence_feature = task["sequence_feature"]
     label_feature = task["label_feature"]
@@ -109,7 +117,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
     )
 
     """Configure trainer"""
-    batch_size = 4
+    batch_size = 8
     training_args = TrainingArguments(
         f"{model_name}{mode}_finetuned_{task['alias']}",
         remove_unused_columns=False,
@@ -118,20 +126,20 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
         learning_rate=1e-5,
         per_device_train_batch_size=batch_size,
         gradient_accumulation_steps= 1,
-        per_device_eval_batch_size= 4,
+        per_device_eval_batch_size= 64,
         num_train_epochs= 2,
         logging_steps= 100,
         load_best_model_at_end=True,  # Keep the best model according to the evaluation
         metric_for_best_model="mcc_score",
         label_names=["labels"],
         dataloader_drop_last=True,
-        max_steps= 1000,
+        max_steps= 10000,
         logging_dir='/dev/null',
         disable_tqdm=True
     )
 
     trainer = Trainer(
-        model,
+        lora_classifier,
         training_args,
         train_dataset= tokenized_train_sequences,
         eval_dataset= tokenized_validation_sequences,

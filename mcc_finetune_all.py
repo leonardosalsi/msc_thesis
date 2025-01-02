@@ -109,7 +109,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
     )
 
     """Configure trainer"""
-    batch_size = 4
+    batch_size = 8
     training_args = TrainingArguments(
         f"{model_name}{mode}_finetuned_{task['alias']}",
         remove_unused_columns=False,
@@ -118,14 +118,14 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
         learning_rate=1e-5,
         per_device_train_batch_size=batch_size,
         gradient_accumulation_steps= 1,
-        per_device_eval_batch_size= 4,
+        per_device_eval_batch_size= 64,
         num_train_epochs= 2,
         logging_steps= 100,
         load_best_model_at_end=True,  # Keep the best model according to the evaluation
         metric_for_best_model="mcc_score",
         label_names=["labels"],
         dataloader_drop_last=True,
-        max_steps= 1000,
+        max_steps= 10000,
         logging_dir='/dev/null',
         disable_tqdm=True
     )
