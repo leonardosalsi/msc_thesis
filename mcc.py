@@ -203,7 +203,7 @@ if __name__ == "__main__":
 
     results = {}
     _model_name = model_name.split('/')[-1]
-    output_file = f'data/{_model_name + mode}.json'
+    output_file = f'data/finetune_all/{_model_name + mode}.json'
 
     if os.path.exists(output_file):
         with open(output_file, "r") as file:
