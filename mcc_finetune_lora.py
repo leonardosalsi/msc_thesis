@@ -50,6 +50,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
         config = EsmConfig.from_pretrained(f"{models_cache_dir}/config-{_model_name}.json", num_labels=task["num_labels"], local_files_only=True, trust_remote_code=True)
         model = AutoModelForSequenceClassification.from_config(config)
     else:
+        logger.log(LOGLEVEL, models_cache_dir)
         model = AutoModelForSequenceClassification.from_pretrained(
             model_name,
             cache_dir=models_cache_dir,
@@ -174,7 +175,7 @@ from config import LOGLEVEL
 def init_logger(logfile):
     logfile = logfile.split('/')[-1]
     pyLogging.basicConfig(
-        filename=f"log/{logfile}.log",
+        filename=f"log/finetune_lora/{logfile}.log",
         filemode="a",
         level=LOGLEVEL,  # Log level
         format="%(message)s"
@@ -235,5 +236,3 @@ if __name__ == "__main__":
     with open(output_file, 'w') as f:
         json.dump(results, f, indent=4)
     logger.info(f"Results saved to {output_file}")
-
-

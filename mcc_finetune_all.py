@@ -46,14 +46,15 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
     )
 
     """Load model and move to device"""
+    _model_name = model_name.split('/')[-1]
+    print(models_cache_dir + _model_name)
     if random_weights:
-        _model_name = model_name.split('/')[-1]
         config = EsmConfig.from_pretrained(f"{models_cache_dir}/config-{_model_name}.json", num_labels=task["num_labels"], local_files_only=True, trust_remote_code=True)
         model = AutoModelForSequenceClassification.from_config(config)
     else:
+        path = models_cache_dir + _model_name
         model = AutoModelForSequenceClassification.from_pretrained(
-            model_name,
-            cache_dir=models_cache_dir,
+            path,
             num_labels=task["num_labels"],
             trust_remote_code=True,
             local_files_only=True
@@ -165,7 +166,7 @@ from config import LOGLEVEL
 def init_logger(logfile):
     logfile = logfile.split('/')[-1]
     pyLogging.basicConfig(
-        filename=f"log/{logfile}.log",
+        filename=f"log/finetune_all/{logfile}.log",
         filemode="a",  # Overwrite log file on each run
         level=LOGLEVEL,  # Log level
         format="%(message)s"

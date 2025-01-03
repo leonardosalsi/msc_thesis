@@ -11,4 +11,5 @@
 source ~/.bashrc
 conda activate gpu_env
 
+HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \
 python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/mcc_finetune_all.py InstaDeepAI/nucleotide-transformer-v2-50m-multi-species
