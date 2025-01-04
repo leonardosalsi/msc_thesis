@@ -77,7 +77,7 @@ def generate_jobs():
             for task in TASKS:
                 generate_file(f"{model['alias']}-random-weights-{task['alias']}-lora", model['modelId'], task['taskId'], random_weights=True)
                 jobs.append(f"{model['alias']}-random-weights-{task['alias']}-lora")
-
+    """
     for model in MODELS:
         for task in TASKS:
             generate_file(f"{model['alias']}-{task['alias']}", model['modelId'], task['taskId'], no_lora=True)
@@ -86,7 +86,7 @@ def generate_jobs():
             for task in TASKS:
                 generate_file(f"{model['alias']}-random-weights-{task['alias']}", model['modelId'], task['taskId'], no_lora=True, random_weights=True)
                 jobs.append(f"{model['alias']}-random-weights-{task['alias']}")
-
+    """
     content = '''#!/bin/bash\n\n'''
 
     for job in jobs:
