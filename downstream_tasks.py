@@ -64,7 +64,7 @@ def generate_file(job_name, modelId, taskId, no_lora=False, random_weights=False
     HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \\
     python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/evaluate_model_mcc.py {modelId} {taskId}{args}
     '''
-    with open(f'jobs/{job_name}.sh', 'w') as rsh:
+    with open(f'jobs/evaluate_mcc/{job_name}.sh', 'w') as rsh:
         rsh.writelines(content)
 
 def generate_jobs():
@@ -90,7 +90,7 @@ def generate_jobs():
     content = '''#!/bin/bash\n\n'''
 
     for job in jobs:
-        content += f"sbatch {job}\n"
+        content += f"sbatch jobs/evaluate_mcc/{job}\n"
 
     with open(f'evaluate_all.sh', 'w') as rsh:
         rsh.writelines(content)
