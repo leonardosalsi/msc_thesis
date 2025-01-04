@@ -90,7 +90,7 @@ def generate_jobs():
     content = '''#!/bin/bash\n\n'''
 
     for job in jobs:
-        content += f"sbatch jobs/evaluate_mcc/{job}\n"
+        content += f"sbatch jobs/evaluate_mcc/{job}.sh\n"
 
     with open(f'evaluate_all.sh', 'w') as rsh:
         rsh.writelines(content)
