@@ -50,7 +50,6 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
         config = EsmConfig.from_pretrained(f"{models_cache_dir}/config-{_model_name}.json", num_labels=task["num_labels"], local_files_only=True, trust_remote_code=True)
         model = AutoModelForSequenceClassification.from_config(config)
     else:
-        logger.log(LOGLEVEL, models_cache_dir)
         model = AutoModelForSequenceClassification.from_pretrained(
             model_name,
             cache_dir=models_cache_dir,
@@ -124,14 +123,14 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights)
         f"{model_name}{mode}_finetuned_lora_{task['alias']}",
         remove_unused_columns=False,
         eval_strategy="steps",
-        save_strategy="steps",
+        save_strategy="no",
         learning_rate=3e-3,
         per_device_train_batch_size=batch_size,
         gradient_accumulation_steps= 1,
         per_device_eval_batch_size= 64,
         num_train_epochs= 2,
         logging_steps= 100,
-        load_best_model_at_end=True,  # Keep the best model according to the evaluation
+        load_best_model_at_end=False,
         metric_for_best_model="mcc_score",
         label_names=["labels"],
         dataloader_drop_last=True,
