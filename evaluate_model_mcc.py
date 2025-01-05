@@ -76,9 +76,6 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights,
         )
         lora_classifier = get_peft_model(model, peft_config)
         lora_classifier.to(device)
-        to_train = lora_classifier
-    else:
-        to_train = model
 
     """Get corresponding feature name and load"""
     sequence_feature = task["sequence_feature"]
@@ -152,14 +149,24 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights,
         disable_tqdm=True
     )
 
-    trainer = Trainer(
-        to_train,
-        training_args,
-        train_dataset= tokenized_train_sequences,
-        eval_dataset= tokenized_validation_sequences,
-        processing_class=tokenizer,
-        compute_metrics=compute_metrics_mcc,
-    )
+    if lora:
+        trainer = Trainer(
+            lora_classifier,
+            training_args,
+            train_dataset= tokenized_train_sequences,
+            eval_dataset= tokenized_validation_sequences,
+            processing_class=tokenizer,
+            compute_metrics=compute_metrics_mcc,
+        )
+    else:
+        trainer = Trainer(
+            model,
+            training_args,
+            train_dataset=tokenized_train_sequences,
+            eval_dataset=tokenized_validation_sequences,
+            processing_class=tokenizer,
+            compute_metrics=compute_metrics_mcc,
+        )
 
     """Finetune pre-trained model"""
     _ = trainer.train()
