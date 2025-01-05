@@ -249,14 +249,16 @@ if __name__ == "__main__":
     args = parse_args()
     model = get_model_by_id(args.modelId)
     task = get_task_by_id(args.taskId)
-
+    model_name = model.split('/')[-1]
     mode = f"-{task['alias']}"
     if args.random_weights:
         mode += "-with-random-weights"
     if not args.lora:
         mode += "-no-lora"
 
-    logger = init_logger(model+mode)
+    filename = f"{model_name + mode}-{task['alias']}"
+
+    logger = init_logger(filename)
     logger.log(LOGLEVEL, f"{model}{mode} on {task['alias']}")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == "cuda":
@@ -264,9 +266,9 @@ if __name__ == "__main__":
     else:
         logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
 
-    _model_name = model.split('/')[-1]
-    output_file = f"data/{_model_name + mode + task['alias']}.json"
 
+    output_file = f"data/{filename}.json"
+    print(output_file)
     if os.path.exists(output_file):
         with open(output_file, "r") as file:
             results = json.load(file)
