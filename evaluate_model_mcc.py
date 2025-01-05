@@ -46,6 +46,8 @@ def finetune_model_by_task_mcc(logger, device, model_name, mode, task, random_we
         split='train'
     )
 
+    logger.log(LOGLEVEL, f"Dataset {task['name']} loaded and splits created")
+
     """Load model and move to device"""
     if random_weights:
         _model_name = model_name.split('/')[-1]
@@ -252,7 +254,7 @@ if __name__ == "__main__":
         mode += "-no-lora"
 
     logger = init_logger(model+mode)
-    logger.log(LOGLEVEL, "Getting device...")
+    logger.log(LOGLEVEL, f"{model}{mode} on {task['alias']}")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == "cuda":
         logger.log(LOGLEVEL, f"Using GPU: {torch.cuda.get_device_name(0)}")
@@ -270,7 +272,7 @@ if __name__ == "__main__":
     try:
         if task['alias'] in results:
             exit(0)
-        logger.log(LOGLEVEL, f"{model}{mode} on {task['alias']}")
+
         results = finetune_model_by_task_mcc(logger, device, model, mode, task, args.random_weights, args.lora)
         logger.log(LOGLEVEL, f"MCC of {model}{mode} on {task['alias']} => mean: {results['mean']}, std: {results['std']}")
     except Exception:
