@@ -261,23 +261,15 @@ if __name__ == "__main__":
     else:
         logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
 
-    results = {}
     _model_name = model.split('/')[-1]
-    output_file = f'data/{_model_name + mode}.json'
+    output_file = f"data/{_model_name + mode + task['alias']}.json"
 
     if os.path.exists(output_file):
         with open(output_file, "r") as file:
             results = json.load(file)
 
-    try:
-        if task['alias'] in results:
-            exit(0)
-
-        results = finetune_model_by_task_mcc(logger, device, model, mode, task, args.random_weights, args.lora)
-        logger.log(LOGLEVEL, f"MCC of {model}{mode} on {task['alias']} => mean: {results['mean']}, std: {results['std']}")
-    except Exception:
-        print(traceback.format_exc())
-        pass
+    results = finetune_model_by_task_mcc(logger, device, model, mode, task, args.random_weights, args.lora)
+    logger.log(LOGLEVEL, f"MCC of {model}{mode} on {task['alias']} => mean: {results['mean']}, std: {results['std']}")
 
     with open(output_file, 'w') as f:
         json.dump(results, f, indent=4)
