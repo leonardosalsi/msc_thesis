@@ -24,15 +24,10 @@ def compute_metrics_mcc(eval_pred):
     r={'mcc_score': matthews_corrcoef(references, predictions)}
     return r
 
-def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights, lora):
+def finetune_model_by_task_mcc(logger, device, model_name, mode, task, random_weights, lora):
     disable_progress_bar()
     set_verbosity(logging.ERROR)
     logging.set_verbosity_error()
-
-    if random_weights:
-        mode = "-with-random-weights"
-    else:
-        mode = ""
 
     """Load dataset splits"""
     dataset_train = load_dataset(
@@ -65,8 +60,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights,
             local_files_only=True
         )
     model = model.to(device)
-    model_size = sum(p.numel() for p in model.parameters() if p.requires_grad) * 4  # 4 bytes per float32
-    print(f"Model size in memory: {model_size / (1024 ** 2):.2f} MB")
+
     if lora:
         """Employ LoRA """
         peft_config = LoraConfig(
@@ -76,6 +70,8 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights,
         )
         lora_classifier = get_peft_model(model, peft_config)
         lora_classifier.to(device)
+
+    logger.log(LOGLEVEL, f"Model {model_name} loaded on device {device}")
 
     """Get corresponding feature name and load"""
     sequence_feature = task["sequence_feature"]
@@ -90,7 +86,6 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights,
     """Generate validation splits"""
     train_sequences, validation_sequences, train_labels, validation_labels = train_test_split(train_sequences, train_labels, test_size=0.05, random_state=42)
 
-    check_memory_usage()
     """Load model tokenizer"""
     tokenizer = AutoTokenizer.from_pretrained(
         model_name,
@@ -98,8 +93,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, task, random_weights,
         trust_remote_code=True,
         local_files_only = True
     )
-    check_memory_usage()
-
+    logger.log(LOGLEVEL, f"Tokenizer {model_name} loaded")
     """Repack splits"""
     _ds_train = Dataset.from_dict({"data": train_sequences,'labels':train_labels})
     _ds_validation = Dataset.from_dict({"data": validation_sequences,'labels':validation_labels})
@@ -277,7 +271,7 @@ if __name__ == "__main__":
         if task['alias'] in results:
             exit(0)
         logger.log(LOGLEVEL, f"{model}{mode} on {task['alias']}")
-        results = finetune_model_by_task_mcc(logger, device, model, task, args.random_weights, args.lora)
+        results = finetune_model_by_task_mcc(logger, device, model, mode, task, args.random_weights, args.lora)
         logger.log(LOGLEVEL, f"MCC of {model}{mode} on {task['alias']} => mean: {results['mean']}, std: {results['std']}")
     except Exception:
         print(traceback.format_exc())
