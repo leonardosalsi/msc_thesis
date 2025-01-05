@@ -251,7 +251,7 @@ if __name__ == "__main__":
     model = get_model_by_id(args.modelId)
     task = get_task_by_id(args.taskId)
 
-    mode = ""
+    mode = f"-{task['alias']}"
     if args.random_weights:
         mode += "-with-random-weights"
     if not args.lora:
