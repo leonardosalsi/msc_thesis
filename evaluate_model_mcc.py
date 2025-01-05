@@ -50,10 +50,12 @@ def finetune_model_by_task_mcc(logger, device, model_name, mode, task, random_we
 
     """Load model and move to device"""
     if random_weights:
+        logger.log(LOGLEVEL, f"Loading model with random weights.")
         _model_name = model_name.split('/')[-1]
         config = EsmConfig.from_pretrained(f"{models_cache_dir}/config-{_model_name}.json", num_labels=task["num_labels"], local_files_only=True, trust_remote_code=True)
         model = AutoModelForSequenceClassification.from_config(config)
     else:
+        logger.log(LOGLEVEL, f"Loading model with pretrained weights.")
         model = AutoModelForSequenceClassification.from_pretrained(
             model_name,
             cache_dir=models_cache_dir,
@@ -64,6 +66,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, mode, task, random_we
     model = model.to(device)
 
     if lora:
+        logger.log(LOGLEVEL, f"LoRA model loaded")
         """Employ LoRA """
         peft_config = LoraConfig(
             task_type=TaskType.SEQ_CLS, inference_mode=False, r=1, lora_alpha=32, lora_dropout=0.1,
@@ -130,7 +133,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, mode, task, random_we
         remove_unused_columns=False,
         eval_strategy="steps",
         save_strategy="no",
-        learning_rate=3e-3,
+        learning_rate=5e-4,
         per_device_train_batch_size=batch_size,
         gradient_accumulation_steps= 1,
         per_device_eval_batch_size= 64,
