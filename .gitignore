@@ -4,3 +4,5 @@ config.py
 out/*
 !out/_
 test.py
+.idea
+__pycache__
