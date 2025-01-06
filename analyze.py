@@ -5,7 +5,6 @@ from downstream_tasks import TASKS, MODELS
 import numpy as np
 from matplotlib import pyplot as plt
 
-data_location = "./data"
 task_permutation = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 4, 5, 1, 3, 2, 6, 7, 8, 27, 19, 20, 21, 22, 23, 24, 25, 26]
 model_permutation = [1.5, 4.5, 1, 5, 3, 2, 6, 4]
 
@@ -21,10 +20,17 @@ def get_task_by_id(taskId):
             return task
     return None
 
+def get_task_by_alias(taskAlias):
+    for task in TASKS:
+        if task['alias'] == taskAlias:
+            return task
+    return None
+
 """
 Collect and sort data per downstream task
 """
 def prepare_data_for_visualization():
+    data_location = "./data"
     _data = {}
     files = [f for f in os.listdir(data_location) if os.path.isfile(os.path.join(data_location, f))]
     for taskId in task_permutation:
@@ -60,6 +66,36 @@ def prepare_data_for_visualization():
                     content = json.loads(content)
                     _data[task['data_alias']][model['data_alias'] + mode] = {'mean': content['mean'],
                                                                              'std': content['std']}
+    return _data
+
+def prepare_training_data_for_visualisation():
+    data_location = "./log"
+    _data = {}
+    all_files = [f for f in os.listdir(data_location) if os.path.isfile(os.path.join(data_location, f))]
+    for modelId in model_permutation:
+        mode = ""
+        random = False
+        if modelId != int(modelId):
+            mode = " with rand. weights"
+            random = True
+        model = get_model_by_id(int(modelId))
+        _data[model['data_alias'] + mode] = {}
+        filtered = list(filter(lambda file: model['name'] in file, all_files))
+        if random:
+            files = list(filter(lambda file: '-random-weights' in file, filtered))
+        else:
+            files = list(filter(lambda file: '-random-weights' not in file, filtered))
+        for file in files:
+            file_path = os.path.join(data_location, file)
+            task_alias = file.replace(model['name'],'').replace("-random-weights","").replace('-lora','').replace('-','').replace('.txt','')
+            task = get_task_by_alias(task_alias)
+            with open(file_path, 'r') as file:
+                lines = file.readlines()
+            log_data = json.loads(lines[7].strip().replace("'",'"'))
+            training_log = log_data[::2][:-1]
+            training_summary = log_data[::2][-1]
+            eval_log = log_data[1::2]
+            _data[model['data_alias'] + mode][task['data_alias']] = {'training_log': training_log, 'eval_log': eval_log, 'training_summary': training_summary}
     return _data
 
 def visualize_mcc_per_task(data):
@@ -237,9 +273,12 @@ def visualize_normalized_mcc_across_tasks(data):
     plt.savefig('img/norm_mcc_across_tasks.svg')
 
 if __name__ == "__main__":
-    data = prepare_data_for_visualization()
+    mcc_data = prepare_data_for_visualization()
     with open('mcc_data_lora.json', 'w') as f:
-        json.dump(data, f, indent=4)
-    visualize_mcc_per_task(data)
-    visualize_mcc_across_tasks(data)
-    visualize_normalized_mcc_across_tasks(data)
+        json.dump(mcc_data, f, indent=4)
+    train_data = prepare_training_data_for_visualisation()
+    with open('training_eval_lora.json', 'w') as f:
+        json.dump(train_data, f, indent=4)
+    visualize_mcc_per_task(mcc_data)
+    visualize_mcc_across_tasks(mcc_data)
+    visualize_normalized_mcc_across_tasks(mcc_data)
