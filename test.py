@@ -24,6 +24,9 @@ data = {}
 for taskId in task_permutation:
     task = get_task_by_id(taskId)
     task_files = list(filter(lambda filename: task['alias'] in filename, files))
+    if task['alias'] == 'enhancers':
+        task_files = list(filter(lambda filename: 'Genomic' not in filename, task_files))
+        task_files = list(filter(lambda filename: 'types' not in filename, task_files))
     print(task['alias'], len(task_files), task_files)
 
 """

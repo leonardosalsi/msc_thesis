@@ -49,7 +49,7 @@ def generate_file(job_name, modelId, taskId, no_lora=False, random_weights=False
 
 #SBATCH --job-name={job_name}
 #SBATCH --output=out/{job_name}.txt
-#SBATCH --cpus-per-task=6
+#SBATCH --cpus-per-task=8
 #SBATCH --time=20:00:00
 #SBATCH --mem-per-cpu=8G
 #SBATCH -p gpu
