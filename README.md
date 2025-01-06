@@ -109,3 +109,8 @@ In the following are some results from the evaluation. Note that only the varian
 parameters of NT-Multi-Species V2 have been additionally evaluated in a state of randomized weights alongside their
 pretrained variants. All data here depicts a fine-tuning with LoRA. Figures, where LoRA was not employed, can be found
 in `img/no-lora`.
+
+
+![eval_mcc](https://github.com/user-attachments/assets/0eecbf60-6978-42cb-9423-4a50e16e8575)
+![norm_mcc_across_tasks](https://github.com/user-attachments/assets/cbecd87e-b079-426a-a34c-4264d40598fd)
+
