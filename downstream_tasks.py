@@ -51,7 +51,7 @@ def generate_file(job_name, modelId, taskId, no_lora=False, random_weights=False
 #SBATCH --output=out/{job_name}.txt
 #SBATCH --cpus-per-task=8
 #SBATCH --time=20:00:00
-#SBATCH --mem-per-cpu=8G
+#SBATCH --mem-per-cpu=10G
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
 

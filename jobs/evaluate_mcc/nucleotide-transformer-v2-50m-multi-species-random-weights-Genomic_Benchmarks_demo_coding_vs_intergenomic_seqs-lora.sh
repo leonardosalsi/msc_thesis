@@ -4,7 +4,7 @@
 #SBATCH --output=out/nucleotide-transformer-v2-50m-multi-species-random-weights-Genomic_Benchmarks_demo_coding_vs_intergenomic_seqs-lora.txt
 #SBATCH --cpus-per-task=8
 #SBATCH --time=20:00:00
-#SBATCH --mem-per-cpu=8G
+#SBATCH --mem-per-cpu=10G
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
 

@@ -4,7 +4,7 @@
 #SBATCH --output=out/nucleotide-transformer-v2-250m-multi-species-Genomic_Benchmarks_human_enhancers_cohn-lora.txt
 #SBATCH --cpus-per-task=8
 #SBATCH --time=20:00:00
-#SBATCH --mem-per-cpu=8G
+#SBATCH --mem-per-cpu=10G
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
 

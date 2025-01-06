@@ -1,3 +1,4 @@
+import json
 import os
 from downstream_tasks import TASKS, MODELS
 
@@ -23,11 +24,38 @@ data = {}
 
 for taskId in task_permutation:
     task = get_task_by_id(taskId)
+    data[task['alias']] = {}
+
+print(data)
+
+for taskId in task_permutation:
+    task = get_task_by_id(taskId)
     task_files = list(filter(lambda filename: task['alias'] in filename, files))
     if task['alias'] == 'enhancers':
         task_files = list(filter(lambda filename: 'Genomic' not in filename, task_files))
         task_files = list(filter(lambda filename: 'types' not in filename, task_files))
-    print(task['alias'], len(task_files), task_files)
+    if len(task_files) == 0:
+        continue
+    for modelId in model_permutation:
+        model = get_model_by_id(int(modelId))
+        model_task_files = list(filter(lambda filename: model['name'] in filename, task_files))
+        mode = ""
+        try:
+            if modelId == int(modelId):
+                file = list(filter(lambda filename: '-with-random-weights' not in filename, model_task_files))[0]
+            else:
+                file = list(filter(lambda filename: '-with-random-weights' in filename, model_task_files))[0]
+                mode = " with rand. weights"
+        except:
+            print("=======")
+            print("ERROR ON " + task['alias'] + "   " + model['alias'])
+            print(model_task_files)
+        file_path = os.path.join('data', file)
+        if os.path.isfile(file_path):
+            with open(file_path, 'r') as file:
+                content = file.read()
+                content = json.loads(content)
+                print(content)
 
 """
 for taskId in task_permutation:
