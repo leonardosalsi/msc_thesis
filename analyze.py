@@ -9,8 +9,6 @@ data_location = "./data"
 task_permutation = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 4, 5, 1, 3, 2, 6, 7, 8, 27, 19, 20, 21, 22, 23, 24, 25, 26]
 model_permutation = [1.5, 4.5, 1, 5, 3, 2, 6, 4]
 
-
-
 def get_model_by_id(modelId):
     for model in MODELS:
         if model['modelId'] == modelId:

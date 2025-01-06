@@ -3,5 +3,4 @@ InstaDeepAI
 config.py
 out/*
 !out/_
-log/*
-!log/_
+test.py
