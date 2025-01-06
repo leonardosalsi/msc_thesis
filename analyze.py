@@ -134,7 +134,7 @@ def visualize_mcc_per_task(data):
 
     for idx in range(num_tasks, len(axes)):
         fig.delaxes(axes[idx])
-    plt.savefig('img/eval_mcc.png')
+    plt.savefig('img/eval_mcc.svg')
 
 def visualize_mcc_across_tasks(data):
     model_mcc = {}
@@ -184,7 +184,7 @@ def visualize_mcc_across_tasks(data):
     ax.set_xticklabels(model_names, rotation=90, ha="center", fontsize=12)
     ax.set_title("Mean MCC across Tasks", fontsize=18, pad=10, loc="center")
     ax.set_ylim(0, 1)
-    plt.savefig('img/mcc_across_tasks.png')
+    plt.savefig('img/mcc_across_tasks.svg')
 
 def visualize_normalized_mcc_across_tasks(data):
     model_mcc = {}
@@ -236,7 +236,7 @@ def visualize_normalized_mcc_across_tasks(data):
     ax.set_xticklabels(model_names, rotation=90, ha="center", fontsize=12)
     ax.set_title("Normalized mean MCC across Tasks", fontsize=18, pad=10, loc="center")
     ax.set_ylim(0, 1)
-    plt.savefig('img/norm_mcc_across_tasks.png')
+    plt.savefig('img/norm_mcc_across_tasks.svg')
 
 if __name__ == "__main__":
     data = prepare_data_for_visualization()
