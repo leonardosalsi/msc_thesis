@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=nucleotide-transformer-v2-250m-multi-species-H3K4me2-lora
 #SBATCH --output=out/nucleotide-transformer-v2-250m-multi-species-H3K4me2-lora.txt
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=6
 #SBATCH --time=20:00:00
 #SBATCH --mem-per-cpu=8G
 #SBATCH -p gpu

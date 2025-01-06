@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=nucleotide-transformer-500m-1000g-Genomic_Benchmarks_demo_coding_vs_intergenomic_seqs-lora
 #SBATCH --output=out/nucleotide-transformer-500m-1000g-Genomic_Benchmarks_demo_coding_vs_intergenomic_seqs-lora.txt
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=6
 #SBATCH --time=20:00:00
 #SBATCH --mem-per-cpu=8G
 #SBATCH -p gpu

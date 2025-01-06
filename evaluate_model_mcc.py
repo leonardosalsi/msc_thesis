@@ -24,7 +24,7 @@ def compute_metrics_mcc(eval_pred):
     r={'mcc_score': matthews_corrcoef(references, predictions)}
     return r
 
-def finetune_model_by_task_mcc(logger, device, model_name, mode, task, random_weights, lora):
+def finetune_model_by_task_mcc(logger, device, model, mode, task, random_weights, lora):
     disable_progress_bar()
     set_verbosity(logging.ERROR)
     logging.set_verbosity_error()
@@ -51,13 +51,12 @@ def finetune_model_by_task_mcc(logger, device, model_name, mode, task, random_we
     """Load model and move to device"""
     if random_weights:
         logger.log(LOGLEVEL, f"Loading model with random weights.")
-        _model_name = model_name.split('/')[-1]
-        config = EsmConfig.from_pretrained(f"{models_cache_dir}/config-{_model_name}.json", num_labels=task["num_labels"], local_files_only=True, trust_remote_code=True)
+        config = EsmConfig.from_pretrained(f"{models_cache_dir}/config-{model['name']}.json", num_labels=task["num_labels"], local_files_only=True, trust_remote_code=True)
         model = AutoModelForSequenceClassification.from_config(config)
     else:
         logger.log(LOGLEVEL, f"Loading model with pretrained weights.")
         model = AutoModelForSequenceClassification.from_pretrained(
-            model_name,
+            model['repo'],
             cache_dir=models_cache_dir,
             num_labels=task["num_labels"],
             trust_remote_code=True,
@@ -76,7 +75,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, mode, task, random_we
         lora_classifier = get_peft_model(model, peft_config)
         lora_classifier.to(device)
 
-    logger.log(LOGLEVEL, f"Model {model_name} loaded on device {device}")
+    logger.log(LOGLEVEL, f"Model {model['name']} loaded on device {device}")
 
     """Get corresponding feature name and load"""
     sequence_feature = task["sequence_feature"]
@@ -93,12 +92,12 @@ def finetune_model_by_task_mcc(logger, device, model_name, mode, task, random_we
 
     """Load model tokenizer"""
     tokenizer = AutoTokenizer.from_pretrained(
-        model_name,
+        model['repo'],
         cache_dir=models_cache_dir,
         trust_remote_code=True,
         local_files_only = True
     )
-    logger.log(LOGLEVEL, f"Tokenizer {model_name} loaded")
+    logger.log(LOGLEVEL, f"Tokenizer {model['name']} loaded")
     """Repack splits"""
     _ds_train = Dataset.from_dict({"data": train_sequences,'labels':train_labels})
     _ds_validation = Dataset.from_dict({"data": validation_sequences,'labels':validation_labels})
@@ -129,7 +128,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, mode, task, random_we
     """Configure trainer"""
     batch_size = 8
     training_args = TrainingArguments(
-        f"{model_name}{mode}-{task['alias']}",
+        f"{model['name']}{mode}-{task['alias']}",
         remove_unused_columns=False,
         eval_strategy="steps",
         save_strategy="no",
@@ -236,7 +235,7 @@ def init_logger(logfile):
 def get_model_by_id(modelId):
     for model in MODELS:
         if model['modelId'] == modelId:
-            return model['name']
+            return model
     return None
 
 def get_task_by_id(taskId):
@@ -249,23 +248,22 @@ if __name__ == "__main__":
     args = parse_args()
     model = get_model_by_id(args.modelId)
     task = get_task_by_id(args.taskId)
-    model_name = model.split('/')[-1]
+
     mode = f"-{task['alias']}"
     if args.random_weights:
         mode += "-with-random-weights"
     if not args.lora:
         mode += "-no-lora"
 
-    filename = f"{model_name + mode}-{task['alias']}"
-
+    filename = f"{model['name'] + mode}-{task['alias']}"
     logger = init_logger(filename)
-    logger.log(LOGLEVEL, f"{model}{mode} on {task['alias']}")
+    logger.log(LOGLEVEL, f"{model['name']}{mode} on {task['alias']}")
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == "cuda":
         logger.log(LOGLEVEL, f"Using GPU: {torch.cuda.get_device_name(0)}")
     else:
         logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
-
 
     output_file = f"data/{filename}.json"
     print(output_file)
@@ -274,7 +272,7 @@ if __name__ == "__main__":
             results = json.load(file)
 
     results = finetune_model_by_task_mcc(logger, device, model, mode, task, args.random_weights, args.lora)
-    logger.log(LOGLEVEL, f"MCC of {model}{mode} on {task['alias']} => mean: {results['mean']}, std: {results['std']}")
+    logger.log(LOGLEVEL, f"MCC of {model['name']}{mode} on {task['alias']} => mean: {results['mean']}, std: {results['std']}")
 
     with open(output_file, 'w') as f:
         json.dump(results, f, indent=4)

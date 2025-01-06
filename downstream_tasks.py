@@ -1,5 +1,3 @@
-from asyncio import tasks
-
 TASKS = [
     {'taskId': 1,'repo': "InstaDeepAI/nucleotide_transformer_downstream_tasks_revised", 'name': "promoter_all", 'alias': "promoter_all", 'len': 300, 'sequence_feature': 'sequence', 'label_feature': 'label', 'num_labels': 2},
     {'taskId': 2,'repo': "InstaDeepAI/nucleotide_transformer_downstream_tasks_revised", 'name': "promoter_tata", 'alias': "promoter_tata", 'len': 300, 'sequence_feature': 'sequence', 'label_feature': 'label', 'num_labels': 2},
@@ -31,12 +29,12 @@ TASKS = [
 ]
 
 MODELS = [
-    {'modelId': 1,'name': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'alias': 'nucleotide-transformer-v2-50m-multi-species'},
-    {'modelId': 2,'name': "InstaDeepAI/nucleotide-transformer-v2-100m-multi-species", 'alias': 'nucleotide-transformer-v2-100m-multi-species'},
-    {'modelId': 3,'name': "InstaDeepAI/nucleotide-transformer-v2-250m-multi-species", 'alias': 'nucleotide-transformer-v2-250m-multi-species'},
-    {'modelId': 4,'name': "InstaDeepAI/nucleotide-transformer-v2-500m-multi-species", 'alias': 'nucleotide-transformer-v2-500m-multi-species'},
-    {'modelId': 5,'name': "InstaDeepAI/nucleotide-transformer-500m-1000g", 'alias': 'nucleotide-transformer-500m-1000g'},
-    {'modelId': 6,'name': "InstaDeepAI/nucleotide-transformer-500m-human-ref", 'alias': 'nucleotide-transformer-500m-human-ref'},
+    {'modelId': 1,'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'name': 'nucleotide-transformer-v2-50m-multi-species', 'alias': 'NT-MS V2 (50M)'},
+    {'modelId': 2,'repo': "InstaDeepAI/nucleotide-transformer-v2-100m-multi-species", 'name': 'nucleotide-transformer-v2-100m-multi-species', 'alias': 'NT-MS V2 (100M)'},
+    {'modelId': 3,'repo': "InstaDeepAI/nucleotide-transformer-v2-250m-multi-species", 'name': 'nucleotide-transformer-v2-250m-multi-species', 'alias': 'NT-MS V2 (250M)'},
+    {'modelId': 4,'repo': "InstaDeepAI/nucleotide-transformer-v2-500m-multi-species", 'name': 'nucleotide-transformer-v2-500m-multi-species', 'alias': 'NT-MS V2 (500M)'},
+    {'modelId': 5,'repo': "InstaDeepAI/nucleotide-transformer-500m-1000g", 'name': 'nucleotide-transformer-500m-1000g', 'alias': 'NT-1000g (500M)'},
+    {'modelId': 6,'repo': "InstaDeepAI/nucleotide-transformer-500m-human-ref", 'name': 'nucleotide-transformer-500m-human-ref', 'alias': 'NT-Human-Ref. (500M)'},
 ]
 
 def generate_file(job_name, modelId, taskId, no_lora=False, random_weights=False):
@@ -51,7 +49,7 @@ def generate_file(job_name, modelId, taskId, no_lora=False, random_weights=False
 
 #SBATCH --job-name={job_name}
 #SBATCH --output=out/{job_name}.txt
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=6
 #SBATCH --time=20:00:00
 #SBATCH --mem-per-cpu=8G
 #SBATCH -p gpu
@@ -69,21 +67,21 @@ def generate_jobs():
     jobs = []
     for model in MODELS:
         for task in TASKS:
-            generate_file(f"{model['alias']}-{task['alias']}-lora", model['modelId'], task['taskId'])
-            jobs.append(f"{model['alias']}-{task['alias']}-lora")
+            generate_file(f"{model['name']}-{task['alias']}-lora", model['modelId'], task['taskId'])
+            jobs.append(f"{model['name']}-{task['alias']}-lora")
         if (model['modelId'] == 1 or model['modelId'] == 4):
             for task in TASKS:
-                generate_file(f"{model['alias']}-random-weights-{task['alias']}-lora", model['modelId'], task['taskId'], random_weights=True)
-                jobs.append(f"{model['alias']}-random-weights-{task['alias']}-lora")
+                generate_file(f"{model['name']}-random-weights-{task['alias']}-lora", model['modelId'], task['taskId'], random_weights=True)
+                jobs.append(f"{model['name']}-random-weights-{task['alias']}-lora")
     """
     for model in MODELS:
         for task in TASKS:
-            generate_file(f"{model['alias']}-{task['alias']}", model['modelId'], task['taskId'], no_lora=True)
-            jobs.append(f"{model['alias']}-{task['alias']}-{task['alias']}")
+            generate_file(f"{model['name']}-{task['alias']}", model['modelId'], task['taskId'], no_lora=True)
+            jobs.append(f"{model['name']}-{task['alias']}-{task['alias']}")
         if (model['modelId'] == 1 or model['modelId'] == 4):
             for task in TASKS:
-                generate_file(f"{model['alias']}-random-weights-{task['alias']}", model['modelId'], task['taskId'], no_lora=True, random_weights=True)
-                jobs.append(f"{model['alias']}-random-weights-{task['alias']}")
+                generate_file(f"{model['name']}-random-weights-{task['alias']}", model['modelId'], task['taskId'], no_lora=True, random_weights=True)
+                jobs.append(f"{model['name']}-random-weights-{task['alias']}")
     """
     content = '''#!/bin/bash\n\n'''
 

@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=nucleotide-transformer-v2-50m-multi-species-random-weights-Genomic_Benchmarks_dummy_mouse_enhancers_ensembl-lora
 #SBATCH --output=out/nucleotide-transformer-v2-50m-multi-species-random-weights-Genomic_Benchmarks_dummy_mouse_enhancers_ensembl-lora.txt
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=6
 #SBATCH --time=20:00:00
 #SBATCH --mem-per-cpu=8G
 #SBATCH -p gpu
