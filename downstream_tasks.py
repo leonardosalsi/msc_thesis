@@ -91,4 +91,5 @@ def generate_jobs():
     with open(f'evaluate_all.sh', 'w') as rsh:
         rsh.writelines(content)
 
-generate_jobs()
+if __name__ == '__main__':
+    generate_jobs()
