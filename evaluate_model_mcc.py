@@ -24,7 +24,7 @@ def compute_metrics_mcc(eval_pred):
     r={'mcc_score': matthews_corrcoef(references, predictions)}
     return r
 
-def finetune_model_by_task_mcc(logger, device, model, mode, task, random_weights, lora):
+def finetune_model_by_task_mcc(logger, device, model_dict, mode, task, random_weights, lora):
     disable_progress_bar()
     set_verbosity(logging.ERROR)
     logging.set_verbosity_error()
@@ -51,12 +51,12 @@ def finetune_model_by_task_mcc(logger, device, model, mode, task, random_weights
     """Load model and move to device"""
     if random_weights:
         logger.log(LOGLEVEL, f"Loading model with random weights.")
-        config = EsmConfig.from_pretrained(f"{models_cache_dir}/config-{model['name']}.json", num_labels=task["num_labels"], local_files_only=True, trust_remote_code=True)
+        config = EsmConfig.from_pretrained(f"{models_cache_dir}/config-{model_dict['name']}.json", num_labels=task["num_labels"], local_files_only=True, trust_remote_code=True)
         model = AutoModelForSequenceClassification.from_config(config)
     else:
         logger.log(LOGLEVEL, f"Loading model with pretrained weights.")
         model = AutoModelForSequenceClassification.from_pretrained(
-            model['repo'],
+            model_dict['repo'],
             cache_dir=models_cache_dir,
             num_labels=task["num_labels"],
             trust_remote_code=True,
@@ -75,7 +75,7 @@ def finetune_model_by_task_mcc(logger, device, model, mode, task, random_weights
         lora_classifier = get_peft_model(model, peft_config)
         lora_classifier.to(device)
 
-    logger.log(LOGLEVEL, f"Model {model['name']} loaded on device {device}")
+    logger.log(LOGLEVEL, f"Model {model_dict['name']} loaded on device {device}")
 
     """Get corresponding feature name and load"""
     sequence_feature = task["sequence_feature"]
@@ -92,12 +92,12 @@ def finetune_model_by_task_mcc(logger, device, model, mode, task, random_weights
 
     """Load model tokenizer"""
     tokenizer = AutoTokenizer.from_pretrained(
-        model['repo'],
+        model_dict['repo'],
         cache_dir=models_cache_dir,
         trust_remote_code=True,
         local_files_only = True
     )
-    logger.log(LOGLEVEL, f"Tokenizer {model['name']} loaded")
+    logger.log(LOGLEVEL, f"Tokenizer {model_dict['name']} loaded")
     """Repack splits"""
     _ds_train = Dataset.from_dict({"data": train_sequences,'labels':train_labels})
     _ds_validation = Dataset.from_dict({"data": validation_sequences,'labels':validation_labels})
@@ -128,7 +128,7 @@ def finetune_model_by_task_mcc(logger, device, model, mode, task, random_weights
     """Configure trainer"""
     batch_size = 8
     training_args = TrainingArguments(
-        f"{model['name']}{mode}-{task['alias']}",
+        f"{model_dict['name']}{mode}-{task['alias']}",
         remove_unused_columns=False,
         eval_strategy="steps",
         save_strategy="no",
