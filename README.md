@@ -118,5 +118,7 @@ in `img/no-lora`.
 The loss evolution during training was captured. For each downstream task, a figure has been generated showing how each model
 evolved over time. This has only been conducted for training with LoRA and the figures can be found in `img/lora/training`.
 
+> **NOTE** The loss calculated is the `CrossEntropyLoss`.
+
 ![H3K4me1](https://github.com/user-attachments/assets/e2774d6f-1cb0-4d23-b8de-14d371b7ae7e)
 
