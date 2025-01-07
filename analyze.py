@@ -1,6 +1,9 @@
 import math
 import os
 import json
+
+from matplotlib.cm import get_cmap
+
 from downstream_tasks import TASKS, MODELS
 import numpy as np
 from matplotlib import pyplot as plt
@@ -272,6 +275,36 @@ def visualize_normalized_mcc_across_tasks(data):
     ax.set_ylim(0, 1)
     plt.savefig('img/norm_mcc_across_tasks.svg')
 
+def visualize_training_loss(data):
+    steps = list(range(100, 10100, 100))
+    num_graphs = 8
+    colors = get_cmap("tab10").colors[:num_graphs]
+    plot_data = {}
+
+    for model_name, task in data.items():
+        for task_name in task:
+            plot_data[task_name] = {}
+
+    for model_name, task in data.items():
+        for task_name, task_results in task.items():
+            plot_data[task_name][model_name] = [entry['loss'] for entry in task_results['training_log']]
+
+    for task_name, task_results in plot_data.items():
+        plt.figure(figsize=(8, 5))
+        i = 0
+        for model_name, loss in task_results.items():
+            plt.plot(steps, loss, label=model_name, color=colors[i], linestyle="-")
+            i += 1
+        plt.xlabel("Training steps")
+        plt.ylabel("Loss")
+        plt.title(task_name)
+        plt.xlim(100, 10000)
+        plt.legend(
+            loc="upper right",
+            fontsize="small"
+        )
+        plt.savefig(f'img/lora/training/{task_name}.png')
+
 if __name__ == "__main__":
     mcc_data = prepare_data_for_visualization()
     with open('mcc_data_lora.json', 'w') as f:
@@ -282,3 +315,4 @@ if __name__ == "__main__":
     visualize_mcc_per_task(mcc_data)
     visualize_mcc_across_tasks(mcc_data)
     visualize_normalized_mcc_across_tasks(mcc_data)
+    visualize_training_loss(train_data)
