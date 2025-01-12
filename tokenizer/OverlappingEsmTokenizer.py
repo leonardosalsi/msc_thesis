@@ -32,14 +32,15 @@ from config import models_cache_dir, datasets_cache_dir
 from datasets import load_dataset
 
 if __name__ == "__main__":
-    multi_species_genomes = load_dataset(
+    multi_species_genomes_small = load_dataset(
         "InstaDeepAI/multi_species_genomes",
         cache_dir=datasets_cache_dir,
+        name="1kbp",
         trust_remote_code=True
     )
 
-    print(multi_species_genomes['train'][0])
-    print(multi_species_genomes['train'][1])
+    print(multi_species_genomes_small['train'][0])
+    print(multi_species_genomes_small['train'][1])
 
     default_tokenizer = EsmTokenizer.from_pretrained(
         "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
@@ -53,7 +54,7 @@ if __name__ == "__main__":
         model_max_length=2048,
     )
 
-    sequence = multi_species_genomes['train'][25]['sequence']
+    sequence = multi_species_genomes_small['train'][0]['sequence']
     default_encoded = default_tokenizer(sequence)
     overlapping_encoded = overlapping_tokenizer(sequence)
 
