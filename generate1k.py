@@ -7,7 +7,7 @@ from config import datasets_cache_dir
 from tqdm import tqdm
 from pprint import pprint
 import pandas as pd
-
+import psutil
 
 def split_with_overlap(sequence, description, chunk_size, overlap_size=200):
     length = len(sequence)
@@ -86,12 +86,17 @@ def split_dataset(dataset_split):
 
 
 def split_dataset(dataset_split):
-    split_dataset = []
-
     chunk_size = 1700
     i = 0
     progress_bar = tqdm(total=len(dataset_split), desc="Splitting dataset", unit="entry")
     while i < len(dataset_split):
+        # Get memory info
+        mem = psutil.virtual_memory()
+        used_ram = mem.used / (1024 ** 3)  # Convert to GB
+        available_ram = mem.available / (1024 ** 3)  # Convert to GB
+
+        # Update tqdm description
+        progress_bar.set_description(f"Splitting dataset | Used RAM: {used_ram:.2f} GB | Available RAM: {available_ram:.2f} GB")
         description = dataset_split[i]["description"]
         last_entry_idx = i
         group = []
@@ -104,9 +109,10 @@ def split_dataset(dataset_split):
         if (len(full_sequence) != splits[-1]['end_pos']):
             print(len(full_sequence), splits[-1]['end_pos'])
             exit(1)
-        split_dataset.extend(splits)
+        for entry in splits:
+            yield entry
         progress_bar.update(len(group))
-    return split_dataset
+
 
 import argparse
 if __name__ == "__main__":
@@ -135,8 +141,7 @@ if __name__ == "__main__":
     # without going over the maximal length allowed by the model.
     # The tokenizer will right-pad the remaining to the max_length required by the model = 2048
     split_dataset_dir = os.path.join(datasets_cache_dir, 'InstaDeepAI___multi_species_genomes/1kbp/', split)
-    new_split = split_dataset(multi_species_genomes)
-    new_train_dataset = Dataset.from_list(new_split)
-    #new_train_dataset.save_to_disk(split_dataset_dir)
+    new_train_dataset = Dataset.from_generator(lambda: split_dataset(multi_species_genomes))
+    new_train_dataset.save_to_disk(split_dataset_dir)
 
 
