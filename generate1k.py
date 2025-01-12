@@ -90,13 +90,6 @@ def split_dataset(dataset_split):
     i = 0
     progress_bar = tqdm(total=len(dataset_split), desc="Splitting dataset", unit="entry")
     while i < len(dataset_split):
-        # Get memory info
-        mem = psutil.virtual_memory()
-        used_ram = mem.used / (1024 ** 3)  # Convert to GB
-        available_ram = mem.available / (1024 ** 3)  # Convert to GB
-
-        # Update tqdm description
-        progress_bar.set_description(f"Splitting dataset | Used RAM: {used_ram:.2f} GB | Available RAM: {available_ram:.2f} GB")
         description = dataset_split[i]["description"]
         last_entry_idx = i
         group = []
