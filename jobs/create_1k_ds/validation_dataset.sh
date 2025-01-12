@@ -2,9 +2,9 @@
 
 #SBATCH --job-name=multi_species_validation_1k
 #SBATCH --output=out/multi_species_validation_1k.txt
-#SBATCH --cpus-per-task=2
+#SBATCH --cpus-per-task=8
 #SBATCH --time=20:00:00
-#SBATCH --mem-per-cpu=2G
+#SBATCH --mem-per-cpu=8G
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
 
