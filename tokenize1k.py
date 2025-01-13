@@ -2,7 +2,7 @@ import math
 import os.path
 
 from datasets import load_dataset, Dataset, load_from_disk
-from config import datasets_cache_dir
+from config import datasets_cache_dir, models_cache_dir
 from tqdm import tqdm
 
 import argparse
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     multi_species_genomes = load_from_disk(split_path)
 
     tokenizer = OverlappingEsmTokenizer.from_pretrained(
-        "/shared/models",
+        models_cache_dir,
         model_max_length=2048,
     )
 
