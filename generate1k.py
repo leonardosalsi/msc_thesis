@@ -2,12 +2,8 @@ import math
 import os.path
 
 from datasets import load_dataset, Dataset
-import textwrap
 from config import datasets_cache_dir
 from tqdm import tqdm
-from pprint import pprint
-import pandas as pd
-import psutil
 
 def split_with_overlap(sequence, description, chunk_size, overlap_size=200):
     length = len(sequence)
@@ -54,36 +50,6 @@ def restore_original_sequence(group, overlap=200):
     chunks = [entry[overlap:] for entry in chunks]
     sequence += "".join(chunks)
     return sequence
-
-def get_sequence_group(dataset_split, description):
-    group = dataset_split.filter(lambda entry: entry["description"] == description)
-    return group.sort("start_pos")
-
-def get_description_catalogue(dataset_split):
-    return dataset_split.unique("description")
-
-"""
-def split_dataset(dataset_split):
-    split_dataset = []
-    descriptions = get_description_catalogue(dataset_split)
-    print(len(descriptions))
-    _group = get_sequence_group(dataset_split, descriptions[0])
-    _full_sequence = restore_original_sequence(_group)
-    optimal_chunk_length = find_optimal_chunk_size(len(_full_sequence))
-
-    for description in descriptions:
-        group = get_sequence_group(dataset_split, description)
-        full_sequence = restore_original_sequence(group)
-        _check_optimal_chunk_length = find_optimal_chunk_size(len(full_sequence))
-        if _check_optimal_chunk_length != optimal_chunk_length:
-            print("ERROR")
-        splits = split_with_overlap(full_sequence, description, optimal_chunk_length)
-        last_end_pos = splits[-1]['end_pos']
-        print(len(full_sequence), last_end_pos)
-
-    return split_dataset
-"""
-
 
 def split_dataset(dataset_split):
     chunk_size = 1700
