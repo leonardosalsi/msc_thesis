@@ -28,8 +28,8 @@ if __name__ == "__main__":
     split_path = os.path.join(dataset_path, split)
     multi_species_genomes = load_from_disk(split_path)
 
-    tokenizer = OverlappingEsmTokenizer.from_pretrained(
-        models_cache_dir,
+    tokenizer = OverlappingEsmTokenizer(
+        vocab_file=os.path.join(models_cache_dir, "nt50-vocab", "vocab.txt"),
         model_max_length=2048,
     )
 
@@ -39,6 +39,7 @@ if __name__ == "__main__":
         return outputs
 
     tokenizer_path = os.path.join(dataset_path, "tokenized", tokenizer_name, split)
+
     multi_species_genomes.map(
         tokenize_function,
         batched=True,
