@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
     dataset_path = os.path.join(datasets_cache_dir, "InstaDeepAI___multi_species_genomes/1kbp")
     split_path = os.path.join(dataset_path, split)
-    multi_species_genomes = load_from_disk(split_path).select(range(1000))
+    multi_species_genomes = load_from_disk(split_path)
 
     tokenizer = OverlappingEsmTokenizer(
         vocab_file=os.path.join(models_cache_dir, "nt50-vocab", "vocab.txt"),
