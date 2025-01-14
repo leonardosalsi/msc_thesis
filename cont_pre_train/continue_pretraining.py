@@ -16,10 +16,9 @@ from transformers import (
     EsmTokenizer,
 )
 
-from config import datasets_cache_dir, models_cache_dir, pretrained_models_cache_dir
+from config import datasets_cache_dir, models_cache_dir, pretrained_models_cache_dir, TOKENIZER_BATCH_SIZE
 from tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 
-TOKENIZER_BATCH_SIZE=4096
 
 if __name__ == "__main__":
     dataset_path = os.path.join(datasets_cache_dir, "InstaDeepAI___multi_species_genomes/1kbp")
@@ -39,7 +38,6 @@ if __name__ == "__main__":
         local_files_only=True
     )
 
-    tokenizer_batch_size = 2048
     tokenizer = OverlappingEsmTokenizer.from_pretrained(
         vocab_file=os.path.join(models_cache_dir, "nt50-vocab", "vocab.txt"),
         model_max_length=2048,
