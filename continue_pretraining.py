@@ -40,7 +40,7 @@ if __name__ == "__main__":
         local_files_only=True
     )
 
-    tokenizer = OverlappingEsmTokenizer.from_pretrained(
+    tokenizer = OverlappingEsmTokenizer(
         vocab_file=os.path.join(models_cache_dir, "nt50-vocab", "vocab.txt"),
         model_max_length=2048,
     )
