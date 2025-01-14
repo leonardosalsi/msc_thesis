@@ -143,7 +143,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task, random_we
         label_names=["labels"],
         dataloader_drop_last=True,
         max_steps= 10000,
-        logging_dir='/dev/null',
+        logging_dir='./log',
         disable_tqdm=True
     )
 
