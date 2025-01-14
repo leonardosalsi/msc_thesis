@@ -48,6 +48,8 @@ if __name__ == "__main__":
         remove_columns=multi_species_genomes.column_names,
     )
 
+    print("Tokenization completed")
+
     tokenized_dataset.save_to_disk(tokenizer_path)
 
 
