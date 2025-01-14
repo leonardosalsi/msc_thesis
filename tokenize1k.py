@@ -2,14 +2,12 @@ import math
 import os.path
 
 from datasets import load_dataset, Dataset, load_from_disk
-from config import datasets_cache_dir, models_cache_dir
+from config import datasets_cache_dir, models_cache_dir, TOKENIZER_BATCH_SIZE
 from tqdm import tqdm
 
 import argparse
 
 from tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
-
-TOKENIZER_BATCH_SIZE=4096
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
