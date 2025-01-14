@@ -125,6 +125,6 @@ if __name__ == "__main__":
         json.dump(trainer.state.log_history, log_file, indent=4)
 
     test_results = trainer.evaluate(eval_dataset=dataset_test)
-    test_results_path = os.path.join(training_args.output_dir, "test_results.json")
+    test_results_path = os.path.join("./log", "test_results.json")
     with open(test_results_path, "w") as test_file:
         json.dump(test_results, test_file, indent=4)
