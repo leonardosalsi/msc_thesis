@@ -3,7 +3,7 @@
 #SBATCH --job-name=cont_pretrain_with_overlap
 #SBATCH --output=out/cont_pretrain_with_overlap.txt
 #SBATCH --cpus-per-task=16
-#SBATCH --time=20:00:00
+#SBATCH --time=60:00:00
 #SBATCH --mem-per-cpu=4G
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
