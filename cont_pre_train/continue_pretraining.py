@@ -2,6 +2,8 @@
 
 import os
 import random
+
+import json
 from pprint import pprint
 from typing import List, Dict
 
@@ -49,6 +51,7 @@ if __name__ == "__main__":
 
     tokenizer_name = type(tokenizer).__name__
     tokenizer_path = os.path.join(dataset_path, "tokenized", tokenizer_name)
+
     tf = lambda examples: tokenize_function(examples)
 
     dataset_train = multi_species_genomes_train.map(
@@ -81,6 +84,8 @@ if __name__ == "__main__":
         new_fingerprint="9f1c3b4a5d6e7f80"
     )
 
+    print("Tokenizer loaded")
+
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
         mlm=True,
@@ -94,13 +99,14 @@ if __name__ == "__main__":
         per_device_train_batch_size=8,
         gradient_accumulation_steps=1,
         save_steps=1000,
-        logging_steps=200,
+        logging_steps=1000,
         eval_strategy="steps",
         evaluation_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
         dataloader_num_workers=2,
         gradient_checkpointing=True,
+        logging_dir='/dev/null',
         max_steps=100000
     )
 
@@ -114,3 +120,11 @@ if __name__ == "__main__":
 
     trainer.train()
     print("Training complete!")
+    log_history_path = os.path.join("./log", "log_history.json")
+    with open(log_history_path, "w") as log_file:
+        json.dump(trainer.state.log_history, log_file, indent=4)
+
+    test_results = trainer.evaluate(eval_dataset=dataset_test)
+    test_results_path = os.path.join(training_args.output_dir, "test_results.json")
+    with open(test_results_path, "w") as test_file:
+        json.dump(test_results, test_file, indent=4)
