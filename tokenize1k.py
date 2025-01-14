@@ -44,7 +44,7 @@ if __name__ == "__main__":
         tokenize_function,
         batched=True,
         batch_size=TOKENIZER_BATCH_SIZE,
-        num_proc=os.cpu_count(),
+        num_proc=124,
         remove_columns=multi_species_genomes.column_names,
     )
 
