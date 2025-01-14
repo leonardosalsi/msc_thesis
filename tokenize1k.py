@@ -9,7 +9,7 @@ import argparse
 
 from tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 
-TOKENIZER_BATCH_SIZE=2048
+TOKENIZER_BATCH_SIZE=4096
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -23,6 +23,14 @@ if __name__ == "__main__":
     )
 
     split = parser.parse_args().split
+
+    fingerprint = ""
+    if split == "train":
+        fingerprint = "a4b7c9d2e5f60718"
+    elif split == "test":
+        fingerprint = "9f1c3b4a5d6e7f80"
+    elif split == "validation":
+        fingerprint = "2e8d4c6b1a3f5d9c"
 
     dataset_path = os.path.join(datasets_cache_dir, "InstaDeepAI___multi_species_genomes/1kbp")
     split_path = os.path.join(dataset_path, split)
@@ -38,19 +46,19 @@ if __name__ == "__main__":
         outputs = tokenizer(examples["sequence"])
         return outputs
 
+    tf = lambda examples: tokenize_function(examples)
     tokenizer_path = os.path.join(dataset_path, "tokenized", tokenizer_name, split)
-
+    print("Beginning tokenization")
     tokenized_dataset = multi_species_genomes.map(
-        tokenize_function,
+        tf,
         batched=True,
         batch_size=TOKENIZER_BATCH_SIZE,
         num_proc=124,
         remove_columns=multi_species_genomes.column_names,
+        cache_file_name=os.path.join(tokenizer_path, f"{tokenizer_name}.arrow"),
+        new_fingerprint=fingerprint
     )
-
     print("Tokenization completed")
-
-    tokenized_dataset.save_to_disk(tokenizer_path)
 
 
 
