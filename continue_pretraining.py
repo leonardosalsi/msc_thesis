@@ -105,7 +105,7 @@ if __name__ == "__main__":
         load_best_model_at_end=True,
         metric_for_best_model="loss",
         dataloader_num_workers=2,
-        gradient_checkpointing=True,
+        gradient_checkpointing=False,
         logging_dir='/dev/null',
         max_steps=100000
     )
