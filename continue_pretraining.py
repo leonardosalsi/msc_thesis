@@ -18,12 +18,27 @@ from transformers import (
     EsmTokenizer,
 )
 
-from config import datasets_cache_dir, models_cache_dir, pretrained_models_cache_dir, TOKENIZER_BATCH_SIZE
+import logging as pyLogging
+from config import datasets_cache_dir, models_cache_dir, pretrained_models_cache_dir, TOKENIZER_BATCH_SIZE, LOGLEVEL
 from tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 
+def init_logger():
+    pyLogging.basicConfig(
+        filename=f"/dev/null",
+        filemode="a",
+        level=LOGLEVEL,  # Log level
+        format="%(message)s"
+    )
+    logger = pyLogging.getLogger()
+    console_handler = pyLogging.StreamHandler()
+    console_handler.setLevel(LOGLEVEL)
+    console_handler.setFormatter(pyLogging.Formatter("%(message)s"))
+    logger.addHandler(console_handler)
+    return logger
 
 if __name__ == "__main__":
     dataset_path = os.path.join(datasets_cache_dir, "InstaDeepAI___multi_species_genomes/1kbp")
+    logger = init_logger()
 
     train__path = os.path.join(dataset_path, "train")
     test__path = os.path.join(dataset_path, "test")
@@ -33,18 +48,19 @@ if __name__ == "__main__":
     multi_species_genomes_test = load_from_disk(test__path)
     multi_species_genomes_validation = load_from_disk(validation_path)
 
+    logger.log(LOGLEVEL, "Dataset loaded")
     model = AutoModelForMaskedLM.from_pretrained(
         "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
         cache_dir=models_cache_dir,
         trust_remote_code=True,
         local_files_only=True
     )
-
+    logger.info("Model loaded")
     tokenizer = OverlappingEsmTokenizer(
         vocab_file=os.path.join(models_cache_dir, "nt50-vocab", "vocab.txt"),
         model_max_length=2048,
     )
-
+    logger.info("Tokenizer loaded")
     def tokenize_function(examples):
         outputs = tokenizer(examples["sequence"])
         return outputs
@@ -53,7 +69,7 @@ if __name__ == "__main__":
     tokenizer_path = os.path.join(dataset_path, "tokenized", tokenizer_name)
 
     tf = lambda examples: tokenize_function(examples)
-
+    logger.info("Start tokenization...")
     dataset_train = multi_species_genomes_train.map(
         tf,
         batched=True,
@@ -84,7 +100,7 @@ if __name__ == "__main__":
         new_fingerprint="9f1c3b4a5d6e7f80"
     )
 
-    print("Tokenizer loaded")
+    logger.info("Tokenization")
 
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
