@@ -11,5 +11,5 @@
 source ~/.bashrc
 conda activate gpu_env
 
-HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True\
+HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \
 python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/continue_pretraining.py
