@@ -59,7 +59,8 @@ if __name__ == "__main__":
         "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
         cache_dir=models_cache_dir,
         trust_remote_code=True,
-        local_files_only=True
+        local_files_only=True,
+        low_cpu_mem_usage=True
     )
     model = model.to(device)
     logger.info("Model loaded")
