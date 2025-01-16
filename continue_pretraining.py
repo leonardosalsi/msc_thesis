@@ -86,7 +86,7 @@ if __name__ == "__main__":
         batch_size=TOKENIZER_BATCH_SIZE,
         num_proc=124,
         remove_columns=multi_species_genomes_train.column_names,
-        cache_file_name=os.path.join(tokenizer_path, f"{tokenizer_name}.arrow"),
+        cache_file_name=os.path.join(tokenizer_path, "train", f"{tokenizer_name}.arrow"),
         new_fingerprint="a4b7c9d2e5f60718"
     )
 
