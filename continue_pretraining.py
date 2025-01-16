@@ -112,7 +112,7 @@ if __name__ == "__main__":
         output_dir=os.path.join(pretrained_models_cache_dir, "enhanced_model"),
         overwrite_output_dir=True,
         num_train_epochs=1,
-        per_device_train_batch_size=8,
+        per_device_train_batch_size=4,
         gradient_accumulation_steps=1,
         save_steps=1000,
         logging_steps=1000,
