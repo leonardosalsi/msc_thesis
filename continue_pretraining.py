@@ -15,7 +15,7 @@ from transformers import (
     TrainingArguments,
     DataCollatorForLanguageModeling,
     PreTrainedTokenizer,
-    EsmTokenizer,
+    EsmTokenizer, AutoModel,
 )
 
 import logging as pyLogging
@@ -55,14 +55,15 @@ if __name__ == "__main__":
     multi_species_genomes_validation = load_from_disk(validation_path)
 
     logger.log(LOGLEVEL, "Dataset loaded")
-    model = AutoModelForMaskedLM.from_pretrained(
-        "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
-        cache_dir=models_cache_dir,
-        trust_remote_code=True,
-        local_files_only=True,
-        low_cpu_mem_usage=True
-    )
-    model = model.to(device)
+    with torch.device(device):
+        model = AutoModelForMaskedLM.from_pretrained(
+            "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+            cache_dir=models_cache_dir,
+            trust_remote_code=True,
+            local_files_only=True,
+            low_cpu_mem_usage=True
+        )
+        print(model.device)
     logger.info("Model loaded")
     tokenizer = OverlappingEsmTokenizer(
         vocab_file=os.path.join(models_cache_dir, "nt50-vocab", "vocab.txt"),
