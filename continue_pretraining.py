@@ -64,7 +64,7 @@ if __name__ == "__main__":
         low_cpu_mem_usage=True
     )
     model = model.to(device)
-
+    logger.log(LOGLEVEL, model)
     logger.log(LOGLEVEL, "Model loaded")
     tokenizer = OverlappingEsmTokenizer(
         vocab_file=os.path.join(models_cache_dir, "nt50-vocab", "vocab.txt"),
