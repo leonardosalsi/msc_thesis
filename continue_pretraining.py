@@ -40,6 +40,12 @@ if __name__ == "__main__":
     dataset_path = os.path.join(datasets_cache_dir, "InstaDeepAI___multi_species_genomes/1kbp")
     logger = init_logger()
 
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device.type == "cuda":
+        logger.log(LOGLEVEL, f"Using GPU: {torch.cuda.get_device_name(0)}")
+    else:
+        logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
+
     train__path = os.path.join(dataset_path, "train")
     test__path = os.path.join(dataset_path, "test")
     validation_path = os.path.join(dataset_path, "validation")
@@ -55,6 +61,7 @@ if __name__ == "__main__":
         trust_remote_code=True,
         local_files_only=True
     )
+    model = model.to(device)
     logger.info("Model loaded")
     tokenizer = OverlappingEsmTokenizer(
         vocab_file=os.path.join(models_cache_dir, "nt50-vocab", "vocab.txt"),
