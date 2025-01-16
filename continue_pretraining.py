@@ -37,9 +37,9 @@ def init_logger():
     return logger
 
 if __name__ == "__main__":
+
     dataset_path = os.path.join(datasets_cache_dir, "InstaDeepAI___multi_species_genomes/1kbp")
     logger = init_logger()
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == "cuda":
         logger.log(LOGLEVEL, f"Using GPU: {torch.cuda.get_device_name(0)}")
@@ -63,6 +63,8 @@ if __name__ == "__main__":
         local_files_only=True,
         low_cpu_mem_usage=True
     )
+
+
     model = model.to(device)
     logger.log(LOGLEVEL, model)
     logger.log(LOGLEVEL, "Model loaded")
@@ -70,6 +72,9 @@ if __name__ == "__main__":
         vocab_file=os.path.join(models_cache_dir, "nt50-vocab", "vocab.txt"),
         model_max_length=2048,
     )
+
+    logger.log(LOGLEVEL, tokenizer.is_fast)
+
     logger.log(LOGLEVEL, "Tokenizer loaded")
     def tokenize_function(examples):
         outputs = tokenizer(examples["sequence"])
@@ -82,31 +87,28 @@ if __name__ == "__main__":
     logger.log(LOGLEVEL, "Start tokenization...")
     dataset_train = multi_species_genomes_train.map(
         tf,
-        batched=True,
-        batch_size=TOKENIZER_BATCH_SIZE,
-        num_proc=124,
+        batched=False,
+        num_proc=20,
         remove_columns=multi_species_genomes_train.column_names,
-        cache_file_name=os.path.join(tokenizer_path, "train", f"{tokenizer_name}.arrow"),
+        cache_file_name=os.path.join(tokenizer_path, "train", f"train.arrow"),
         new_fingerprint="a4b7c9d2e5f60718"
     )
 
     dataset_validation = multi_species_genomes_validation.map(
         tf,
-        batched=True,
-        batch_size=TOKENIZER_BATCH_SIZE,
-        num_proc=124,
+        batched=False,
+        num_proc=20,
         remove_columns=multi_species_genomes_train.column_names,
-        cache_file_name=os.path.join(tokenizer_path, "validation", f"{tokenizer_name}.arrow"),
+        cache_file_name=os.path.join(tokenizer_path, "validation", f"validation.arrow"),
         new_fingerprint="2e8d4c6b1a3f5d9c"
     )
 
     dataset_test = multi_species_genomes_validation.map(
         tf,
-        batched=True,
-        batch_size=TOKENIZER_BATCH_SIZE,
-        num_proc=124,
+        batched=False,
+        num_proc=20,
         remove_columns=multi_species_genomes_train.column_names,
-        cache_file_name=os.path.join(tokenizer_path, "test", f"{tokenizer_name}.arrow"),
+        cache_file_name=os.path.join(tokenizer_path, "test", f"test.arrow"),
         new_fingerprint="9f1c3b4a5d6e7f80"
     )
 
