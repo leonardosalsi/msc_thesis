@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=cont_pretrain_with_overlap
 #SBATCH --output=out/cont_pretrain_with_overlap.txt
-#SBATCH --cpus-per-task=16
+#SBATCH --cpus-per-task=8
 #SBATCH --time=60:00:00
 #SBATCH --mem-per-cpu=8G
 #SBATCH -p gpu
@@ -11,5 +11,5 @@
 source ~/.bashrc
 conda activate gpu_env
 
-HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \
+HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True\
 python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/continue_pretraining.py

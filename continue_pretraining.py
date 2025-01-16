@@ -117,7 +117,6 @@ if __name__ == "__main__":
         save_steps=1000,
         logging_steps=1000,
         eval_strategy="steps",
-        evaluation_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
         dataloader_num_workers=2,
