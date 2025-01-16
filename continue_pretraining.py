@@ -65,12 +65,12 @@ if __name__ == "__main__":
     )
     model = model.to(device)
 
-    logger.info("Model loaded")
+    logger.log(LOGLEVEL, "Model loaded")
     tokenizer = OverlappingEsmTokenizer(
         vocab_file=os.path.join(models_cache_dir, "nt50-vocab", "vocab.txt"),
         model_max_length=2048,
     )
-    logger.info("Tokenizer loaded")
+    logger.log(LOGLEVEL, "Tokenizer loaded")
     def tokenize_function(examples):
         outputs = tokenizer(examples["sequence"])
         return outputs
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     tokenizer_path = os.path.join(dataset_path, "tokenized", tokenizer_name)
 
     tf = lambda examples: tokenize_function(examples)
-    logger.info("Start tokenization...")
+    logger.log(LOGLEVEL, "Start tokenization...")
     dataset_train = multi_species_genomes_train.map(
         tf,
         batched=True,
@@ -110,7 +110,7 @@ if __name__ == "__main__":
         new_fingerprint="9f1c3b4a5d6e7f80"
     )
 
-    logger.info("Tokenization")
+    logger.log(LOGLEVEL, "Tokenization")
 
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     )
 
     trainer.train()
-    print("Training complete!")
+    logger.log(LOGLEVEL, "Training complete!")
     log_history_path = os.path.join("./log", "log_history.json")
     with open(log_history_path, "w") as log_file:
         json.dump(trainer.state.log_history, log_file, indent=4)
