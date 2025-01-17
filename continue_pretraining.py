@@ -37,8 +37,6 @@ def init_logger():
     return logger
 
 if __name__ == "__main__":
-
-    dataset_path = os.path.join(datasets_cache_dir, "InstaDeepAI___multi_species_genomes/1kbp")
     logger = init_logger()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == "cuda":
@@ -46,13 +44,32 @@ if __name__ == "__main__":
     else:
         logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
 
-    train__path = os.path.join(dataset_path, "train")
-    test__path = os.path.join(dataset_path, "test")
-    validation_path = os.path.join(dataset_path, "validation")
+    tokenizer = OverlappingEsmTokenizer(
+        vocab_file=os.path.join(models_cache_dir, "nt50-vocab", "vocab.txt"),
+        model_max_length=2048,
+    )
 
-    multi_species_genomes_train = load_from_disk(train__path).select(range(2000))
-    multi_species_genomes_test = load_from_disk(test__path).select(range(2000))
-    multi_species_genomes_validation = load_from_disk(validation_path).select(range(2000))
+
+    def tokenize_function(examples):
+        outputs = tokenizer(examples["sequence"])
+        return outputs
+
+
+    tf = lambda examples: tokenize_function(examples)
+
+    logger.log(LOGLEVEL, "Tokenizer loaded")
+
+    tokenizer_name = type(tokenizer).__name__
+    tokenizer_model_cache_path = os.path.join(tokenizer_cache_dir, tokenizer_name)
+    tokenizer_model_datasets_dir = os.path.join(tokenized_datasets_dir, tokenizer_name)
+
+    train__path = os.path.join(tokenizer_model_datasets_dir, "train")
+    test__path = os.path.join(tokenizer_model_datasets_dir, "test")
+    validation_path = os.path.join(tokenizer_model_datasets_dir, "validation")
+
+    dataset_train = load_from_disk(train__path)
+    dataset_test = load_from_disk(test__path)
+    dataset_validation = load_from_disk(validation_path)
 
     logger.log(LOGLEVEL, "Dataset loaded")
 
@@ -65,56 +82,6 @@ if __name__ == "__main__":
     )
     model = model.to(device)
     logger.log(LOGLEVEL, "Model loaded")
-
-    tokenizer = OverlappingEsmTokenizer(
-        vocab_file=os.path.join(models_cache_dir, "nt50-vocab", "vocab.txt"),
-        model_max_length=2048,
-    )
-
-    def tokenize_function(examples):
-        outputs = tokenizer(examples["sequence"])
-        return outputs
-
-    tf = lambda examples: tokenize_function(examples)
-
-    logger.log(LOGLEVEL, "Tokenizer loaded")
-
-    tokenizer_name = type(tokenizer).__name__
-    tokenizer_model_cache_path = os.path.join(tokenizer_cache_dir, tokenizer_name)
-    tokenizer_model_datasets_dir = os.path.join(tokenized_datasets_dir, tokenizer_name)
-
-    logger.log(LOGLEVEL, "Start tokenization...")
-    dataset_train = multi_species_genomes_train.map(
-        tf,
-        batched=False,
-        num_proc=20,
-        remove_columns=multi_species_genomes_train.column_names,
-        cache_file_name=os.path.join(tokenizer_model_cache_path, "train", f"train.arrow"),
-        new_fingerprint="a4b7c9d2e5f60718"
-    )
-    dataset_train.save_to_disk(os.path.join(tokenizer_model_datasets_dir, "train"))
-
-    dataset_validation = multi_species_genomes_validation.map(
-        tf,
-        batched=False,
-        num_proc=20,
-        remove_columns=multi_species_genomes_train.column_names,
-        cache_file_name=os.path.join(tokenizer_model_cache_path, "validation", f"validation.arrow"),
-        new_fingerprint="2e8d4c6b1a3f5d9c"
-    )
-    dataset_train.save_to_disk(os.path.join(tokenizer_model_datasets_dir, "validation"))
-
-    dataset_test = multi_species_genomes_validation.map(
-        tf,
-        batched=False,
-        num_proc=20,
-        remove_columns=multi_species_genomes_train.column_names,
-        cache_file_name=os.path.join(tokenizer_model_cache_path, "test", f"test.arrow"),
-        new_fingerprint="9f1c3b4a5d6e7f80"
-    )
-    dataset_train.save_to_disk(os.path.join(tokenizer_model_datasets_dir, "test"))
-
-    logger.log(LOGLEVEL, "Tokenization")
 
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
