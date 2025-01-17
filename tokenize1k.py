@@ -1,12 +1,9 @@
-import math
 import os.path
-
-from datasets import load_dataset, Dataset, load_from_disk
-from config import datasets_cache_dir, models_cache_dir, TOKENIZER_BATCH_SIZE
-from tqdm import tqdm
+from datasets import load_from_disk
+from config import datasets_cache_dir, models_cache_dir, tokenizer_cache_dir, \
+    tokenized_datasets_dir
 
 import argparse
-
 from tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 
 if __name__ == "__main__":
@@ -45,17 +42,20 @@ if __name__ == "__main__":
         return outputs
 
     tf = lambda examples: tokenize_function(examples)
-    tokenizer_path = os.path.join(dataset_path, "tokenized", tokenizer_name, split)
+
+    tokenizer_model_cache_path = os.path.join(tokenizer_cache_dir, tokenizer_name)
+    tokenizer_model_datasets_dir = os.path.join(tokenized_datasets_dir, tokenizer_name)
+
     print("Beginning tokenization")
     tokenized_dataset = multi_species_genomes.map(
         tf,
-        batched=True,
-        batch_size=TOKENIZER_BATCH_SIZE,
-        num_proc=124,
+        batched=False,
+        num_proc=40,
         remove_columns=multi_species_genomes.column_names,
-        cache_file_name=os.path.join(tokenizer_path, f"{tokenizer_name}.arrow"),
+        cache_file_name=os.path.join(tokenizer_model_cache_path, split, f"{split}.arrow"),
         new_fingerprint=fingerprint
     )
+    tokenized_dataset.save_to_disk(os.path.join(tokenizer_model_datasets_dir, split))
     print("Tokenization completed")
 
 
