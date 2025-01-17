@@ -19,7 +19,7 @@ from transformers import (
 )
 
 import logging as pyLogging
-from config import datasets_cache_dir, models_cache_dir, pretrained_models_cache_dir, TOKENIZER_BATCH_SIZE, LOGLEVEL
+from config import datasets_cache_dir, models_cache_dir, pretrained_models_cache_dir, tokenizer_cache_dir, LOGLEVEL, tokenized_datasets_dir
 from tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 
 def init_logger():
@@ -50,9 +50,9 @@ if __name__ == "__main__":
     test__path = os.path.join(dataset_path, "test")
     validation_path = os.path.join(dataset_path, "validation")
 
-    multi_species_genomes_train = load_from_disk(train__path)
-    multi_species_genomes_test = load_from_disk(test__path)
-    multi_species_genomes_validation = load_from_disk(validation_path)
+    multi_species_genomes_train = load_from_disk(train__path).select(range(2000))
+    multi_species_genomes_test = load_from_disk(test__path).select(range(2000))
+    multi_species_genomes_validation = load_from_disk(validation_path).select(range(2000))
 
     logger.log(LOGLEVEL, "Dataset loaded")
 
@@ -81,8 +81,8 @@ if __name__ == "__main__":
         return outputs
 
     tokenizer_name = type(tokenizer).__name__
-    tokenizer_path = os.path.join(dataset_path, "tokenized", tokenizer_name)
-
+    tokenizer_model_cache_path = os.path.join(tokenizer_cache_dir, tokenizer_name)
+    tokenizer_model_datasets_dir = os.path.join(tokenized_datasets_dir, tokenizer_name)
     tf = lambda examples: tokenize_function(examples)
     logger.log(LOGLEVEL, "Start tokenization...")
     dataset_train = multi_species_genomes_train.map(
@@ -90,27 +90,30 @@ if __name__ == "__main__":
         batched=False,
         num_proc=20,
         remove_columns=multi_species_genomes_train.column_names,
-        cache_file_name=os.path.join(tokenizer_path, "train", f"train.arrow"),
+        cache_file_name=os.path.join(tokenizer_model_cache_path, "train", f"train.arrow"),
         new_fingerprint="a4b7c9d2e5f60718"
     )
+    dataset_train.save_to_disk(os.path.join(tokenizer_model_datasets_dir, "train"))
 
     dataset_validation = multi_species_genomes_validation.map(
         tf,
         batched=False,
         num_proc=20,
         remove_columns=multi_species_genomes_train.column_names,
-        cache_file_name=os.path.join(tokenizer_path, "validation", f"validation.arrow"),
+        cache_file_name=os.path.join(tokenizer_model_cache_path, "validation", f"validation.arrow"),
         new_fingerprint="2e8d4c6b1a3f5d9c"
     )
+    dataset_train.save_to_disk(os.path.join(tokenizer_model_datasets_dir, "validation"))
 
     dataset_test = multi_species_genomes_validation.map(
         tf,
         batched=False,
         num_proc=20,
         remove_columns=multi_species_genomes_train.column_names,
-        cache_file_name=os.path.join(tokenizer_path, "test", f"test.arrow"),
+        cache_file_name=os.path.join(tokenizer_model_cache_path, "test", f"test.arrow"),
         new_fingerprint="9f1c3b4a5d6e7f80"
     )
+    dataset_train.save_to_disk(os.path.join(tokenizer_model_datasets_dir, "test"))
 
     logger.log(LOGLEVEL, "Tokenization")
 
