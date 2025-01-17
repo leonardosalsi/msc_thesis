@@ -63,27 +63,26 @@ if __name__ == "__main__":
         local_files_only=True,
         low_cpu_mem_usage=True
     )
-
-
     model = model.to(device)
-    logger.log(LOGLEVEL, model)
     logger.log(LOGLEVEL, "Model loaded")
+
     tokenizer = OverlappingEsmTokenizer(
         vocab_file=os.path.join(models_cache_dir, "nt50-vocab", "vocab.txt"),
         model_max_length=2048,
     )
 
-    logger.log(LOGLEVEL, tokenizer.is_fast)
-
-    logger.log(LOGLEVEL, "Tokenizer loaded")
     def tokenize_function(examples):
         outputs = tokenizer(examples["sequence"])
         return outputs
 
+    tf = lambda examples: tokenize_function(examples)
+
+    logger.log(LOGLEVEL, "Tokenizer loaded")
+
     tokenizer_name = type(tokenizer).__name__
     tokenizer_model_cache_path = os.path.join(tokenizer_cache_dir, tokenizer_name)
     tokenizer_model_datasets_dir = os.path.join(tokenized_datasets_dir, tokenizer_name)
-    tf = lambda examples: tokenize_function(examples)
+
     logger.log(LOGLEVEL, "Start tokenization...")
     dataset_train = multi_species_genomes_train.map(
         tf,
