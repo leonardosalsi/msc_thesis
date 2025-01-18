@@ -19,14 +19,6 @@ if __name__ == "__main__":
 
     split = parser.parse_args().split
 
-    fingerprint = ""
-    if split == "train":
-        fingerprint = "a4b7c9d2e5f60718"
-    elif split == "test":
-        fingerprint = "9f1c3b4a5d6e7f80"
-    elif split == "validation":
-        fingerprint = "2e8d4c6b1a3f5d9c"
-
     dataset_path = os.path.join(datasets_cache_dir, "InstaDeepAI___multi_species_genomes/1kbp-noN")
     split_path = os.path.join(dataset_path, split)
     multi_species_genomes = load_from_disk(split_path)
@@ -51,9 +43,7 @@ if __name__ == "__main__":
         tf,
         batched=False,
         num_proc=40,
-        remove_columns=multi_species_genomes.column_names,
-        cache_file_name=os.path.join(tokenizer_model_cache_path, f"{split}", f"{split}.arrow"),
-        new_fingerprint=fingerprint
+        remove_columns=multi_species_genomes.column_names
     )
     tokenized_dataset.save_to_disk(os.path.join(tokenizer_model_datasets_dir, f"{split}-noN"))
     print("Tokenization completed")
