@@ -64,9 +64,9 @@ if __name__ == "__main__":
     tokenizer_model_cache_path = os.path.join(tokenizer_cache_dir, tokenizer_name)
     tokenizer_model_datasets_dir = os.path.join(tokenized_datasets_dir, tokenizer_name)
 
-    train__path = os.path.join(tokenizer_model_datasets_dir, "train")
-    test__path = os.path.join(tokenizer_model_datasets_dir, "test")
-    validation_path = os.path.join(tokenizer_model_datasets_dir, "validation")
+    train__path = os.path.join(tokenizer_model_datasets_dir, "train-noN")
+    test__path = os.path.join(tokenizer_model_datasets_dir, "test-noN")
+    validation_path = os.path.join(tokenizer_model_datasets_dir, "validation-noN")
 
     dataset_train = load_from_disk(train__path)
     dataset_test = load_from_disk(test__path)
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=os.path.join(pretrained_models_cache_dir, "enhanced_model"),
         overwrite_output_dir=True,
-        num_train_epochs=1,
+        num_train_epochs=100,
         per_device_train_batch_size=1,
         gradient_accumulation_steps=1,
         save_steps=1000,
