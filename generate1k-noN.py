@@ -71,8 +71,6 @@ def split_dataset(dataset_split):
                 exit(1)
             for entry in splits:
                 yield entry
-        else:
-            print("NO N")
         progress_bar.update(len(group))
 
 
