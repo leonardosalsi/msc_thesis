@@ -52,10 +52,10 @@ if __name__ == "__main__":
         batched=False,
         num_proc=40,
         remove_columns=multi_species_genomes.column_names,
-        cache_file_name=os.path.join(tokenizer_model_cache_path, f"{split}-noN", f"{split}.arrow"),
+        cache_file_name=os.path.join(tokenizer_model_cache_path, f"{split}", f"{split}.arrow"),
         new_fingerprint=fingerprint
     )
-    tokenized_dataset.save_to_disk(os.path.join(tokenizer_model_datasets_dir, split))
+    tokenized_dataset.save_to_disk(os.path.join(tokenizer_model_datasets_dir, f"{split}-noN"))
     print("Tokenization completed")
 
 
