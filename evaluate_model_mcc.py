@@ -90,7 +90,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task, random_we
     """Generate validation splits"""
     train_sequences, validation_sequences, train_labels, validation_labels = train_test_split(train_sequences, train_labels, test_size=0.05, random_state=42)
 
-    """Load model tokenizer"""
+    """Load model overrides"""
     tokenizer = AutoTokenizer.from_pretrained(
         model_dict['repo'],
         cache_dir=models_cache_dir,
