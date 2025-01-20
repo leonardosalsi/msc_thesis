@@ -119,13 +119,11 @@ if __name__ == "__main__":
         max_steps=3000
     )
 
-    subsample = lambda: dataset_validation.select(range(1000))
-
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=dataset_train,
-        eval_dataset=subsample,
+        eval_dataset=dataset_validation,
         data_collator=data_collator,
     )
 
