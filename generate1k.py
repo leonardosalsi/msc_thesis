@@ -98,7 +98,7 @@ if __name__ == "__main__":
     # If we apply a sliding window over a sequence of 6200 characters, we end up with 6198 tokens.
     # Splitting the original sequences and storing them in a new dataset allows for overlapping tokenization
     # without going over the maximal length allowed by the model.
-    # The tokenizer will right-pad the remaining to the max_length required by the model = 2048
+    # The overrides will right-pad the remaining to the max_length required by the model = 2048
     split_dataset_dir = os.path.join(datasets_cache_dir, 'InstaDeepAI___multi_species_genomes/1kbp/', split)
     new_train_dataset = Dataset.from_generator(lambda: split_dataset(multi_species_genomes))
     new_train_dataset.save_to_disk(split_dataset_dir)

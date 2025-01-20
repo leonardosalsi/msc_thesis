@@ -4,7 +4,7 @@ from config import datasets_cache_dir, models_cache_dir, tokenizer_cache_dir, \
     tokenized_datasets_dir
 
 import argparse
-from tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
+from overrides.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

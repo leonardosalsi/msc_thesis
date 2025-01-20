@@ -21,23 +21,9 @@ from transformers import (
 
 import logging as pyLogging
 from config import datasets_cache_dir, models_cache_dir, pretrained_models_cache_dir, tokenizer_cache_dir, LOGLEVEL, tokenized_datasets_dir
-from tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
+from overrides.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 
 from transformers import TrainerCallback
-
-class DynamicEvalSubsetCallback(TrainerCallback):
-    def __init__(self, validation_dataset, subset_size, seed=42):
-        self.validation_dataset = validation_dataset
-        self.subset_size = subset_size
-        self.seed = seed
-
-    def on_evaluate(self, args, state, control, **kwargs):
-        import random
-        random.seed(self.seed + state.global_step)
-        indices = random.sample(range(len(self.validation_dataset)), self.subset_size)
-        new_eval_dataset = self.validation_dataset.select(indices)
-        kwargs["trainer"].eval_dataset = new_eval_dataset
-
 
 def init_logger():
     pyLogging.basicConfig(
@@ -84,9 +70,17 @@ if __name__ == "__main__":
     test__path = os.path.join(tokenizer_model_datasets_dir, "test-noN")
     validation_path = os.path.join(tokenizer_model_datasets_dir, "validation-noN")
 
+
+    def custom_collator(data):
+        text_batch = [
+            f'informal statement {example["generated informal statement"]} formal statement {example["formal statement"]}'
+            for example in data]
+        tokenized = tokenizer(text_batch, padding='longest', max_length=128, truncation=True, return_tensors='pt')
+        return tokenized
+
     dataset_train = load_from_disk(train__path)
     dataset_test = load_from_disk(test__path)
-    dataset_validation = load_from_disk(validation_path)
+    dataset_validation = load_from_disk(validation_path).select(range(1000))
 
     logger.log(LOGLEVEL, "Dataset loaded")
 
@@ -106,18 +100,13 @@ if __name__ == "__main__":
         mlm_probability=0.15
     )
 
-    dynamic_eval_callback = DynamicEvalSubsetCallback(
-        validation_dataset=dataset_validation,
-        subset_size=10000
-    )
-
     training_args = TrainingArguments(
         output_dir=os.path.join(pretrained_models_cache_dir, "enhanced_model"),
         overwrite_output_dir=True,
-        num_train_epochs=100,
-        per_device_train_batch_size=24,
+        num_train_epochs=1,
+        per_device_train_batch_size=59,
         auto_find_batch_size=True,
-        gradient_accumulation_steps=1,
+        gradient_accumulation_steps=10,
         save_steps=1000,
         logging_steps=1000,
         eval_strategy="steps",
@@ -126,17 +115,18 @@ if __name__ == "__main__":
         dataloader_num_workers=2,
         gradient_checkpointing=False,
         logging_dir='/dev/null',
-        max_steps=100000,
-
+        fp16=False,
+        max_steps=3000
     )
+
+    subsample = lambda: dataset_validation.select(range(1000))
 
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=dataset_train,
-        eval_dataset=dataset_validation,
+        eval_dataset=subsample,
         data_collator=data_collator,
-        callbacks=[dynamic_eval_callback]
     )
 
     trainer.train()
