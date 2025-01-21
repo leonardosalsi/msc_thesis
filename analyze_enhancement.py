@@ -1,0 +1,328 @@
+import math
+import os
+import json
+from pprint import pprint
+
+from matplotlib.cm import get_cmap
+
+from downstream_tasks import TASKS, MODELS
+import numpy as np
+from matplotlib import pyplot as plt
+
+task_permutation = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 4, 5, 1, 3, 2, 6, 7, 8, 27, 19, 20, 21, 22,  24, 25, 26] #remove 23
+model_permutation = [1, 7]
+
+def get_model_by_id(modelId):
+    for model in MODELS:
+        if model['modelId'] == modelId:
+            return model
+    return None
+
+def get_task_by_id(taskId):
+    for task in TASKS:
+        if task['taskId'] == taskId:
+            return task
+    return None
+
+def get_task_by_alias(taskAlias):
+    for task in TASKS:
+        if task['alias'] == taskAlias:
+            return task
+    return None
+
+"""
+Collect and sort data per downstream task
+"""
+def prepare_data_for_visualization():
+    data_location = "./data_enhanced"
+    _data = {}
+    files = [f for f in os.listdir(data_location) if os.path.isfile(os.path.join(data_location, f))]
+    for taskId in task_permutation:
+        task = get_task_by_id(taskId)
+        _data[task['data_alias']] = {}
+
+    for taskId in task_permutation:
+        task = get_task_by_id(taskId)
+        task_files = list(filter(lambda filename: task['alias'] in filename, files))
+        if task['alias'] == 'enhancers':
+            task_files = list(filter(lambda filename: 'Genomic' not in filename, task_files))
+            task_files = list(filter(lambda filename: 'types' not in filename, task_files))
+        if len(task_files) == 0:
+            continue
+        for modelId in model_permutation:
+            model = get_model_by_id(int(modelId))
+            if "-it" in model['name']:
+                model_task_files = list(filter(lambda filename: model['name'] in filename, task_files))
+            else:
+                model_task_files = list(filter(lambda filename: "-it" not in filename, task_files))
+                model_task_files = list(filter(lambda filename: model['name'] in filename, model_task_files))
+            mode = ""
+            try:
+                if modelId == int(modelId):
+                    file = list(filter(lambda filename: '-with-random-weights' not in filename, model_task_files))[0]
+                else:
+                    file = list(filter(lambda filename: '-with-random-weights' in filename, model_task_files))[0]
+                    mode = " with rand. weights"
+            except:
+                print("=======")
+                print("ERROR ON " + task['data_alias'] + "   " + model['data_alias'])
+                print(model_task_files)
+            file_path = os.path.join('data_enhanced', file)
+            if os.path.isfile(file_path):
+                with open(file_path, 'r') as file:
+                    content = file.read()
+                    content = json.loads(content)
+                    _data[task['data_alias']][model['data_alias'] + mode] = {'mean': content['mean'],
+                                                                             'std': content['std']}
+
+    return _data
+
+def prepare_training_data_for_visualisation():
+    data_location = "./log_enhanced"
+    _data = {}
+    all_files = [f for f in os.listdir(data_location) if os.path.isfile(os.path.join(data_location, f))]
+    for modelId in model_permutation:
+        mode = ""
+        random = False
+        if modelId != int(modelId):
+            mode = " with rand. weights"
+            random = True
+        model = get_model_by_id(int(modelId))
+        _data[model['data_alias'] + mode] = {}
+        if "-it" in model['name']:
+            filtered = list(filter(lambda file: model['name'] in file, all_files))
+        else:
+            filtered = list(filter(lambda file: "-it" not in file, all_files))
+            filtered = list(filter(lambda file: model['name'] in file, filtered))
+        if random:
+            files = list(filter(lambda file: '-random-weights' in file, filtered))
+        else:
+            files = list(filter(lambda file: '-random-weights' not in file, filtered))
+        for file in files:
+            file_path = os.path.join(data_location, file)
+            task_alias = file.replace(model['name'],'').replace("-random-weights","").replace('-lora','').replace('-','').replace('.txt','')
+            task = get_task_by_alias(task_alias)
+            with open(file_path, 'r') as file:
+                lines = file.readlines()
+            log_data = json.loads(lines[7].strip().replace("'",'"'))
+            training_log = log_data[::2][:-1]
+            training_summary = log_data[::2][-1]
+            eval_log = log_data[1::2]
+            _data[model['data_alias'] + mode][task['data_alias']] = {'training_log': training_log, 'eval_log': eval_log, 'training_summary': training_summary}
+    return _data
+
+def visualize_mcc_per_task(data):
+    num_tasks = len(data)
+    print(f"Number of tasks: {num_tasks}")
+    cols = 3
+    rows = math.ceil(num_tasks / cols)
+
+    fig, axes = plt.subplots(rows, cols, figsize=(18, rows * 5), constrained_layout=True)
+    axes = axes.flatten()
+
+    colors = plt.cm.tab10.colors
+
+    for idx, (task_name, model_results) in enumerate(data.items()):
+        if idx >= len(axes):  # Safety check
+            break
+
+        ax = axes[idx]
+        model_names = list(model_results.keys())
+        mcc_values = [model_results[model]['mean'] for model in model_names]
+        std_values = [model_results[model]['std'] * 2 for model in model_names]
+
+        x = np.arange(len(model_names))
+        bars = ax.bar(
+            x,
+            mcc_values,
+            yerr=std_values,
+            color=colors[:len(model_names)],
+            width=0.9,
+            capsize=5,
+            error_kw={'elinewidth': 2}
+        )
+
+        for bar, value in zip(bars, mcc_values):
+            if value > 0.2:
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    bar.get_y() + 0.05,
+                    f"{value:.2f}",
+                    ha="center",
+                    va="bottom",
+                    rotation=90,
+                    fontsize=12,
+                    color="white",
+                    weight="bold",
+                )
+            else:
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    bar.get_y() + bar.get_height() + 0.05,
+                    f"{value:.2f}",
+                    ha="center",
+                    va="bottom",
+                    rotation=90,
+                    fontsize=12,
+                    color="black",
+                    weight="bold",
+                )
+
+        ax.set_title(task_name, fontsize=24, pad=10, loc="center")
+        ax.set_ylim(0, 1)
+
+        col = idx % cols
+        is_last_row = idx >= (rows - 1) * cols or idx + cols >= num_tasks
+        if is_last_row:
+            ax.set_xticks(x)
+            ax.set_xticklabels(model_names, rotation=90, ha="center", fontsize=16)
+        else:
+            ax.set_xticks([])
+
+    for idx in range(num_tasks, len(axes)):
+        fig.delaxes(axes[idx])
+    plt.savefig('img/it01/eval_mcc.svg')
+
+def visualize_mcc_across_tasks(data):
+    model_mcc = {}
+    for (task_name, model_results) in data.items():
+        for (model_name, scores) in model_results.items():
+            if model_name not in model_mcc:
+                model_mcc[model_name] = []
+            model_mcc[model_name].append(scores['mean'])
+
+
+    for (model_name, scores) in model_mcc.items():
+        model_mcc[model_name] = np.mean(scores)
+
+    model_names = list(model_mcc.keys())
+    mean_mcc = [model_mcc[model] for model in model_names]
+
+    colors = plt.cm.tab10.colors
+    fig, ax = plt.subplots(figsize=(6, 6), constrained_layout=True)
+    bars = ax.bar(model_names, mean_mcc, color=colors[:len(model_names)], width=0.9)
+    for bar, value in zip(bars, mean_mcc):
+        if value > 0.2:
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_y() + 0.05,
+                f"{value:.2f}",
+                ha="center",
+                va="bottom",
+                rotation=90,
+                fontsize=12,
+                color="white",
+                weight="bold",
+            )
+        else:
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_y() + bar.get_height() + 0.05,
+                f"{value:.2f}",
+                ha="center",
+                va="bottom",
+                rotation=90,
+                fontsize=12,
+                color="black",
+                weight="bold",
+            )
+    x = np.arange(len(model_names))
+    ax.set_xticks(x)
+    ax.set_xticklabels(model_names, rotation=90, ha="center", fontsize=12)
+    ax.set_title("Mean MCC across Tasks", fontsize=18, pad=10, loc="center")
+    ax.set_ylim(0, 1)
+    plt.savefig('img/it01/mcc_across_tasks.svg')
+
+def visualize_normalized_mcc_across_tasks(data):
+    model_mcc = {}
+    for (task_name, model_results) in data.items():
+        for (model_name, scores) in model_results.items():
+            if model_name not in model_mcc:
+                model_mcc[model_name] = []
+            model_mcc[model_name].append(scores['mean'])
+
+    for (model_name, scores) in model_mcc.items():
+        min = np.min(scores)
+        max = np.max(scores)
+        normalized_scores = (scores - min) / (max - min)
+        model_mcc[model_name] = np.mean(normalized_scores)
+
+    model_names = list(model_mcc.keys())
+    mean_mcc = [model_mcc[model] for model in model_names]
+
+    colors = plt.cm.tab10.colors
+    fig, ax = plt.subplots(figsize=(6, 6), constrained_layout=True)
+    bars = ax.bar(model_names, mean_mcc, color=colors[:len(model_names)], width=0.9)
+    for bar, value in zip(bars, mean_mcc):
+        if value > 0.2:
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_y() + 0.05,
+                f"{value:.2f}",
+                ha="center",
+                va="bottom",
+                rotation=90,
+                fontsize=12,
+                color="white",
+                weight="bold",
+            )
+        else:
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_y() + bar.get_height() + 0.05,
+                f"{value:.2f}",
+                ha="center",
+                va="bottom",
+                rotation=90,
+                fontsize=12,
+                color="black",
+                weight="bold",
+            )
+    x = np.arange(len(model_names))
+    ax.set_xticks(x)
+    ax.set_xticklabels(model_names, rotation=90, ha="center", fontsize=12)
+    ax.set_title("Normalized mean MCC across Tasks", fontsize=18, pad=10, loc="center")
+    ax.set_ylim(0, 1)
+    plt.savefig('img/it01/norm_mcc_across_tasks.svg')
+
+def visualize_training_loss(data):
+    steps = list(range(100, 10100, 100))
+    num_graphs = 8
+    colors = get_cmap("tab10").colors[:num_graphs]
+    plot_data = {}
+
+    for model_name, task in data.items():
+        for task_name in task:
+            plot_data[task_name] = {}
+
+    for model_name, task in data.items():
+        for task_name, task_results in task.items():
+            plot_data[task_name][model_name] = [entry['loss'] for entry in task_results['training_log']]
+
+    for task_name, task_results in plot_data.items():
+        plt.figure(figsize=(8, 5))
+        i = 0
+        for model_name, loss in task_results.items():
+            plt.plot(steps, loss, label=model_name, color=colors[i], linestyle="-")
+            i += 1
+        plt.xlabel("Training steps")
+        plt.ylabel("Loss")
+        plt.title(task_name)
+        plt.xlim(100, 10000)
+        plt.legend(
+            loc="upper right",
+            fontsize="small"
+        )
+        plt.savefig(f'img/lora/training/{task_name}.png')
+
+if __name__ == "__main__":
+    mcc_data = prepare_data_for_visualization()
+    with open('mcc_data_lora.json', 'w') as f:
+        json.dump(mcc_data, f, indent=4)
+    #train_data = prepare_training_data_for_visualisation()
+    #with open('training_eval_lora.json', 'w') as f:
+    #    json.dump(train_data, f, indent=4)
+    visualize_mcc_per_task(mcc_data)
+    visualize_mcc_across_tasks(mcc_data)
+    visualize_normalized_mcc_across_tasks(mcc_data)
+    #visualize_training_loss(train_data)
