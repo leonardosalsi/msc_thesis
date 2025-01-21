@@ -1,3 +1,7 @@
+import os
+
+from config import pretrained_models_cache_dir
+
 TASKS = [
     {'taskId': 1,'repo': "InstaDeepAI/nucleotide_transformer_downstream_tasks_revised", 'name': "promoter_all", 'alias': "promoter_all", 'len': 300, 'sequence_feature': 'sequence', 'label_feature': 'label', 'num_labels': 2, 'data_alias': 'Promoter (all)'},
     {'taskId': 2,'repo': "InstaDeepAI/nucleotide_transformer_downstream_tasks_revised", 'name': "promoter_tata", 'alias': "promoter_tata", 'len': 300, 'sequence_feature': 'sequence', 'label_feature': 'label', 'num_labels': 2, 'data_alias': 'Promoter (TATA)'},
@@ -35,6 +39,7 @@ MODELS = [
     {'modelId': 4,'repo': "InstaDeepAI/nucleotide-transformer-v2-500m-multi-species", 'name': 'nucleotide-transformer-v2-500m-multi-species', 'data_alias': 'NT-MS V2 (500M)'},
     {'modelId': 5,'repo': "InstaDeepAI/nucleotide-transformer-500m-1000g", 'name': 'nucleotide-transformer-500m-1000g', 'data_alias': 'NT-1000g (500M)'},
     {'modelId': 6,'repo': "InstaDeepAI/nucleotide-transformer-500m-human-ref", 'name': 'nucleotide-transformer-500m-human-ref', 'data_alias': 'NT-Human-Ref. (500M)'},
+    {'modelId': 7,'repo': os.path.join(pretrained_models_cache_dir , "enhanced_model_01/checkpoint-3000/"), 'name': 'nucleotide-transformer-v2-50m-multi-species-it01', 'data_alias': 'NT-MS V2 (50M) IT01'},
 ]
 
 def generate_file(job_name, modelId, taskId, no_lora=False, random_weights=False):
