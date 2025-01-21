@@ -92,7 +92,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task, random_we
 
     """Load model overrides"""
     tokenizer = AutoTokenizer.from_pretrained(
-        model_dict['repo'],
+        model_dict['tokenizer'],
         cache_dir=models_cache_dir,
         trust_remote_code=True,
         local_files_only = True

@@ -33,13 +33,13 @@ TASKS = [
 ]
 
 MODELS = [
-    {'modelId': 1,'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'name': 'nucleotide-transformer-v2-50m-multi-species', 'data_alias': 'NT-MS V2 (50M)'},
-    {'modelId': 2,'repo': "InstaDeepAI/nucleotide-transformer-v2-100m-multi-species", 'name': 'nucleotide-transformer-v2-100m-multi-species', 'data_alias': 'NT-MS V2 (100M)'},
-    {'modelId': 3,'repo': "InstaDeepAI/nucleotide-transformer-v2-250m-multi-species", 'name': 'nucleotide-transformer-v2-250m-multi-species', 'data_alias': 'NT-MS V2 (250M)'},
-    {'modelId': 4,'repo': "InstaDeepAI/nucleotide-transformer-v2-500m-multi-species", 'name': 'nucleotide-transformer-v2-500m-multi-species', 'data_alias': 'NT-MS V2 (500M)'},
-    {'modelId': 5,'repo': "InstaDeepAI/nucleotide-transformer-500m-1000g", 'name': 'nucleotide-transformer-500m-1000g', 'data_alias': 'NT-1000g (500M)'},
-    {'modelId': 6,'repo': "InstaDeepAI/nucleotide-transformer-500m-human-ref", 'name': 'nucleotide-transformer-500m-human-ref', 'data_alias': 'NT-Human-Ref. (500M)'},
-    {'modelId': 7,'repo': os.path.join(pretrained_models_cache_dir , "enhanced_model_01/checkpoint-3000/"), 'name': 'nucleotide-transformer-v2-50m-multi-species-it01', 'data_alias': 'NT-MS V2 (50M) IT01'},
+    {'modelId': 1,'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'name': 'nucleotide-transformer-v2-50m-multi-species', 'data_alias': 'NT-MS V2 (50M)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species"},
+    {'modelId': 2,'repo': "InstaDeepAI/nucleotide-transformer-v2-100m-multi-species", 'name': 'nucleotide-transformer-v2-100m-multi-species', 'data_alias': 'NT-MS V2 (100M)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-100m-multi-species"},
+    {'modelId': 3,'repo': "InstaDeepAI/nucleotide-transformer-v2-250m-multi-species", 'name': 'nucleotide-transformer-v2-250m-multi-species', 'data_alias': 'NT-MS V2 (250M)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-250m-multi-species"},
+    {'modelId': 4,'repo': "InstaDeepAI/nucleotide-transformer-v2-500m-multi-species", 'name': 'nucleotide-transformer-v2-500m-multi-species', 'data_alias': 'NT-MS V2 (500M)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-500m-multi-species"},
+    {'modelId': 5,'repo': "InstaDeepAI/nucleotide-transformer-500m-1000g", 'name': 'nucleotide-transformer-500m-1000g', 'data_alias': 'NT-1000g (500M)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-500m-1000g"},
+    {'modelId': 6,'repo': "InstaDeepAI/nucleotide-transformer-500m-human-ref", 'name': 'nucleotide-transformer-500m-human-ref', 'data_alias': 'NT-Human-Ref. (500M)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-500m-human-ref"},
+    {'modelId': 7,'repo': os.path.join(pretrained_models_cache_dir , "enhanced_model_01/checkpoint-3000/"), 'name': 'nucleotide-transformer-v2-50m-multi-species-it01', 'data_alias': 'NT-MS V2 (50M) IT01', 'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species"},
 ]
 
 def generate_file(job_name, modelId, taskId, no_lora=False, random_weights=False):
