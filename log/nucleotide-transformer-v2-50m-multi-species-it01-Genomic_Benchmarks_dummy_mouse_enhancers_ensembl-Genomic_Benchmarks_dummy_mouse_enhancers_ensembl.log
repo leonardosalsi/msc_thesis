@@ -1,0 +1,7 @@
+nucleotide-transformer-v2-50m-multi-species-it01-Genomic_Benchmarks_dummy_mouse_enhancers_ensembl on Genomic_Benchmarks_dummy_mouse_enhancers_ensembl
+Using GPU: NVIDIA GeForce RTX 2080 Ti
+Dataset  loaded and splits created
+Loading model with pretrained weights.
+LoRA model loaded
+Model nucleotide-transformer-v2-50m-multi-species-it01 loaded on device cuda
+Tokenizer nucleotide-transformer-v2-50m-multi-species-it01 loaded
