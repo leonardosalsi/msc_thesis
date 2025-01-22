@@ -1,0 +1,20 @@
+LOGLEVEL = 22
+
+def get_chunk_size_folder_name(chunk_size) -> str:
+    return str(chunk_size / 1000).replace(".", "_") + "kbp"
+
+
+import logging as pyLogging
+def init_logger():
+    pyLogging.basicConfig(
+        filename=f"/dev/null",
+        filemode="a",
+        level=LOGLEVEL,  # Log level
+        format="%(message)s"
+    )
+    logger = pyLogging.getLogger()
+    console_handler = pyLogging.StreamHandler()
+    console_handler.setLevel(LOGLEVEL)
+    console_handler.setFormatter(pyLogging.Formatter("%(message)s"))
+    logger.addHandler(console_handler)
+    return logger

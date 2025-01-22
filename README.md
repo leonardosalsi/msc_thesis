@@ -55,7 +55,7 @@ Each job calls `evaluate_model_mcc.py` and selects the model and the downstream 
 > use models with random weights instead of pretrained models and whether to employ LoRA or not.
 
 ```shell
-evaluate_model_mcc.py modelId taskId [-h] [--random-weights] [--no-lora]
+evaluate_model.py modelId taskId [-h] [--random-weights] [--no-lora]
 ```
 
 > **NOTE** Currently, `evaluate_model_mcc.py` expects all models and datasets to be downlaoded already. A WIP is the
