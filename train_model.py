@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import math
 import os
 
 import json
@@ -64,6 +65,10 @@ if __name__ == "__main__":
     chunk_size_folder_name = get_chunk_size_folder_name(args.chunk_size)
     train_from_scratch = args.from_scratch
     logger = init_logger()
+
+    num = math.floor(args.chunk_size / 1000)
+    num_tokens = num * 1000
+    gradient_accumulation_steps = 2 / num
     """
     Get device
     """
@@ -106,13 +111,13 @@ if __name__ == "__main__":
         tokenizer = OverlappingEsmTokenizer(
             vocab_file="model_configs/vocab.txt",
             model_max_length=2048,
-            num_tokens=1000
+            num_tokens=num_tokens
         )
     elif selected_tokenizer == "OverlappingEsmTokenizerWithNSkipping":
         tokenizer = OverlappingEsmTokenizerWithNSkipping(
             vocab_file="model_configs/vocab.txt",
             model_max_length=2048,
-            num_tokens=1000
+            num_tokens=num_tokens
         )
     else:
         raise ValueError("The specified tokenizer does not exist.")
