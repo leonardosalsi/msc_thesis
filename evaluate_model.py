@@ -6,7 +6,7 @@ from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
 from config import models_cache_dir, datasets_cache_dir
 from datasets.utils.logging import disable_progress_bar, set_verbosity
-from util import LOGLEVEL, init_logger
+from util import LOGLEVEL, init_logger, get_model_by_id, get_task_by_id
 import numpy as np
 from peft import LoraConfig, TaskType, get_peft_model
 import traceback
@@ -51,7 +51,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task, random_we
     """Load model and move to device"""
     if random_weights:
         logger.log(LOGLEVEL, f"Loading model with random weights.")
-        config = EsmConfig.from_pretrained(f"{models_cache_dir}/config-{model_dict['name']}.json", num_labels=task["num_labels"], local_files_only=True, trust_remote_code=True)
+        config = EsmConfig.from_pretrained(f"model_configs/config-{model_dict['name']}.json", num_labels=task["num_labels"], local_files_only=True, trust_remote_code=True)
         model = AutoModelForSequenceClassification.from_config(config)
     else:
         logger.log(LOGLEVEL, f"Loading model with pretrained weights.")
@@ -223,17 +223,6 @@ def parse_args():
     )
     return parser.parse_args()
 
-def get_model_by_id(modelId):
-    for model in MODELS:
-        if model['modelId'] == modelId:
-            return model
-    return None
-
-def get_task_by_id(taskId):
-    for task in TASKS:
-        if task['taskId'] == taskId:
-            return task
-    return None
 
 if __name__ == "__main__":
     args = parse_args()

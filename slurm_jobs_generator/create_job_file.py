@@ -1,5 +1,7 @@
 import os
-from slurm_jobs_generator._tokenization_job import ask_tokenization
+
+from slurm_jobs_generator._downsize_chunk_job import ask_downsize
+from slurm_jobs_generator._evaluate_job import ask_evaluation
 from slurm_jobs_generator._training_job import ask_training
 
 if __name__ == "__main__":
@@ -17,7 +19,7 @@ if __name__ == "__main__":
             break
         else:
             print("Invalid input. Select either y or n.")
-    print("Generate jobs for training [1], tokenization [2] or dataset splitting [3]?")
+    print("Generate jobs for training [1], model evaliation by MCC [2] or dataset chunk downsizing [3]?")
     mode = ""
     while True:
         ans = input("> ")
@@ -25,9 +27,10 @@ if __name__ == "__main__":
             ask_training(parent_folder)
             break
         elif ans == "2":
-            ask_tokenization(parent_folder)
+            ask_evaluation(parent_folder)
             break
         elif ans == "3":
+            ask_downsize(parent_folder)
             break
         else:
             print("Invalid input. Select 1, 2 or 3.")

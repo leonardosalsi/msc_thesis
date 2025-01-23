@@ -3,17 +3,19 @@ import argparse
 import os
 
 import json
+import time
 
 import torch
-from datasets import load_from_disk
+from datasets import load_from_disk, Dataset
+from sklearn.model_selection import train_test_split
 from transformers import (
     AutoModelForMaskedLM,
     Trainer,
     TrainingArguments,
     DataCollatorForLanguageModeling, AutoTokenizer, EsmConfig,
 )
-from config import models_cache_dir, pretrained_models_cache_dir, tokenizer_cache_dir, tokenized_datasets_dir, \
-    datasets_cache_dir
+from config import models_cache_dir, pretrained_models_cache_dir, tokenizer_cache_dir, \
+    datasets_cache_dir, logs_dir, generated_datasets_dir
 from overrides.tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 from overrides.tokenizer.OverlappingEsmTokenizerWithNSkipping import OverlappingEsmTokenizerWithNSkipping
 from util import init_logger, LOGLEVEL, get_chunk_size_folder_name
@@ -22,6 +24,12 @@ from util import init_logger, LOGLEVEL, get_chunk_size_folder_name
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Script to train model either from scratch or from pretrained weights with specified tokenization."
+    )
+    parser.add_argument(
+        "dataset",
+        type=str,
+        help="Name of the dataset",
+        choices=["multi_genome_dataset"]
     )
     parser.add_argument(
         "tokenizer",
@@ -42,9 +50,17 @@ def parse_args():
     )
     return parser.parse_args()
 
+
+def memory_safe_train_test_split(data, test_proportion=99.95):
+    ratio = int(len(data)/test_proportion) #should be int
+    data_train = data[ratio:,:]
+    data_test =  data[:ratio,:]
+    return data_train, data_test
+
 if __name__ == "__main__":
     args = parse_args()
     selected_tokenizer = args.tokenizer
+    selected_dataset = args.dataset
     chunk_size_folder_name = get_chunk_size_folder_name(args.chunk_size)
     train_from_scratch = args.from_scratch
     logger = init_logger()
@@ -58,44 +74,12 @@ if __name__ == "__main__":
         logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
 
     """
-    Get tokenizer
+    Load model
     """
-    if selected_tokenizer == "Default":
-        tokenizer = AutoTokenizer.from_pretrained(
-            "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
-            cache_dir=models_cache_dir,
-            trust_remote_code=True,
-            local_files_only=True
-        )
-    elif selected_tokenizer == "OverlappingEsmTokenizer":
-        tokenizer = OverlappingEsmTokenizer(
-            vocab_file="model_configs/vocab.txt",
-            model_max_length=2048,
-        )
-    elif selected_tokenizer == "OverlappingEsmTokenizerWithNSkipping":
-        tokenizer = OverlappingEsmTokenizerWithNSkipping(
-            vocab_file="model_configs/vocab.txt",
-            model_max_length=2048,
-        )
-    else:
-        raise ValueError("The specified tokenizer does not exist.")
 
-    def tokenize_function(examples):
-        outputs = tokenizer(examples["sequence"])
-        return outputs
-
-    tf = lambda examples: tokenize_function(examples)
-
-    logger.log(LOGLEVEL, "Tokenizer loaded")
-
-    """
-    Load dataset
-    """
-    dataset_train = load_from_disk(os.path.join(datasets_cache_dir, 'InstaDeepAI___multi_species_genomes', chunk_size_folder_name, 'train'))
-
-    logger.log(LOGLEVEL, "Dataset loaded")
     if train_from_scratch:
-        config = EsmConfig.from_pretrained(f"model_configs/config-nucleotide-transformer-v2-50m-multi-species.json", local_files_only=True, trust_remote_code=True)
+        config = EsmConfig.from_pretrained(f"model_configs/config-nucleotide-transformer-v2-50m-multi-species.json",
+                                           local_files_only=True, trust_remote_code=True)
         model = AutoModelForMaskedLM.from_config(config)
     else:
         model = AutoModelForMaskedLM.from_pretrained(
@@ -108,14 +92,84 @@ if __name__ == "__main__":
     model = model.to(device)
     logger.log(LOGLEVEL, "Model loaded")
 
+    """
+    Load tokenizer
+    """
+    if selected_tokenizer == "Default":
+        tokenizer = AutoTokenizer.from_pretrained(
+            "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+            cache_dir=models_cache_dir,
+            trust_remote_code=True,
+            local_files_only=True
+        )
+    elif selected_tokenizer == "OverlappingEsmTokenizer":
+        tokenizer = OverlappingEsmTokenizer(
+            vocab_file="model_configs/vocab.txt",
+            model_max_length=2048,
+            num_tokens=1000
+        )
+    elif selected_tokenizer == "OverlappingEsmTokenizerWithNSkipping":
+        tokenizer = OverlappingEsmTokenizerWithNSkipping(
+            vocab_file="model_configs/vocab.txt",
+            model_max_length=2048,
+            num_tokens=1000
+        )
+    else:
+        raise ValueError("The specified tokenizer does not exist.")
+
+    def tokenize_function(examples):
+        outputs = tokenizer(examples)
+        return outputs
+
+    tf = lambda examples: tokenize_function(examples)
+
+    logger.log(LOGLEVEL, "Tokenizer loaded")
+
+    """
+    Load dataset
+    """
+    dataset_train = load_from_disk(os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train'))
+    dataset_sequences = dataset_train["sequence"]
+    train_sequences, validation_sequences = train_test_split(dataset_sequences, test_size=0.05)
+    logger.log(LOGLEVEL, "Splits created")
+    train_sequences = Dataset.from_dict({"sequence": train_sequences})
+    validation_sequences = Dataset.from_dict({"sequence": validation_sequences})
+    logger.log(LOGLEVEL, "Dataset loaded")
+
+    """
+    Enable retokenization per epoch
+    
+    tokenized_train_sequences = train_sequences.map(
+        tf,
+        batched=True,
+    )
+
+    tokenized_validation_sequences = validation_sequences.map(
+        tf,
+        batched=True,
+    )
+    """
+    tokenized_train_sequences = train_sequences.shuffle(seed=time.time_ns())
+    tokenized_train_sequences = tokenized_train_sequences.set_transform(tokenize_function)
+
+    tokenized_validation_sequences = validation_sequences.shuffle(seed=time.time_ns())
+    tokenized_validation_sequences = tokenized_validation_sequences.set_transform(tokenize_function)
+
+    """
+    Instantiate collator
+    """
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
         mlm=True,
         mlm_probability=0.15
     )
 
+    """
+    Train model
+    """
+    created_model_name = f"{selected_tokenizer.lower()}_{selected_dataset.lower()}_{chunk_size_folder_name}"
     training_args = TrainingArguments(
-        output_dir=os.path.join(pretrained_models_cache_dir, "enhanced_model"),
+        output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
         num_train_epochs=1,
         per_device_train_batch_size=59,
@@ -136,18 +190,13 @@ if __name__ == "__main__":
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=dataset_train,
-        eval_dataset=dataset_validation,
+        train_dataset=tokenized_train_sequences,
+        eval_dataset=tokenized_validation_sequences,
         data_collator=data_collator,
     )
 
     trainer.train()
     logger.log(LOGLEVEL, "Training complete!")
-    log_history_path = os.path.join("./log", "log_history.json")
+    log_history_path = os.path.join(logs_dir, f"log_history_{created_model_name}.json")
     with open(log_history_path, "w") as log_file:
         json.dump(trainer.state.log_history, log_file, indent=4)
-
-    test_results = trainer.evaluate(eval_dataset=dataset_test)
-    test_results_path = os.path.join("./log", "test_results.json")
-    with open(test_results_path, "w") as test_file:
-        json.dump(test_results, test_file, indent=4)
