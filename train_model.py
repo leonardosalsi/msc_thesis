@@ -166,11 +166,10 @@ if __name__ == "__main__":
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
         num_train_epochs=10,
-        per_device_train_batch_size=50,
-        auto_find_batch_size=True,
-        gradient_accumulation_steps=50,
-        save_steps=400,
-        logging_steps=400,
+        per_device_train_batch_size=500,
+        gradient_accumulation_steps=2,
+        save_steps=100,
+        logging_steps=100,
         eval_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
@@ -179,7 +178,7 @@ if __name__ == "__main__":
         logging_dir='/dev/null',
         remove_unused_columns=False,
         fp16=False,
-        max_steps=3000,
+        max_steps=300,
         include_num_input_tokens_seen=True
     )
 
@@ -190,6 +189,8 @@ if __name__ == "__main__":
         eval_dataset=tokenized_validation_sequences,
         data_collator=data_collator,
     )
+
+    print(trainer.args.per_device_train_batch_size)
 
     trainer.train()
     logger.log(LOGLEVEL, "Training complete!")
