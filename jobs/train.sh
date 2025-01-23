@@ -1,0 +1,7 @@
+#!/bin/bash
+cd ..
+
+sbatch jobs/train-model-multi_genome_dataset-overlappingesmtokenizerwithnskipping-1_2kbp/train-model-multi_genome_dataset-overlappingesmtokenizerwithnskipping-1_2kbp.sh
+sbatch jobs/train-model-multi_genome_dataset-overlappingesmtokenizerwithnskipping-1_2kbp-from_scratch/train-model-multi_genome_dataset-overlappingesmtokenizerwithnskipping-1_2kbp-from_scratch.sh
+sbatch jobs/train-model-multi_genome_dataset-overlappingesmtokenizerwithnskipping-2_2kbp/train-model-multi_genome_dataset-overlappingesmtokenizerwithnskipping-2_2kbp.sh
+sbatch jobs/train-model-multi_genome_dataset-overlappingesmtokenizerwithnskipping-2_2kbp-from_scratch/train-model-multi_genome_dataset-overlappingesmtokenizerwithnskipping-2_2kbp-from_scratch.sh
