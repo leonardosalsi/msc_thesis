@@ -112,9 +112,9 @@ def _generate_file_for_training(parent_folder, model_ids, task_ids, random_weigh
     joined_task_ids = "".join(str(task_id) for task_id in task_ids)
     if random_weights:
         if not lora:
-            slurm_jobs_folder_name = f"eval-models-{joined_model_ids}-{joined_task_ids}-{samples}-from_scratch"
+            slurm_jobs_folder_name = f"eval-models-{joined_model_ids}-{joined_task_ids}-{samples}-random-weights"
         else:
-            slurm_jobs_folder_name = f"eval-models-{joined_model_ids}-{joined_task_ids}-{samples}-from_scratch-lora"
+            slurm_jobs_folder_name = f"eval-models-{joined_model_ids}-{joined_task_ids}-{samples}-random-weights-lora"
     else:
         if not lora:
             slurm_jobs_folder_name = f"eval-models-{joined_model_ids}-{joined_task_ids}-{samples}"
