@@ -2,9 +2,9 @@
 
 #SBATCH --job-name=train-model-multi_genome_dataset-overlappingesmtokenizerwithnskipping-1_2kbp
 #SBATCH --output=out/train-model-multi_genome_dataset-overlappingesmtokenizerwithnskipping-1_2kbp.txt
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=2
 #SBATCH --time=120:00:00
-#SBATCH --mem-per-cpu=16G
+#SBATCH --mem-per-cpu=32G
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
 
