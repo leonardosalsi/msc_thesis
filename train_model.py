@@ -190,8 +190,6 @@ if __name__ == "__main__":
         data_collator=data_collator,
     )
 
-    print(trainer.args.per_device_train_batch_size)
-
     trainer.train()
     logger.log(LOGLEVEL, "Training complete!")
     log_history_path = os.path.join(logs_dir, f"log_history_{created_model_name}.json")
