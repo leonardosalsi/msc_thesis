@@ -7,7 +7,7 @@ import time
 
 import torch
 from datasets import load_from_disk, Dataset
-from sklearn.model_selection import train_test_split
+
 from transformers import (
     AutoModelForMaskedLM,
     Trainer,
@@ -118,7 +118,7 @@ if __name__ == "__main__":
         raise ValueError("The specified tokenizer does not exist.")
 
     def tokenize_function(examples):
-        outputs = tokenizer(examples)
+        outputs = tokenizer(examples['sequence'])
         return outputs
 
     tf = lambda examples: tokenize_function(examples)
@@ -129,31 +129,22 @@ if __name__ == "__main__":
     Load dataset
     """
     dataset_train = load_from_disk(os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train'))
-    dataset_sequences = dataset_train["sequence"]
-    train_sequences, validation_sequences = train_test_split(dataset_sequences, test_size=0.05)
+    columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
+    dataset_train = dataset_train.remove_columns(columns_to_remove)
+    dataset_train = dataset_train.train_test_split(test_size=0.05)
     logger.log(LOGLEVEL, "Splits created")
-    train_sequences = Dataset.from_dict({"sequence": train_sequences})
-    validation_sequences = Dataset.from_dict({"sequence": validation_sequences})
+    train_sequences = dataset_train['train']
+    validation_sequences = dataset_train['test']
     logger.log(LOGLEVEL, "Dataset loaded")
 
     """
     Enable retokenization per epoch
-    
-    tokenized_train_sequences = train_sequences.map(
-        tf,
-        batched=True,
-    )
-
-    tokenized_validation_sequences = validation_sequences.map(
-        tf,
-        batched=True,
-    )
     """
-    tokenized_train_sequences = train_sequences.shuffle(seed=time.time_ns())
-    tokenized_train_sequences = tokenized_train_sequences.set_transform(tokenize_function)
+    tokenized_train_sequences = train_sequences.shuffle()
+    tokenized_train_sequences.set_transform(tokenize_function)
 
-    tokenized_validation_sequences = validation_sequences.shuffle(seed=time.time_ns())
-    tokenized_validation_sequences = tokenized_validation_sequences.set_transform(tokenize_function)
+    tokenized_validation_sequences = validation_sequences.shuffle()
+    tokenized_validation_sequences.set_transform(tokenize_function)
 
     """
     Instantiate collator
@@ -167,24 +158,29 @@ if __name__ == "__main__":
     """
     Train model
     """
-    created_model_name = f"{selected_tokenizer.lower()}_{selected_dataset.lower()}_{chunk_size_folder_name}"
+    if train_from_scratch:
+        created_model_name = f"{selected_tokenizer.lower()}_{selected_dataset.lower()}_{chunk_size_folder_name}_from_scratch"
+    else:
+        created_model_name = f"{selected_tokenizer.lower()}_{selected_dataset.lower()}_{chunk_size_folder_name}"
     training_args = TrainingArguments(
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
-        num_train_epochs=1,
-        per_device_train_batch_size=59,
+        num_train_epochs=10,
+        per_device_train_batch_size=50,
         auto_find_batch_size=True,
-        gradient_accumulation_steps=10,
-        save_steps=1000,
-        logging_steps=1000,
+        gradient_accumulation_steps=50,
+        save_steps=400,
+        logging_steps=400,
         eval_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
         dataloader_num_workers=2,
         gradient_checkpointing=False,
         logging_dir='/dev/null',
+        remove_unused_columns=False,
         fp16=False,
-        max_steps=3000
+        max_steps=3000,
+        include_num_input_tokens_seen=True
     )
 
     trainer = Trainer(
