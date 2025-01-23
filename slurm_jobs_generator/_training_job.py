@@ -104,7 +104,7 @@ source ~/.bashrc
 conda activate gpu_env
 
 HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \\
-python {python_train} {dataset_name} {tokenizer_name} {chunk_size} {"--from-scratch" if from_scratch else ""}"""
+python {python_train} {dataset_name} {tokenizer_name} {chunk_size} {"--from_scratch" if from_scratch else ""}"""
 
     with open(os.path.join(slurm_jobs_folder_local, f"{filename}.sh"), "w") as file:
         file.write(content)
