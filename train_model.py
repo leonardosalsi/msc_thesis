@@ -142,7 +142,7 @@ if __name__ == "__main__":
     dataset_train = load_from_disk(os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train'))
     columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
     dataset_train = dataset_train.remove_columns(columns_to_remove)
-    dataset_train = dataset_train.train_test_split(test_size=0.001)
+    dataset_train = dataset_train.train_test_split(test_size=0.005)
     logger.log(LOGLEVEL, "Splits created")
     train_sequences = dataset_train['train']
     validation_sequences = dataset_train['test']
@@ -178,10 +178,11 @@ if __name__ == "__main__":
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
         num_train_epochs=10,
-        per_device_train_batch_size=10,
+        per_device_train_batch_size=1, #10
         gradient_accumulation_steps=25,
-        save_steps=1000,
-        logging_steps=1000,
+        per_device_eval_batch_size=40,
+        save_steps=1,
+        logging_steps=1,
         eval_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
