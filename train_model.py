@@ -13,7 +13,7 @@ from transformers import (
     AutoModelForMaskedLM,
     Trainer,
     TrainingArguments,
-    DataCollatorForLanguageModeling, AutoTokenizer, EsmConfig,
+    DataCollatorForLanguageModeling, AutoTokenizer, EsmConfig, TrainerCallback,
 )
 from config import models_cache_dir, pretrained_models_cache_dir, tokenizer_cache_dir, \
     datasets_cache_dir, logs_dir, generated_datasets_dir
@@ -21,6 +21,11 @@ from overrides.tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 from overrides.tokenizer.OverlappingEsmTokenizerWithNSkipping import OverlappingEsmTokenizerWithNSkipping
 from util import init_logger, LOGLEVEL, get_chunk_size_folder_name
 
+class PrinterCallback(TrainerCallback):
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        _ = logs.pop("total_flos", None)
+        if state.is_local_process_zero:
+            print(logs)
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -136,12 +141,12 @@ if __name__ == "__main__":
     dataset_train = load_from_disk(os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train'))
     columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
     dataset_train = dataset_train.remove_columns(columns_to_remove)
-    dataset_train = dataset_train.train_test_split(test_size=0.05)
+    dataset_train = dataset_train.train_test_split(test_size=0.001)
     logger.log(LOGLEVEL, "Splits created")
     train_sequences = dataset_train['train']
     validation_sequences = dataset_train['test']
     logger.log(LOGLEVEL, "Dataset loaded")
-
+    logger.log(LOGLEVEL, f"Total training tokens: {len(train_sequences) * 1000}")
     """
     Enable retokenization per epoch
     """
@@ -174,8 +179,8 @@ if __name__ == "__main__":
         num_train_epochs=10,
         per_device_train_batch_size=10,
         gradient_accumulation_steps=100,
-        save_steps=100000,
-        logging_steps=1,
+        save_steps=1000,
+        logging_steps=1000,
         eval_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
@@ -184,7 +189,7 @@ if __name__ == "__main__":
         logging_dir='/dev/null',
         remove_unused_columns=False,
         fp16=True,
-        max_steps=900000,
+        max_steps=9000,
         include_num_input_tokens_seen=True,
     )
 
