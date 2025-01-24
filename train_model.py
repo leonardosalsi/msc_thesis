@@ -142,7 +142,7 @@ if __name__ == "__main__":
     dataset_train = load_from_disk(os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train'))
     columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
     dataset_train = dataset_train.remove_columns(columns_to_remove)
-    dataset_train = dataset_train.train_test_split(test_size=0.005)
+    dataset_train = dataset_train.train_test_split(test_size=0.02)
     logger.log(LOGLEVEL, "Splits created")
     train_sequences = dataset_train['train']
     validation_sequences = dataset_train['test']
