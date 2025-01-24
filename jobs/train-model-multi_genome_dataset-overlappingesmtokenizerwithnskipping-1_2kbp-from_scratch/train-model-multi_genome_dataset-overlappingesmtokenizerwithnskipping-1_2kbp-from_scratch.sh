@@ -6,7 +6,7 @@
 #SBATCH --time=48:00:00
 #SBATCH --mem-per-cpu=40G
 #SBATCH -p gpu
-#SBATCH --gres=gpu:rtx2080ti:4
+#SBATCH --gres=gpu:rtx2080ti:1
 
 source ~/.bashrc
 conda activate gpu_env
