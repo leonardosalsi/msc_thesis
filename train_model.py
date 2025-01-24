@@ -172,7 +172,7 @@ if __name__ == "__main__":
         overwrite_output_dir=True,
         num_train_epochs=10,
         per_device_train_batch_size=125,
-        gradient_accumulation_steps=2,
+        gradient_accumulation_steps=8,
         save_steps=100,
         logging_steps=100,
         eval_strategy="steps",

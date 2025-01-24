@@ -12,4 +12,4 @@ source ~/.bashrc
 conda activate gpu_env
 
 HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \
-python -m torch.distributed.run --nproc_per_node=4 /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/train_model.py multi_genome_dataset OverlappingEsmTokenizerWithNSkipping 1200 --from_scratch
+python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/train_model.py multi_genome_dataset OverlappingEsmTokenizerWithNSkipping 1200 --from_scratch
