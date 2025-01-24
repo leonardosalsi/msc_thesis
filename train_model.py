@@ -171,10 +171,10 @@ if __name__ == "__main__":
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
         num_train_epochs=10,
-        per_device_train_batch_size=125,
-        gradient_accumulation_steps=8,
-        save_steps=100,
-        logging_steps=100,
+        per_device_train_batch_size=50,
+        gradient_accumulation_steps=20,
+        save_steps=100000,
+        logging_steps=100000,
         eval_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
@@ -183,7 +183,7 @@ if __name__ == "__main__":
         logging_dir='/dev/null',
         remove_unused_columns=False,
         fp16=False,
-        max_steps=1000,
+        max_steps=900000,
         include_num_input_tokens_seen=True,
     )
 
