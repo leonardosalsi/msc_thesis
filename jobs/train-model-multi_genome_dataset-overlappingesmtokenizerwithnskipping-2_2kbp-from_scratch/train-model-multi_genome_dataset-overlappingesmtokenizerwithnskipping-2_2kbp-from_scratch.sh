@@ -15,5 +15,5 @@ export HF_DATASETS_OFFLINE=1
 export HF_HUB_OFFLINE=1
 
 # Launch the training script with torchrun for multi-GPU DDP
-torchrun --nproc_per_node=4 --master_addr=127.0.0.1 --master_port=29500 /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/train_model.py \
+torchrun --nproc_per_node=4 --backend=nccl --master_addr=127.0.0.1 --master_port=29500 /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/train_model.py \
     multi_genome_dataset OverlappingEsmTokenizerWithNSkipping 2200 --from_scratch
