@@ -171,7 +171,7 @@ if __name__ == "__main__":
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
         num_train_epochs=10,
-        per_device_train_batch_size=500,
+        per_device_train_batch_size=125,
         gradient_accumulation_steps=2,
         save_steps=100,
         logging_steps=100,
@@ -184,7 +184,7 @@ if __name__ == "__main__":
         remove_unused_columns=False,
         fp16=False,
         max_steps=1000,
-        include_num_input_tokens_seen=True
+        include_num_input_tokens_seen=True,
     )
 
     trainer = Trainer(
