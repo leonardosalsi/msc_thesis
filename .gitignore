@@ -3,6 +3,6 @@ InstaDeepAI
 config.py
 out/*
 !out/_
-test.py
+test*.py
 .idea
 __pycache__

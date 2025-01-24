@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import gc
 import math
 import os
 
@@ -178,7 +179,7 @@ if __name__ == "__main__":
         overwrite_output_dir=True,
         num_train_epochs=10,
         per_device_train_batch_size=10,
-        gradient_accumulation_steps=100,
+        gradient_accumulation_steps=25,
         save_steps=1000,
         logging_steps=1000,
         eval_strategy="steps",
@@ -189,7 +190,7 @@ if __name__ == "__main__":
         logging_dir='/dev/null',
         remove_unused_columns=False,
         fp16=True,
-        max_steps=9000,
+        max_steps=6000,
         include_num_input_tokens_seen=True,
     )
 
@@ -198,7 +199,7 @@ if __name__ == "__main__":
         args=training_args,
         train_dataset=tokenized_train_sequences,
         eval_dataset=tokenized_validation_sequences,
-        data_collator=data_collator
+        data_collator=data_collator,
     )
 
     trainer.train()
