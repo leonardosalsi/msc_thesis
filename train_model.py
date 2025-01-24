@@ -167,14 +167,15 @@ if __name__ == "__main__":
         created_model_name = f"{selected_tokenizer.lower()}_{selected_dataset.lower()}_{chunk_size_folder_name}_from_scratch"
     else:
         created_model_name = f"{selected_tokenizer.lower()}_{selected_dataset.lower()}_{chunk_size_folder_name}"
+
     training_args = TrainingArguments(
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
         num_train_epochs=10,
-        per_device_train_batch_size=50,
-        gradient_accumulation_steps=20,
+        per_device_train_batch_size=10,
+        gradient_accumulation_steps=100,
         save_steps=100000,
-        logging_steps=100000,
+        logging_steps=1,
         eval_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
@@ -182,7 +183,7 @@ if __name__ == "__main__":
         gradient_checkpointing=False,
         logging_dir='/dev/null',
         remove_unused_columns=False,
-        fp16=False,
+        fp16=True,
         max_steps=900000,
         include_num_input_tokens_seen=True,
     )
@@ -192,7 +193,7 @@ if __name__ == "__main__":
         args=training_args,
         train_dataset=tokenized_train_sequences,
         eval_dataset=tokenized_validation_sequences,
-        data_collator=data_collator,
+        data_collator=data_collator
     )
 
     trainer.train()
