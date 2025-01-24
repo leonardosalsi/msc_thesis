@@ -8,6 +8,7 @@
 #SBATCH -p gpu
 #SBATCH --gres=gpu:v100:4
 
+enable_modules
 module load cudacore/.11.8.0 StdEnv/2023
 
 source ~/.bashrc
