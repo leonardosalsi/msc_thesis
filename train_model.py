@@ -22,11 +22,7 @@ from overrides.tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 from overrides.tokenizer.OverlappingEsmTokenizerWithNSkipping import OverlappingEsmTokenizerWithNSkipping
 from util import init_logger, LOGLEVEL, get_chunk_size_folder_name
 
-class PrinterCallback(TrainerCallback):
-    def on_log(self, args, state, control, logs=None, **kwargs):
-        _ = logs.pop("total_flos", None)
-        if state.is_local_process_zero:
-            print(logs)
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -148,14 +144,17 @@ if __name__ == "__main__":
     validation_sequences = dataset_train['test'].select(range(100))
     logger.log(LOGLEVEL, "Dataset loaded")
     logger.log(LOGLEVEL, f"Total training tokens: {len(train_sequences) * 1000}")
+
     """
     Enable retokenization per epoch
     """
     tokenized_train_sequences = train_sequences.shuffle()
-    tokenized_train_sequences.set_transform(tokenize_function)
+    #tokenized_train_sequences.set_transform(tokenize_function)
+    tokenized_train_sequences = tokenized_train_sequences.map(tf, batched=True, num_proc=4)
 
     tokenized_validation_sequences = validation_sequences.shuffle()
-    tokenized_validation_sequences.set_transform(tokenize_function)
+    #tokenized_validation_sequences.set_transform(tokenize_function)
+    tokenized_validation_sequences = tokenized_validation_sequences.map(tf, batched=True, num_proc=4)
 
     """
     Instantiate collator
@@ -178,7 +177,7 @@ if __name__ == "__main__":
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
         num_train_epochs=50,
-        per_device_train_batch_size=5,
+        per_device_train_batch_size=10,
         gradient_accumulation_steps=25,
         per_device_eval_batch_size=80,
         save_steps=100000,
@@ -186,7 +185,7 @@ if __name__ == "__main__":
         eval_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
-        dataloader_num_workers=2,
+        dataloader_num_workers=8,
         gradient_checkpointing=False,
         logging_dir='/dev/null',
         remove_unused_columns=False,
