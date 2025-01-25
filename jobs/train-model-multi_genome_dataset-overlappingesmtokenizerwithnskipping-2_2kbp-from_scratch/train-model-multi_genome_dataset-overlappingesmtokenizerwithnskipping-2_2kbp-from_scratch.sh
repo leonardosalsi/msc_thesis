@@ -4,7 +4,7 @@
 #SBATCH --output=out/train-model-multi_genome_dataset-overlappingesmtokenizerwithnskipping-2_2kbp-from_scratch.txt
 #SBATCH --cpus-per-task=4
 #SBATCH --time=72:00:00
-#SBATCH --mem-per-cpu=40G
+#SBATCH --mem-per-cpu=20G
 #SBATCH -p gpu
 #SBATCH --gres=gpu:v100:4
 
