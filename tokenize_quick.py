@@ -1,7 +1,10 @@
 import argparse
 import os.path
 from datasets import load_from_disk
+from transformers import AutoTokenizer
+
 from config import datasets_cache_dir, models_cache_dir, tokenizer_cache_dir, generated_datasets_dir
+from overrides.tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 from overrides.tokenizer.OverlappingEsmTokenizerWithNSkipping import OverlappingEsmTokenizerWithNSkipping
 from util import get_chunk_size_folder_name
 
@@ -35,14 +38,29 @@ if __name__ == "__main__":
     selected_dataset = args.dataset
     chunk_size_folder_name = get_chunk_size_folder_name(args.chunk_size)
 
-
     dataset_train = load_from_disk(os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train'))
 
-    tokenizer = OverlappingEsmTokenizerWithNSkipping(
-        vocab_file="model_configs/vocab.txt",
-        model_max_length=2048,
-        num_tokens=1000
-    )
+    if selected_tokenizer == "Default":
+        tokenizer = AutoTokenizer.from_pretrained(
+            "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+            cache_dir=models_cache_dir,
+            trust_remote_code=True,
+            local_files_only=True
+        )
+    elif selected_tokenizer == "OverlappingEsmTokenizer":
+        tokenizer = OverlappingEsmTokenizer(
+            vocab_file="model_configs/vocab.txt",
+            model_max_length=2048,
+            num_tokens=1000
+        )
+    elif selected_tokenizer == "OverlappingEsmTokenizerWithNSkipping":
+        tokenizer = OverlappingEsmTokenizerWithNSkipping(
+            vocab_file="model_configs/vocab.txt",
+            model_max_length=2048,
+            num_tokens=1000
+        )
+    else:
+        raise ValueError("The specified tokenizer does not exist.")
 
     tokenizer_name = type(tokenizer).__name__
     def tokenize_function(examples):
@@ -59,6 +77,6 @@ if __name__ == "__main__":
         batched=False,
         num_proc=4,
         remove_columns=dataset_train.column_names,
-        cache_file_name=os.path.join(tokenizer_model_cache_path, f"TEST.arrow"),
+        cache_file_name=os.path.join(tokenizer_model_cache_path, selected_dataset, chunk_size_folder_name, "train.json"),
     )
     tokenized_dataset.save_to_disk(os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train_tokenized'))
