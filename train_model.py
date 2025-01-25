@@ -145,7 +145,7 @@ if __name__ == "__main__":
     dataset_train = dataset_train.train_test_split(test_size=0.02)
     logger.log(LOGLEVEL, "Splits created")
     train_sequences = dataset_train['train']
-    validation_sequences = dataset_train['test']
+    validation_sequences = dataset_train['test'].select(range(100))
     logger.log(LOGLEVEL, "Dataset loaded")
     logger.log(LOGLEVEL, f"Total training tokens: {len(train_sequences) * 1000}")
     """
