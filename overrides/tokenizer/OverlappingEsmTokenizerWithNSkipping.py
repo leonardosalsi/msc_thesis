@@ -32,5 +32,5 @@ class OverlappingEsmTokenizerWithNSkipping(EsmTokenizer):
         length = len(tokens)
         end_idx = length - self.num_tokens
         idx = random.randint(0, end_idx)
-        tokens = tokens[idx:idx+self.num_tokens - 2]
+        tokens = tokens[idx:idx+self.num_tokens]
         return tokens
