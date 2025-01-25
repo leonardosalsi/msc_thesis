@@ -71,6 +71,15 @@ if __name__ == "__main__":
     num = math.floor(args.chunk_size / 1000)
     num_tokens = num * 1000
     gradient_accumulation_steps = 2 / num
+
+    """
+    Define setup name
+    """
+    if train_from_scratch:
+        created_model_name = f"{selected_tokenizer.lower()}_{selected_dataset.lower()}_{chunk_size_folder_name}_from_scratch"
+    else:
+        created_model_name = f"{selected_tokenizer.lower()}_{selected_dataset.lower()}_{chunk_size_folder_name}"
+
     """
     Get device
     """
@@ -138,23 +147,26 @@ if __name__ == "__main__":
     dataset_train = load_from_disk(os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train'))
     columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
     dataset_train = dataset_train.remove_columns(columns_to_remove)
-    dataset_train = dataset_train.train_test_split(test_size=0.02)
-    logger.log(LOGLEVEL, "Splits created")
-    train_sequences = dataset_train['train']
-    validation_sequences = dataset_train['test'].select(range(100))
     logger.log(LOGLEVEL, "Dataset loaded")
+
+    """
+    Pre-tokenize
+    """
+    tokenized_dataset_train = dataset_train.map(
+        tf,
+        batched=False,
+        num_proc=4,
+        cache_file_name=os.path.join(tokenizer_cache_dir, created_model_name, 'dataset.json'),
+        remove_columns=['sequence']
+    )
+    print(tokenized_dataset_train[0])
+    logger.log(LOGLEVEL, "Dataset tokenized")
+
+    tokenized_splits = tokenized_dataset_train.train_test_split(test_size=0.02)
+
+    train_sequences = tokenized_splits['train']
+    validation_sequences = tokenized_splits['test']
     logger.log(LOGLEVEL, f"Total training tokens: {len(train_sequences) * 1000}")
-
-    """
-    Enable retokenization per epoch
-    """
-    tokenized_train_sequences = train_sequences.shuffle()
-    #tokenized_train_sequences.set_transform(tokenize_function)
-    tokenized_train_sequences = tokenized_train_sequences.map(tf, batched=True, num_proc=4)
-
-    tokenized_validation_sequences = validation_sequences.shuffle()
-    #tokenized_validation_sequences.set_transform(tokenize_function)
-    tokenized_validation_sequences = tokenized_validation_sequences.map(tf, batched=True, num_proc=4)
 
     """
     Instantiate collator
@@ -168,11 +180,6 @@ if __name__ == "__main__":
     """
     Train model
     """
-    if train_from_scratch:
-        created_model_name = f"{selected_tokenizer.lower()}_{selected_dataset.lower()}_{chunk_size_folder_name}_from_scratch"
-    else:
-        created_model_name = f"{selected_tokenizer.lower()}_{selected_dataset.lower()}_{chunk_size_folder_name}"
-
     training_args = TrainingArguments(
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
@@ -197,8 +204,8 @@ if __name__ == "__main__":
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=tokenized_train_sequences,
-        eval_dataset=tokenized_validation_sequences,
+        train_dataset=train_sequences,
+        eval_dataset=validation_sequences,
         data_collator=data_collator,
     )
 
