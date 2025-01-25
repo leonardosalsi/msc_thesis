@@ -177,8 +177,8 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
-        num_train_epochs=10,
-        per_device_train_batch_size=10,
+        num_train_epochs=50,
+        per_device_train_batch_size=5,
         gradient_accumulation_steps=25,
         per_device_eval_batch_size=80,
         save_steps=100000,
@@ -191,7 +191,7 @@ if __name__ == "__main__":
         logging_dir='/dev/null',
         remove_unused_columns=False,
         fp16=True,
-        max_steps=600000,
+        max_steps=300000,
         include_num_input_tokens_seen=True,
     )
 
