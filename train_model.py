@@ -155,7 +155,7 @@ if __name__ == "__main__":
     tokenized_dataset_train = dataset_train.map(
         tf,
         batched=False,
-        num_proc=4,
+        num_proc=80,
         cache_file_name=os.path.join(tokenizer_cache_dir, created_model_name, 'dataset.json'),
         remove_columns=['sequence']
     )
