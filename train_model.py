@@ -183,18 +183,56 @@ if __name__ == "__main__":
     )
 
 
+
+
     """
-    Check VRAM
+    Train model
     """
+    training_args = TrainingArguments(
+        output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
+        overwrite_output_dir=True,
+        per_gpu_train_batch_size=64,
+        gradient_accumulation_steps=1000,
+        per_device_eval_batch_size=10,
+        save_steps=1000,
+        logging_steps=1000,
+        eval_strategy="steps",
+        load_best_model_at_end=True,
+        metric_for_best_model="loss",
+        dataloader_num_workers=2,
+        gradient_checkpointing=False,
+        auto_find_batch_size=True,
+        logging_dir='/dev/null',
+        remove_unused_columns=False,
+        fp16=True,
+        max_steps=100000,
+        include_num_input_tokens_seen=True,
+    )
+
+
+
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=tokenized_train_sequences,
+        eval_dataset=tokenized_validation_sequences,
+        data_collator=data_collator,
+    )
+
+    """
+        Check VRAM
+        """
     sample = tokenized_train_sequences[0]
-    batch_size = 20
-    print(f"Batch size: {batch_size}")
+    batch_size_device = trainer.args.per_device_train_batch_size
+    batch_size_gpu = trainer.args.per_gpu_train_batch_size
+    logger.log(LOGLEVEL,f"Batch size (Device): {batch_size_device}")
+    logger.log(LOGLEVEL,f"Batch size (GPU): {batch_size_gpu}")
     total_vram = torch.cuda.get_device_properties(device).total_memory
     logger.log(LOGLEVEL, f"Total VRAM: {total_vram / (1024 ** 3):.2f} GB")
     logger.log(LOGLEVEL, f"Baseline VRAM usage: {baseline_memory / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
 
     torch.cuda.empty_cache()
-    batch = data_collator([sample]*batch_size)
+    batch = data_collator([sample] * batch_size_gpu)
     for key in batch:
         batch[key] = batch[key].to(device)
     before_fwd = torch.cuda.memory_allocated(device)
@@ -206,41 +244,11 @@ if __name__ == "__main__":
 
     # Print VRAM usage statistics
 
-    logger.log(LOGLEVEL, f"VRAM usage after forward pass: {after_fwd / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
-    logger.log(LOGLEVEL, f"VRAM used for forward pass: {used_for_fwd / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
+    logger.log(LOGLEVEL,
+               f"VRAM usage after forward pass: {after_fwd / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
+    logger.log(LOGLEVEL,
+               f"VRAM used for forward pass: {used_for_fwd / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
     exit(0)
-
-
-    """
-    Train model
-    """
-    training_args = TrainingArguments(
-        output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
-        overwrite_output_dir=True,
-        per_device_train_batch_size=1,
-        gradient_accumulation_steps=1000,
-        per_device_eval_batch_size=10,
-        save_steps=1000,
-        logging_steps=1000,
-        eval_strategy="steps",
-        load_best_model_at_end=True,
-        metric_for_best_model="loss",
-        dataloader_num_workers=2,
-        gradient_checkpointing=False,
-        logging_dir='/dev/null',
-        remove_unused_columns=False,
-        fp16=True,
-        max_steps=100000,
-        include_num_input_tokens_seen=True,
-    )
-
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=tokenized_train_sequences,
-        eval_dataset=tokenized_validation_sequences,
-        data_collator=data_collator,
-    )
 
     trainer.train()
     logger.log(LOGLEVEL, "Training complete!")
