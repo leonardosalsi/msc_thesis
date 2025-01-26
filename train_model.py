@@ -192,8 +192,8 @@ if __name__ == "__main__":
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
         per_device_train_batch_size=64,
-        gradient_accumulation_steps=1000,
-        per_device_eval_batch_size=10,
+        gradient_accumulation_steps=4,
+        per_device_eval_batch_size=64,
         save_steps=1000,
         logging_steps=1000,
         eval_strategy="steps",
@@ -205,7 +205,7 @@ if __name__ == "__main__":
         logging_dir='/dev/null',
         remove_unused_columns=False,
         fp16=True,
-        max_steps=100000,
+        max_steps=600000,
         include_num_input_tokens_seen=True,
     )
 
@@ -221,7 +221,7 @@ if __name__ == "__main__":
 
     """
         Check VRAM
-        """
+        
     sample = tokenized_train_sequences[0]
     batch_size_device = trainer.args.per_device_train_batch_size
     logger.log(LOGLEVEL,f"Batch size (Device): {batch_size_device}")
@@ -247,7 +247,7 @@ if __name__ == "__main__":
     logger.log(LOGLEVEL,
                f"VRAM used for forward pass: {used_for_fwd / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
     exit(0)
-
+    """
     trainer.train()
     logger.log(LOGLEVEL, "Training complete!")
     log_history_path = os.path.join(logs_dir, f"log_history_{created_model_name}.json")
