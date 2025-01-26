@@ -144,7 +144,7 @@ if __name__ == "__main__":
     """
     Load dataset
     """
-    dataset_train = load_from_disk(os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train'))
+    dataset_train = load_from_disk(os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train_tokenized'))
     #columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
     #dataset_train = dataset_train.remove_columns(columns_to_remove)
     logger.log(LOGLEVEL, "Dataset loaded")
