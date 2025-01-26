@@ -191,7 +191,7 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
-        per_gpu_train_batch_size=64,
+        per_device_train_batch_size=64,
         gradient_accumulation_steps=1000,
         per_device_eval_batch_size=10,
         save_steps=1000,
@@ -224,15 +224,13 @@ if __name__ == "__main__":
         """
     sample = tokenized_train_sequences[0]
     batch_size_device = trainer.args.per_device_train_batch_size
-    batch_size_gpu = trainer.args.per_gpu_train_batch_size
     logger.log(LOGLEVEL,f"Batch size (Device): {batch_size_device}")
-    logger.log(LOGLEVEL,f"Batch size (GPU): {batch_size_gpu}")
     total_vram = torch.cuda.get_device_properties(device).total_memory
     logger.log(LOGLEVEL, f"Total VRAM: {total_vram / (1024 ** 3):.2f} GB")
     logger.log(LOGLEVEL, f"Baseline VRAM usage: {baseline_memory / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
 
     torch.cuda.empty_cache()
-    batch = data_collator([sample] * batch_size_gpu)
+    batch = data_collator([sample] * batch_size_device)
     for key in batch:
         batch[key] = batch[key].to(device)
     before_fwd = torch.cuda.memory_allocated(device)
