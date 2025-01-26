@@ -144,33 +144,24 @@ if __name__ == "__main__":
     """
     Load dataset
     """
-    dataset_train = load_from_disk(os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train_tokenized'))
-    #columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
-    #dataset_train = dataset_train.remove_columns(columns_to_remove)
+    dataset_train = load_from_disk(os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train'))
+    columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
+    dataset_train = dataset_train.remove_columns(columns_to_remove)
+    dataset_train = dataset_train.train_test_split(test_size=0.02)
+    logger.log(LOGLEVEL, "Splits created")
+    train_sequences = dataset_train['train']
+    validation_sequences = dataset_train['test']
     logger.log(LOGLEVEL, "Dataset loaded")
-    tokenized_splits = dataset_train.train_test_split(test_size=0.02)
-    train_sequences = tokenized_splits['train']
-    validation_sequences = tokenized_splits['test']
-    """
-    Pre-tokenize
-    
-    tokenized_dataset_train = dataset_train.map(
-        tf,
-        batched=False,
-        num_proc=40,
-        cache_file_name=os.path.join(tokenizer_cache_dir, created_model_name, 'dataset.json'),
-        remove_columns=['sequence']
-    )
-
-    print(tokenized_dataset_train[0])
-    logger.log(LOGLEVEL, "Dataset tokenized")
-
-    tokenized_splits = tokenized_dataset_train.train_test_split(test_size=0.02)
-
-    train_sequences = tokenized_splits['train']
-    validation_sequences = tokenized_splits['test']
     logger.log(LOGLEVEL, f"Total training tokens: {len(train_sequences) * 1000}")
     """
+    Enable retokenization per epoch
+    """
+    tokenized_train_sequences = train_sequences.shuffle()
+    tokenized_train_sequences.set_transform(tokenize_function)
+
+    tokenized_validation_sequences = validation_sequences.shuffle()
+    tokenized_validation_sequences.set_transform(tokenize_function)
+
 
     """
     Instantiate collator

@@ -1,6 +1,6 @@
 import argparse
 import os.path
-from datasets import load_from_disk
+from datasets import load_from_disk, load_dataset
 from transformers import AutoTokenizer
 
 from config import datasets_cache_dir, models_cache_dir, tokenizer_cache_dir, generated_datasets_dir
@@ -38,8 +38,13 @@ if __name__ == "__main__":
     selected_dataset = args.dataset
     chunk_size_folder_name = get_chunk_size_folder_name(args.chunk_size)
 
-    dataset_train = load_from_disk(os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train'))
-
+    #dataset_train = load_from_disk(os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train'))
+    dataset_train = load_dataset(
+        "InstaDeepAI/multi_species_genomes",
+        cache_dir=datasets_cache_dir,
+        split='train',
+        trust_remote_code=True
+    )
     if selected_tokenizer == "Default":
         tokenizer = AutoTokenizer.from_pretrained(
             "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
