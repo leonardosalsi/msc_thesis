@@ -191,18 +191,21 @@ if __name__ == "__main__":
     print(f"Batch size: {batch_size}")
     total_vram = torch.cuda.get_device_properties(device).total_memory
     logger.log(LOGLEVEL, f"Total VRAM: {total_vram}")
+    logger.log(LOGLEVEL, f"Baseline VRAM usage: {baseline_memory / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
+
     torch.cuda.empty_cache()
     batch = data_collator([sample]*batch_size)
     for key in batch:
         batch[key] = batch[key].to(device)
     before_fwd = torch.cuda.memory_allocated(device)
+    logger.log(LOGLEVEL,
+               f"VRAM usage before forward pass: {before_fwd / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
     output = model(**batch)
     after_fwd = torch.cuda.memory_allocated(device)
     used_for_fwd = after_fwd - before_fwd
 
     # Print VRAM usage statistics
-    logger.log(LOGLEVEL, f"Baseline VRAM usage: {baseline_memory / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
-    logger.log(LOGLEVEL, f"VRAM usage before forward pass: {before_fwd / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
+
     logger.log(LOGLEVEL, f"VRAM usage after forward pass: {after_fwd / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
     logger.log(LOGLEVEL, f"VRAM used for forward pass: {used_for_fwd / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
     exit(0)
