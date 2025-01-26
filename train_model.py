@@ -106,6 +106,12 @@ if __name__ == "__main__":
             low_cpu_mem_usage=True
         )
     model = model.to(device)
+    torch.cuda.empty_cache()
+
+
+    baseline_memory = torch.cuda.memory_allocated(device)
+
+
     logger.log(LOGLEVEL, "Model loaded")
 
     """
@@ -114,7 +120,9 @@ if __name__ == "__main__":
     if selected_tokenizer == "Default":
         tokenizer = AutoTokenizer.from_pretrained(
             "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+            model_max_length=2048,
             cache_dir=models_cache_dir,
+            remove_columns=['sequence'],
             trust_remote_code=True,
             local_files_only=True
         )
@@ -133,6 +141,7 @@ if __name__ == "__main__":
     else:
         raise ValueError("The specified tokenizer does not exist.")
 
+
     def tokenize_function(examples):
         outputs = tokenizer(examples['sequence'])
         return outputs
@@ -144,19 +153,14 @@ if __name__ == "__main__":
     """
     Load dataset
     """
-    #dataset_train = load_from_disk(os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train'))
-    dataset_train = load_dataset(
-        "InstaDeepAI/multi_species_genomes",
-        cache_dir=datasets_cache_dir,
-        split='train',
-        trust_remote_code=True
-    )
+    dataset_train = load_from_disk(os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train'))
     columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
     dataset_train = dataset_train.remove_columns(columns_to_remove)
     dataset_train = dataset_train.train_test_split(test_size=0.02)
     logger.log(LOGLEVEL, "Splits created")
     train_sequences = dataset_train['train']
     validation_sequences = dataset_train['test']
+
     logger.log(LOGLEVEL, "Dataset loaded")
     logger.log(LOGLEVEL, f"Total training tokens: {len(train_sequences) * 1000}")
     """
@@ -168,15 +172,39 @@ if __name__ == "__main__":
     tokenized_validation_sequences = validation_sequences.shuffle()
     tokenized_validation_sequences.set_transform(tokenize_function)
 
-
     """
     Instantiate collator
     """
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
         mlm=True,
-        mlm_probability=0.15
+        mlm_probability=0.15,
+        pad_to_multiple_of=8
     )
+
+
+    """
+    Check VRAM
+    """
+    sample = tokenized_train_sequences[0]
+    batch_size = 20
+    print(f"Batch size: {batch_size}")
+    torch.cuda.empty_cache()
+    batch = data_collator([sample]*batch_size)
+    for key in batch:
+        batch[key] = batch[key].to(device)
+    before_fwd = torch.cuda.memory_allocated(device)
+    output = model(**batch)
+    after_fwd = torch.cuda.memory_allocated(device)
+    used_for_fwd = after_fwd - before_fwd
+    total_vram = torch.cuda.get_device_properties(device).total_memory
+    # Print VRAM usage statistics
+    print(f"Baseline VRAM usage: {baseline_memory / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
+    print(f"VRAM usage before forward pass: {before_fwd / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
+    print(f"VRAM usage after forward pass: {after_fwd / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
+    print(f"VRAM used for forward pass: {used_for_fwd / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
+    exit(0)
+
 
     """
     Train model
@@ -184,12 +212,11 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
-        num_train_epochs=50,
-        per_device_train_batch_size=10,
-        gradient_accumulation_steps=25,
-        per_device_eval_batch_size=80,
-        save_steps=100000,
-        logging_steps=100000,
+        per_device_train_batch_size=1,
+        gradient_accumulation_steps=1000,
+        per_device_eval_batch_size=10,
+        save_steps=1000,
+        logging_steps=1000,
         eval_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
@@ -198,15 +225,15 @@ if __name__ == "__main__":
         logging_dir='/dev/null',
         remove_unused_columns=False,
         fp16=True,
-        max_steps=300000,
+        max_steps=100000,
         include_num_input_tokens_seen=True,
     )
 
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=train_sequences,
-        eval_dataset=validation_sequences,
+        train_dataset=tokenized_train_sequences,
+        eval_dataset=tokenized_validation_sequences,
         data_collator=data_collator,
     )
 
