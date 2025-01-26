@@ -8,7 +8,7 @@ import json
 import time
 
 import torch
-from datasets import load_from_disk, Dataset
+from datasets import load_from_disk, Dataset, load_dataset
 
 from transformers import (
     AutoModelForMaskedLM,
@@ -144,7 +144,13 @@ if __name__ == "__main__":
     """
     Load dataset
     """
-    dataset_train = load_from_disk(os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train'))
+    #dataset_train = load_from_disk(os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train'))
+    dataset_train = load_dataset(
+        "InstaDeepAI/multi_species_genomes",
+        cache_dir=datasets_cache_dir,
+        split='train',
+        trust_remote_code=True
+    )
     columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
     dataset_train = dataset_train.remove_columns(columns_to_remove)
     dataset_train = dataset_train.train_test_split(test_size=0.02)
