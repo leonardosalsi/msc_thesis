@@ -6,3 +6,5 @@ out/*
 test*.py
 .idea
 __pycache__
+tokenize_quick.py
+jobs/tokenize*
