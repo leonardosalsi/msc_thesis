@@ -182,9 +182,6 @@ if __name__ == "__main__":
         pad_to_multiple_of=8
     )
 
-
-
-
     """
     Train model
     """
@@ -208,7 +205,6 @@ if __name__ == "__main__":
         max_steps=600000,
         include_num_input_tokens_seen=True,
     )
-
 
 
     trainer = Trainer(
