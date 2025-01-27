@@ -124,6 +124,7 @@ def get_results(force_recompute = False):
         metadata_file = glob.glob(os.path.join(logan_data) + "/*.csv")[0]
         contigs_files = glob.glob(os.path.join(logan_data) + "/*.contigs.fa.zst")
         metadata = pd.read_csv(metadata_file)
+        metadata['kingdom'] = metadata['kingdom'].fillna('Other')
         kingdoms = list(set(metadata['kingdom']))
         organisms = list(set(metadata['organism']))
         kingdoms_ratios = {}
@@ -139,23 +140,27 @@ def get_results(force_recompute = False):
             filename = file.split('/')[-1].split('.')[0]
             entry = metadata.loc[metadata['acc'] == filename]
             _kingdom = entry['kingdom'].values[0]
+            _kingdom = _kingdom if pd.notna(_kingdom) else 'Other'
             _organism = entry['organism'].values[0]
             _mbases = entry['mbases'].values[0]
+            _mbases = _mbases if pd.notna(_mbases) else 0
             _organism_kmeans = entry['organism_kmeans'].values[0]
+            _organism_kmeans = _organism_kmeans if pd.notna(_organism_kmeans) else 0
             sequences = np.array(list(fasta_parsing_func(file)))
             graph = find_overlaps_and_build_graph(sequences, KMER)
             random_walk_sequences = random_walk_graph_sequences(graph, sequences)
             sequences_len = np.array([len(x) for x in sequences])
             random_walk_sequences_len = np.array([len(x) for x in random_walk_sequences])
-            sequence_length_ratio = np.mean(sequences_len / random_walk_sequences_len)
+            sequence_length_ratio = float(np.mean(sequences_len / random_walk_sequences_len))
+            print(_organism_kmeans)
             kingdoms_ratios[_kingdom].append(
-                {"acc": filename, "ratio": sequence_length_ratio, "mbases": _mbases, "organism_kmeans": _organism_kmeans})
+                {"acc": filename, "ratio": sequence_length_ratio, "mbases": int(_mbases)})
             organisms_ratios[_organism].append(
-                {"acc": filename, "ratio": sequence_length_ratio, "mbases": _mbases, "organism_kmeans": _organism_kmeans})
+                {"acc": filename, "ratio": sequence_length_ratio, "mbases": int(_mbases), "kmeans": int(_organism_kmeans)})
         _results = {"kingdoms": kingdoms_ratios, "organisms": organisms_ratios}
 
         with open(data_file, 'w', encoding='utf-8') as f:
-            json.dump(_results, f, ensure_ascii=False, indent=4)
+            json.dump(_results, f, indent=4)
         with open(data_file) as f:
             results = json.load(f)
         return results
@@ -176,3 +181,4 @@ if __name__ == "__main__":
     args = parse_args()
     force_recompute = args.force_recompute
     results = get_results(force_recompute)
+    print(results['kingdoms'])
