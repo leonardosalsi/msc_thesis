@@ -8,3 +8,4 @@ test*.py
 __pycache__
 tokenize_quick.py
 jobs/tokenize*
+getting_started_with_logan.ipynb
