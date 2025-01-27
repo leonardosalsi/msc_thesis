@@ -152,7 +152,6 @@ def get_results(force_recompute = False):
             sequences_len = np.array([len(x) for x in sequences])
             random_walk_sequences_len = np.array([len(x) for x in random_walk_sequences])
             sequence_length_ratio = float(np.mean(sequences_len / random_walk_sequences_len))
-            print(_organism_kmeans)
             kingdoms_ratios[_kingdom].append(
                 {"acc": filename, "ratio": sequence_length_ratio, "mbases": int(_mbases)})
             organisms_ratios[_organism].append(
