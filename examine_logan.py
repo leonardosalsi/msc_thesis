@@ -1,4 +1,5 @@
 import argparse
+import csv
 import os
 import sys
 import glob
@@ -21,7 +22,7 @@ from config import datasets_cache_dir, results_dir, logan_datasets_dir
 ALPHABET = {"A", "T", "C", "G"}
 KMER = 31
 MAX_SEQ_LENGTH = 2048
-
+LOGAN_RATIOS_FILE = os.path.join(results_dir, "logan_ratios.csv")
 
 def chop_at_first_repeated_kmer(sequence, k):
     kmers = set()
@@ -45,7 +46,7 @@ def find_overlaps_and_build_graph(sequences, k_mer=3):
     graph = defaultdict(list)
 
     # Check for overlaps
-    for i, seq1 in tqdm(enumerate(sequences), total=len(sequences)):
+    for i, seq1 in enumerate(sequences):
         seq1_suffix = seq1[-min_overlap:]
         graph[i] = []
         for j in prefix_dict[seq1_suffix]:
@@ -84,7 +85,7 @@ def dfs_paths(graph, start, path=None, all_paths=None, depth=10):
 
 def random_walk_graph_sequences(graph, sequences):
     random_walk_sequences = []
-    for node in tqdm(graph):
+    for node in graph:
         paths = dfs_paths(graph, node)
         idx = np.random.randint(len(paths))
         path = paths[idx]
@@ -106,63 +107,56 @@ def fasta_parsing_func(fasta_path):
     sequences = []
     decoded_lines = data.decode()  # .split("\n")
 
-    for s in tqdm(SeqIO.parse(StringIO(decoded_lines), "fasta")):
+    for s in SeqIO.parse(StringIO(decoded_lines), "fasta"):
         s = str(s.seq)
         s = "".join([c for c in s if c in ALPHABET])  # make sure only ALPHABET
         s = chop_at_first_repeated_kmer(s, KMER)
         yield s
 
-def get_results(force_recompute = False):
-    data_file = os.path.join(results_dir, "logan_examined.json")
-    result_exists = os.path.isfile(data_file)
+def calculate_ratios(force_recompute = False):
+    result_exists = os.path.isfile(LOGAN_RATIOS_FILE)
     if result_exists and not force_recompute:
-        with open(data_file) as f:
-            results = json.load(f)
-        return results
+        return
     else:
+        fieldnames = ["kingdom", "organism", "acc", "mbases", "kmeans", "ratio"]
         logan_data = os.path.join(logan_datasets_dir, 'data')
         metadata_file = glob.glob(os.path.join(logan_data) + "/*.csv")[0]
         contigs_files = glob.glob(os.path.join(logan_data) + "/*.contigs.fa.zst")
         metadata = pd.read_csv(metadata_file)
         metadata['kingdom'] = metadata['kingdom'].fillna('Other')
-        kingdoms = list(set(metadata['kingdom']))
-        organisms = list(set(metadata['organism']))
-        kingdoms_ratios = {}
-        organisms_ratios = {}
+        with open(LOGAN_RATIOS_FILE, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for file in tqdm(contigs_files):
+                filename = file.split('/')[-1].split('.')[0]
+                entry = metadata.loc[metadata['acc'] == filename]
+                _kingdom = entry['kingdom'].values[0]
+                _kingdom = _kingdom if pd.notna(_kingdom) else 'Other'
+                _organism = entry['organism'].values[0]
+                _mbases = entry['mbases'].values[0]
+                _mbases = _mbases if pd.notna(_mbases) else 0
+                _organism_kmeans = entry['organism_kmeans'].values[0]
+                _organism_kmeans = _organism_kmeans if pd.notna(_organism_kmeans) else 0
+                sequences = np.array(list(fasta_parsing_func(file)))
+                graph = find_overlaps_and_build_graph(sequences, KMER)
+                random_walk_sequences = random_walk_graph_sequences(graph, sequences)
+                sequences_len = np.array([len(x) for x in sequences])
+                random_walk_sequences_len = np.array([len(x) for x in random_walk_sequences])
+                sequence_length_ratio = float(np.mean(sequences_len / random_walk_sequences_len))
+                result = {
+                    "kingdom": _kingdom,
+                    "organism": _organism,
+                    "acc": filename,
+                    "ratio": sequence_length_ratio,
+                    "mbases": int(_mbases),
+                    "kmeans": int(_organism_kmeans)
+                }
+                writer.writerow(result)
+        return
 
-        for organism in organisms:
-            organisms_ratios[organism] = []
+def get_file_content():
+    return pd.read_csv(LOGAN_RATIOS_FILE)
 
-        for kingdom in kingdoms:
-            kingdoms_ratios[kingdom] = []
-
-        for file in contigs_files:
-            filename = file.split('/')[-1].split('.')[0]
-            entry = metadata.loc[metadata['acc'] == filename]
-            _kingdom = entry['kingdom'].values[0]
-            _kingdom = _kingdom if pd.notna(_kingdom) else 'Other'
-            _organism = entry['organism'].values[0]
-            _mbases = entry['mbases'].values[0]
-            _mbases = _mbases if pd.notna(_mbases) else 0
-            _organism_kmeans = entry['organism_kmeans'].values[0]
-            _organism_kmeans = _organism_kmeans if pd.notna(_organism_kmeans) else 0
-            sequences = np.array(list(fasta_parsing_func(file)))
-            graph = find_overlaps_and_build_graph(sequences, KMER)
-            random_walk_sequences = random_walk_graph_sequences(graph, sequences)
-            sequences_len = np.array([len(x) for x in sequences])
-            random_walk_sequences_len = np.array([len(x) for x in random_walk_sequences])
-            sequence_length_ratio = float(np.mean(sequences_len / random_walk_sequences_len))
-            kingdoms_ratios[_kingdom].append(
-                {"acc": filename, "ratio": sequence_length_ratio, "mbases": int(_mbases)})
-            organisms_ratios[_organism].append(
-                {"acc": filename, "ratio": sequence_length_ratio, "mbases": int(_mbases), "kmeans": int(_organism_kmeans)})
-        _results = {"kingdoms": kingdoms_ratios, "organisms": organisms_ratios}
-
-        with open(data_file, 'w', encoding='utf-8') as f:
-            json.dump(_results, f, indent=4)
-        with open(data_file) as f:
-            results = json.load(f)
-        return results
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -179,5 +173,6 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     force_recompute = args.force_recompute
-    results = get_results(force_recompute)
-    print(results['kingdoms'])
+    calculate_ratios(force_recompute)
+    content = get_file_content()
+    print(content)
