@@ -188,8 +188,8 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
-        per_device_train_batch_size=64,
-        gradient_accumulation_steps=4,
+        per_device_train_batch_size=50,
+        gradient_accumulation_steps=2,
         per_device_eval_batch_size=64,
         save_steps=1000,
         logging_steps=1000,
@@ -215,6 +215,7 @@ if __name__ == "__main__":
         data_collator=data_collator,
     )
 
+    logger.log(LOGLEVEL, f"Used batch size: {trainer.args.per_device_train_batch_size}")
     """
         Check VRAM
         
