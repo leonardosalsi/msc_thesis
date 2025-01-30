@@ -113,69 +113,58 @@ def fasta_parsing_func(fasta_path):
         s = chop_at_first_repeated_kmer(s, KMER)
         yield s
 
-def calculate_ratios(force_recompute = False):
-    result_exists = os.path.isfile(LOGAN_RATIOS_FILE)
-    if result_exists and not force_recompute:
-        return
-    else:
-        fieldnames = ["kingdom", "organism", "acc", "mbases", "kmeans", "ratio"]
-        logan_data = os.path.join(logan_datasets_dir, 'data')
-        metadata_file = glob.glob(os.path.join(logan_data) + "/*.csv")[0]
-        contigs_files = glob.glob(os.path.join(logan_data) + "/*.contigs.fa.zst")
-        metadata = pd.read_csv(metadata_file)
-        metadata['kingdom'] = metadata['kingdom'].fillna('Other')
-        try:
+def calculate_ratios():
+    fieldnames = ["kingdom", "organism", "acc", "mbases", "kmeans", "ratio"]
+    logan_data = os.path.join(logan_datasets_dir, 'data')
+    metadata_file = glob.glob(os.path.join(logan_data) + "/*.csv")[0]
+    contigs_files = glob.glob(os.path.join(logan_data) + "/*.contigs.fa.zst")
+    metadata = pd.read_csv(metadata_file)
+    metadata['kingdom'] = metadata['kingdom'].fillna('Other')
+    known_accs = []
+    precomputed = get_file_content()
+    if not precomputed is None:
+        known_accs = list(precomputed.acc)
+    try:
+        if not known_accs:
             with open(LOGAN_RATIOS_FILE, "w", newline="") as f:
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
-                for file in tqdm(contigs_files):
-                    filename = file.split('/')[-1].split('.')[0]
-                    entry = metadata.loc[metadata['acc'] == filename]
-                    _kingdom = entry['kingdom'].values[0]
-                    _kingdom = _kingdom if pd.notna(_kingdom) else 'Other'
-                    _organism = entry['organism'].values[0]
-                    _mbases = entry['mbases'].values[0]
-                    _mbases = _mbases if pd.notna(_mbases) else 0
-                    _organism_kmeans = entry['organism_kmeans'].values[0]
-                    _organism_kmeans = _organism_kmeans if pd.notna(_organism_kmeans) else 0
-                    sequences = np.array(list(fasta_parsing_func(file)))
-                    graph = find_overlaps_and_build_graph(sequences, KMER)
-                    random_walk_sequences = random_walk_graph_sequences(graph, sequences)
-                    sequences_len = np.array([len(x) for x in sequences])
-                    random_walk_sequences_len = np.array([len(x) for x in random_walk_sequences])
-                    sequence_length_ratio = float(np.mean(sequences_len / random_walk_sequences_len))
-                    result = {
-                        "kingdom": _kingdom,
-                        "organism": _organism,
-                        "acc": filename,
-                        "ratio": sequence_length_ratio,
-                        "mbases": int(_mbases),
-                        "kmeans": int(_organism_kmeans)
-                    }
+        for file in tqdm(contigs_files, desc="Processing fasta files"):
+            acc = file.split('/')[-1].split('.')[0]
+            if acc not in known_accs:
+                tqdm.write(f"Processing acc: {acc}")
+                entry = metadata.loc[metadata['acc'] == acc]
+                _kingdom = entry['kingdom'].values[0]
+                _kingdom = _kingdom if pd.notna(_kingdom) else 'Other'
+                _organism = entry['organism'].values[0]
+                _mbases = entry['mbases'].values[0]
+                _mbases = _mbases if pd.notna(_mbases) else 0
+                _organism_kmeans = entry['organism_kmeans'].values[0]
+                _organism_kmeans = _organism_kmeans if pd.notna(_organism_kmeans) else 0
+                sequences = np.array(list(fasta_parsing_func(file)))
+                graph = find_overlaps_and_build_graph(sequences, KMER)
+                random_walk_sequences = random_walk_graph_sequences(graph, sequences)
+                sequences_len = np.array([len(x) for x in sequences])
+                random_walk_sequences_len = np.array([len(x) for x in random_walk_sequences])
+                sequence_length_ratio = float(np.mean(sequences_len / random_walk_sequences_len))
+                result = {
+                    "kingdom": _kingdom,
+                    "organism": _organism,
+                    "acc": acc,
+                    "ratio": sequence_length_ratio,
+                    "mbases": int(_mbases),
+                    "kmeans": int(_organism_kmeans)
+                }
+                with open(LOGAN_RATIOS_FILE, "a", newline="") as f:
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
                     writer.writerow(result)
-        except Exception as e:
-            print("Partial results have been written to the file.")
-        return
+    except Exception as e:
+        print("Partial results have been written to the file.")
+    return
 
 def get_file_content():
-    return pd.read_csv(LOGAN_RATIOS_FILE)
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Script to examine and visualize data on the Logan dataset."
-    )
-    parser.add_argument(
-        "--force-recompute",
-        action="store_true",
-        dest="force_recompute",
-        help="Aggregate data from new instead of reading stored variant. Will overwrite stored variant. Default is false."
-    )
-    return parser.parse_args()
+    if os.path.isfile(LOGAN_RATIOS_FILE):
+        return pd.read_csv(LOGAN_RATIOS_FILE)
 
 if __name__ == "__main__":
-    args = parse_args()
-    force_recompute = args.force_recompute
-    calculate_ratios(force_recompute)
-    content = get_file_content()
-    print(content)
+    calculate_ratios()
