@@ -124,34 +124,37 @@ def calculate_ratios(force_recompute = False):
         contigs_files = glob.glob(os.path.join(logan_data) + "/*.contigs.fa.zst")
         metadata = pd.read_csv(metadata_file)
         metadata['kingdom'] = metadata['kingdom'].fillna('Other')
-        with open(LOGAN_RATIOS_FILE, "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
-            for file in tqdm(contigs_files):
-                filename = file.split('/')[-1].split('.')[0]
-                entry = metadata.loc[metadata['acc'] == filename]
-                _kingdom = entry['kingdom'].values[0]
-                _kingdom = _kingdom if pd.notna(_kingdom) else 'Other'
-                _organism = entry['organism'].values[0]
-                _mbases = entry['mbases'].values[0]
-                _mbases = _mbases if pd.notna(_mbases) else 0
-                _organism_kmeans = entry['organism_kmeans'].values[0]
-                _organism_kmeans = _organism_kmeans if pd.notna(_organism_kmeans) else 0
-                sequences = np.array(list(fasta_parsing_func(file)))
-                graph = find_overlaps_and_build_graph(sequences, KMER)
-                random_walk_sequences = random_walk_graph_sequences(graph, sequences)
-                sequences_len = np.array([len(x) for x in sequences])
-                random_walk_sequences_len = np.array([len(x) for x in random_walk_sequences])
-                sequence_length_ratio = float(np.mean(sequences_len / random_walk_sequences_len))
-                result = {
-                    "kingdom": _kingdom,
-                    "organism": _organism,
-                    "acc": filename,
-                    "ratio": sequence_length_ratio,
-                    "mbases": int(_mbases),
-                    "kmeans": int(_organism_kmeans)
-                }
-                writer.writerow(result)
+        try:
+            with open(LOGAN_RATIOS_FILE, "w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for file in tqdm(contigs_files):
+                    filename = file.split('/')[-1].split('.')[0]
+                    entry = metadata.loc[metadata['acc'] == filename]
+                    _kingdom = entry['kingdom'].values[0]
+                    _kingdom = _kingdom if pd.notna(_kingdom) else 'Other'
+                    _organism = entry['organism'].values[0]
+                    _mbases = entry['mbases'].values[0]
+                    _mbases = _mbases if pd.notna(_mbases) else 0
+                    _organism_kmeans = entry['organism_kmeans'].values[0]
+                    _organism_kmeans = _organism_kmeans if pd.notna(_organism_kmeans) else 0
+                    sequences = np.array(list(fasta_parsing_func(file)))
+                    graph = find_overlaps_and_build_graph(sequences, KMER)
+                    random_walk_sequences = random_walk_graph_sequences(graph, sequences)
+                    sequences_len = np.array([len(x) for x in sequences])
+                    random_walk_sequences_len = np.array([len(x) for x in random_walk_sequences])
+                    sequence_length_ratio = float(np.mean(sequences_len / random_walk_sequences_len))
+                    result = {
+                        "kingdom": _kingdom,
+                        "organism": _organism,
+                        "acc": filename,
+                        "ratio": sequence_length_ratio,
+                        "mbases": int(_mbases),
+                        "kmeans": int(_organism_kmeans)
+                    }
+                    writer.writerow(result)
+        except Exception as e:
+            print("Partial results have been written to the file.")
         return
 
 def get_file_content():
