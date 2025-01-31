@@ -113,58 +113,70 @@ def fasta_parsing_func(fasta_path):
         s = chop_at_first_repeated_kmer(s, KMER)
         yield s
 
-def create_file_lookup():
+def pre_select_fasta_files():
     logan_data = os.path.join(logan_datasets_dir, 'data')
     contigs_files = glob.glob(os.path.join(logan_data) + "/*.contigs.fa.zst")
+    fieldnames = ['acc','kingdom','organism','organism_kmeans','mbases']
+    metadata_file = glob.glob(os.path.join(logan_data) + "/*.csv")[0]
+    metadata = pd.read_csv(metadata_file, names=fieldnames)
+    to_be_processed = []
+    for i, entry in tqdm(metadata[1:].iterrows(), desc="Processing fasta files"):
+        if entry['kingdom'] != "Viridiplantae":
+            to_be_processed.append(os.path.join(logan_data,f"{entry['acc']}.contigs.fa.zst"))
+    return to_be_processed
 
-def calculate_ratios():
-    fieldnames = ["kingdom", "organism", "acc", "mbases", "kmeans", "ratio"]
+def calculate_ratios(fasta_files):
+    fieldnames = ["kingdom", "organism", "acc", "mbases", "kmeans", "ratio", "avg_seq_len_pre", "avg_seq_len_post"]
     logan_data = os.path.join(logan_datasets_dir, 'data')
     metadata_file = glob.glob(os.path.join(logan_data) + "/*.csv")[0]
-    contigs_files = glob.glob(os.path.join(logan_data) + "/*.contigs.fa.zst")
     metadata = pd.read_csv(metadata_file)
     metadata['kingdom'] = metadata['kingdom'].fillna('Other')
     known_accs = []
     precomputed = get_file_content()
+    not_found = []
     if not precomputed is None:
         known_accs = list(precomputed.acc)
-    try:
-        if not known_accs:
-            with open(LOGAN_RATIOS_FILE, "w", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=fieldnames)
-                writer.writeheader()
-        for file in tqdm(contigs_files, desc="Processing fasta files"):
-            acc = file.split('/')[-1].split('.')[0]
-            if acc not in known_accs:
-                tqdm.write(f"Processing acc: {acc}")
-                entry = metadata.loc[metadata['acc'] == acc]
-                _kingdom = entry['kingdom'].values[0]
-                _kingdom = _kingdom if pd.notna(_kingdom) else 'Other'
-                if _kingdom != 'Viridiplantae':
-                    _organism = entry['organism'].values[0]
-                    _mbases = entry['mbases'].values[0]
-                    _mbases = _mbases if pd.notna(_mbases) else 0
-                    _organism_kmeans = entry['organism_kmeans'].values[0]
-                    _organism_kmeans = _organism_kmeans if pd.notna(_organism_kmeans) else 0
+    if not known_accs:
+        with open(LOGAN_RATIOS_FILE, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+    for file in tqdm(fasta_files, desc="Processing fasta files"):
+        acc = file.split('/')[-1].split('.')[0]
+        if acc not in known_accs:
+            entry = metadata.loc[metadata['acc'] == acc]
+            _kingdom = entry['kingdom'].values[0]
+            _kingdom = _kingdom if pd.notna(_kingdom) else 'Other'
+            if _kingdom != 'Viridiplantae':
+                _organism = entry['organism'].values[0]
+                _mbases = entry['mbases'].values[0]
+                _mbases = _mbases if pd.notna(_mbases) else 0
+                _organism_kmeans = entry['organism_kmeans'].values[0]
+                _organism_kmeans = _organism_kmeans if pd.notna(_organism_kmeans) else 0
+                try:
                     sequences = np.array(list(fasta_parsing_func(file)))
-                    graph = find_overlaps_and_build_graph(sequences, KMER)
-                    random_walk_sequences = random_walk_graph_sequences(graph, sequences)
-                    sequences_len = np.array([len(x) for x in sequences])
-                    random_walk_sequences_len = np.array([len(x) for x in random_walk_sequences])
-                    sequence_length_ratio = float(np.mean(sequences_len / random_walk_sequences_len))
-                    result = {
-                        "kingdom": _kingdom,
-                        "organism": _organism,
-                        "acc": acc,
-                        "ratio": sequence_length_ratio,
-                        "mbases": int(_mbases),
-                        "kmeans": int(_organism_kmeans)
-                    }
-                    with open(LOGAN_RATIOS_FILE, "a", newline="") as f:
-                        writer = csv.DictWriter(f, fieldnames=fieldnames)
-                        writer.writerow(result)
-    except Exception as e:
-        print("Partial results have been written to the file.")
+                except FileNotFoundError:
+                    not_found.append(file)
+                    continue
+                graph = find_overlaps_and_build_graph(sequences, KMER)
+                random_walk_sequences = random_walk_graph_sequences(graph, sequences)
+                sequences_len = np.array([len(x) for x in sequences])
+                random_walk_sequences_len = np.array([len(x) for x in random_walk_sequences])
+                sequence_length_ratio = float(np.mean(sequences_len / random_walk_sequences_len))
+                result = {
+                    "kingdom": _kingdom,
+                    "organism": _organism,
+                    "acc": acc,
+                    "mbases": int(_mbases),
+                    "kmeans": int(_organism_kmeans),
+                    "ratio": sequence_length_ratio,
+                    "avg_seq_len_pre": np.mean(sequences_len),
+                    "avg_seq_len_post": np.mean(random_walk_sequences_len),
+                }
+                with open(LOGAN_RATIOS_FILE, "a", newline="") as f:
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
+                    writer.writerow(result)
+    print("The following fasta files were not found:")
+    pprint(not_found)
     return
 
 def get_file_content():
@@ -172,4 +184,5 @@ def get_file_content():
         return pd.read_csv(LOGAN_RATIOS_FILE)
 
 if __name__ == "__main__":
-    calculate_ratios()
+    fasta_files = pre_select_fasta_files()
+    calculate_ratios(fasta_files)
