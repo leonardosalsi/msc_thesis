@@ -136,7 +136,7 @@ def calculate_ratios():
                 entry = metadata.loc[metadata['acc'] == acc]
                 _kingdom = entry['kingdom'].values[0]
                 _kingdom = _kingdom if pd.notna(_kingdom) else 'Other'
-                if _kingdom is not 'Viridiplantae':
+                if _kingdom != 'Viridiplantae':
                     _organism = entry['organism'].values[0]
                     _mbases = entry['mbases'].values[0]
                     _mbases = _mbases if pd.notna(_mbases) else 0
