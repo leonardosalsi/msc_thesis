@@ -1,7 +1,7 @@
 import os
 
 from downstream_tasks import MODELS, TASKS
-from util import get_chunk_size_folder_name, get_model_by_id, get_task_by_id
+from util import get_chunk_size_file_name, get_model_by_id, get_task_by_id
 
 
 def ask_evaluation(parent_folder):

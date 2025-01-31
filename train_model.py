@@ -20,7 +20,7 @@ from config import models_cache_dir, pretrained_models_cache_dir, tokenizer_cach
     datasets_cache_dir, logs_dir, generated_datasets_dir
 from overrides.tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 from overrides.tokenizer.OverlappingEsmTokenizerWithNSkipping import OverlappingEsmTokenizerWithNSkipping
-from util import init_logger, LOGLEVEL, get_chunk_size_folder_name
+from util import init_logger, LOGLEVEL, get_chunk_size_file_name
 
 
 
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     args = parse_args()
     selected_tokenizer = args.tokenizer
     selected_dataset = args.dataset
-    chunk_size_folder_name = get_chunk_size_folder_name(args.chunk_size)
+    chunk_size_folder_name = get_chunk_size_file_name(args.chunk_size)
     train_from_scratch = args.from_scratch
     logger = init_logger()
 
