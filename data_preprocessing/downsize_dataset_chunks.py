@@ -4,7 +4,7 @@ import argparse
 from datasets import load_dataset, Dataset
 from config import datasets_cache_dir, generated_datasets_dir
 from tqdm import tqdm
-from util import get_chunk_size_folder_name
+from util import get_chunk_size_file_name
 
 def split_with_overlap(sequence, description, chunk_size, overlap_size=200):
     length = len(sequence)
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     """
     Recreate dataset with smaller chunks
     """
-    chunk_size_filename = get_chunk_size_folder_name(chunk_size)
+    chunk_size_filename = get_chunk_size_file_name(chunk_size)
     split_dataset_dir = os.path.join(generated_datasets_dir, selected_dataset, chunk_size_filename, split)
 
     """

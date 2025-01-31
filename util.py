@@ -2,9 +2,13 @@ from downstream_tasks import MODELS, TASKS
 
 LOGLEVEL = 22
 
-def get_chunk_size_folder_name(chunk_size) -> str:
+
+
+def get_chunk_size_file_name(chunk_size) -> str:
     return (str(chunk_size / 1000).replace(".", "_") + "kbp").replace("_0", "")
 
+def get_entropy_file_name(low, high) -> str:
+    return f"entropy_{low}_{high}".replace(".", "_")
 
 import logging as pyLogging
 def init_logger():

@@ -1,5 +1,5 @@
 import os
-from util import get_chunk_size_folder_name
+from util import get_chunk_size_file_name
 
 def ask_training(parent_folder):
     print("Training NT-50M-v2. Continue from pretrained model (by InstaDeep)? [y|n]")
@@ -75,7 +75,7 @@ def _ask_chunk_size(parent_folder, from_scratch, dataset_name, tokenizer_name):
 
 def _generate_file_for_training(parent_folder, from_scratch, dataset_name, tokenizer_name, chunk_size):
     shellfiles = []
-    chunk_size_filename = get_chunk_size_folder_name(chunk_size)
+    chunk_size_filename = get_chunk_size_file_name(chunk_size)
     jobs_folder_local = os.path.join(os.path.dirname(os.getcwd()), f"jobs")
     jobs_folder = os.path.join(parent_folder, f"jobs")
     if from_scratch:
