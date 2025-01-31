@@ -113,6 +113,10 @@ def fasta_parsing_func(fasta_path):
         s = chop_at_first_repeated_kmer(s, KMER)
         yield s
 
+def create_file_lookup():
+    logan_data = os.path.join(logan_datasets_dir, 'data')
+    contigs_files = glob.glob(os.path.join(logan_data) + "/*.contigs.fa.zst")
+
 def calculate_ratios():
     fieldnames = ["kingdom", "organism", "acc", "mbases", "kmeans", "ratio"]
     logan_data = os.path.join(logan_datasets_dir, 'data')
