@@ -22,8 +22,6 @@ from overrides.tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 from overrides.tokenizer.OverlappingEsmTokenizerWithNSkipping import OverlappingEsmTokenizerWithNSkipping
 from util import init_logger, LOGLEVEL, get_chunk_size_file_name
 
-
-
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Script to train model either from scratch or from pretrained weights with specified tokenization."
@@ -52,7 +50,6 @@ def parse_args():
         help="Train model from scratch. Default is false."
     )
     return parser.parse_args()
-
 
 def memory_safe_train_test_split(data, test_proportion=99.95):
     ratio = int(len(data)/test_proportion) #should be int
