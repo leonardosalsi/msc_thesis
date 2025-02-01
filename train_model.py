@@ -178,8 +178,7 @@ if __name__ == "__main__":
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
         mlm=True,
-        mlm_probability=0.15,
-        pad_to_multiple_of=8
+        mlm_probability=0.15
     )
 
     """
@@ -188,7 +187,7 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
-        per_device_train_batch_size=50,
+        per_device_train_batch_size=1,
         gradient_accumulation_steps=2,
         per_device_eval_batch_size=64,
         save_steps=1000,
