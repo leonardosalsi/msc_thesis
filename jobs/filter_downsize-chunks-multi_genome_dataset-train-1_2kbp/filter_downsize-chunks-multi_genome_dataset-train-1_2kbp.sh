@@ -12,4 +12,4 @@ source ~/.bashrc
 conda activate gpu_env
 
 HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \
-python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/temp/msc_thesis/data_preprocessing/filter_and_downsize_dataset.py multi_genome_dataset train 2200 --shannon 1.35 1.8 --gc 0.4 0.6
+python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/data_preprocessing/filter_and_downsize_dataset.py multi_genome_dataset train 2200 --shannon 1.35 1.8 --gc 0.4 0.6

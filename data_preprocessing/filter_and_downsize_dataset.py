@@ -2,7 +2,7 @@ import math
 import os.path
 import argparse
 from datasets import load_dataset, Dataset
-from config import datasets_cache_dir, generated_datasets_dir
+from ..config import datasets_cache_dir, generated_datasets_dir
 from tqdm import tqdm
 from util import get_chunk_size_file_name, get_filtered_dataset_name
 
