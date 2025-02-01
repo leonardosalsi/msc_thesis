@@ -7,8 +7,15 @@ LOGLEVEL = 22
 def get_chunk_size_file_name(chunk_size) -> str:
     return (str(chunk_size / 1000).replace(".", "_") + "kbp").replace("_0", "")
 
-def get_entropy_file_name(low, high) -> str:
-    return f"entropy_{low}_{high}".replace(".", "_")
+def get_filtered_dataset_name(chunk_size, shannon, gc) -> str:
+    shannon_txt = ""
+    gc_txt = ""
+    if shannon is not None:
+        shannon_txt = f"_sh_{shannon[0]}_{shannon[1]}"
+    if gc is not None:
+        gc_txt = f"_gc_{gc[0]}_{gc[1]}"
+    chunk_size_file_name = get_chunk_size_file_name(chunk_size)
+    return f"{chunk_size_file_name}{shannon_txt}{gc_txt}".replace(".", "_")
 
 import logging as pyLogging
 def init_logger():
