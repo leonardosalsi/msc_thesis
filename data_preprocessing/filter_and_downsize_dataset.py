@@ -163,8 +163,6 @@ if __name__ == "__main__":
         print(f"Unknown dataset {selected_dataset}")
         exit(1)
 
-    dataset = dataset.select(range(100000))
-
     """
     Recreate dataset with allowed sequences
     """
