@@ -20,7 +20,8 @@ from config import models_cache_dir, pretrained_models_cache_dir, tokenizer_cach
     datasets_cache_dir, logs_dir, generated_datasets_dir
 from overrides.tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 from overrides.tokenizer.OverlappingEsmTokenizerWithNSkipping import OverlappingEsmTokenizerWithNSkipping
-from util import init_logger, LOGLEVEL, get_chunk_size_file_name
+from util import init_logger, LOGLEVEL, get_chunk_size_file_name, get_filtered_dataset_name
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -44,6 +45,20 @@ def parse_args():
         help="Chunk size (defined when further splitting data)",
     )
     parser.add_argument(
+        "--shannon",
+        type=float,
+        nargs=2,
+        metavar=("LOW", "HIGH"),
+        help="Lower and upper margin of allowed Shannon entropy (e.g., --shannon 1.4 1.8)"
+    )
+    parser.add_argument(
+        "--gc",
+        type=float,
+        nargs=2,
+        metavar=("LOW", "HIGH"),
+        help="Lower and upper margin of allowed GC content (e.g., --gc 0.4 0.6)"
+    )
+    parser.add_argument(
         "--from_scratch",
         action="store_true",
         dest="from_scratch",
@@ -61,7 +76,9 @@ if __name__ == "__main__":
     args = parse_args()
     selected_tokenizer = args.tokenizer
     selected_dataset = args.dataset
-    chunk_size_folder_name = get_chunk_size_file_name(args.chunk_size)
+    chunk_size_folder_name = get_filtered_dataset_name(args.chunk_size, args.shannon, args.gc)
+    shannon = args.shannon
+    gc = args.gc
     train_from_scratch = args.from_scratch
     logger = init_logger()
 
@@ -72,10 +89,17 @@ if __name__ == "__main__":
     """
     Define setup name
     """
+    shannon_txt = ""
+    gc_txt = ""
+    from_scratch_txt = ""
+    if shannon is not None:
+        shannon_txt = f"_sh_{shannon[0]}_{shannon[1]}"
+    if gc is not None:
+        gc_txt = f"_gc_{gc[0]}_{gc[1]}"
     if train_from_scratch:
-        created_model_name = f"{selected_tokenizer.lower()}_{selected_dataset.lower()}_{chunk_size_folder_name}_from_scratch"
-    else:
-        created_model_name = f"{selected_tokenizer.lower()}_{selected_dataset.lower()}_{chunk_size_folder_name}"
+        from_scratch_txt = "_from_scratch"
+
+    created_model_name = f"{selected_tokenizer.lower()}_{selected_dataset.lower()}_{chunk_size_folder_name}{shannon_txt}{gc_txt}{from_scratch_txt}"
 
     """
     Get device
@@ -184,21 +208,21 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
-        per_device_train_batch_size=1,
+        per_device_train_batch_size=10,
         gradient_accumulation_steps=2,
-        per_device_eval_batch_size=64,
-        save_steps=1000,
-        logging_steps=1000,
+        per_device_eval_batch_size=32,
+        auto_find_batch_size=True,
+        save_steps=100,
+        logging_steps=1,
         eval_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
         dataloader_num_workers=2,
         gradient_checkpointing=False,
-        auto_find_batch_size=True,
         logging_dir='/dev/null',
         remove_unused_columns=False,
         fp16=True,
-        max_steps=600000,
+        max_steps=3600,
         include_num_input_tokens_seen=True,
     )
 
@@ -211,37 +235,9 @@ if __name__ == "__main__":
         data_collator=data_collator,
     )
 
-    logger.log(LOGLEVEL, f"Used batch size: {trainer.args.per_device_train_batch_size}")
-    """
-        Check VRAM
-        
-    sample = tokenized_train_sequences[0]
-    batch_size_device = trainer.args.per_device_train_batch_size
-    logger.log(LOGLEVEL,f"Batch size (Device): {batch_size_device}")
-    total_vram = torch.cuda.get_device_properties(device).total_memory
-    logger.log(LOGLEVEL, f"Total VRAM: {total_vram / (1024 ** 3):.2f} GB")
-    logger.log(LOGLEVEL, f"Baseline VRAM usage: {baseline_memory / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
 
-    torch.cuda.empty_cache()
-    batch = data_collator([sample] * batch_size_device)
-    for key in batch:
-        batch[key] = batch[key].to(device)
-    before_fwd = torch.cuda.memory_allocated(device)
-    logger.log(LOGLEVEL,
-               f"VRAM usage before forward pass: {before_fwd / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
-    output = model(**batch)
-    after_fwd = torch.cuda.memory_allocated(device)
-    used_for_fwd = after_fwd - before_fwd
-
-    # Print VRAM usage statistics
-
-    logger.log(LOGLEVEL,
-               f"VRAM usage after forward pass: {after_fwd / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
-    logger.log(LOGLEVEL,
-               f"VRAM used for forward pass: {used_for_fwd / (1024 ** 3):.2f}/{total_vram / (1024 ** 3):.2f} GB")
-    exit(0)
-    """
     trainer.train()
+
     logger.log(LOGLEVEL, "Training complete!")
     log_history_path = os.path.join(logs_dir, f"log_history_{created_model_name}.json")
     with open(log_history_path, "w") as log_file:
