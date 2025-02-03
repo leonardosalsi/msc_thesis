@@ -4,7 +4,7 @@
 #SBATCH --output=out/evaluate_logan_data.txt
 #SBATCH --cpus-per-task=4
 #SBATCH --time=100:00:00
-#SBATCH --mem-per-cpu=60G
+#SBATCH --mem-per-cpu=80G
 
 source ~/.bashrc
 conda activate gpu_env
