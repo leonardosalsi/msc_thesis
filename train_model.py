@@ -209,7 +209,7 @@ if __name__ == "__main__":
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
         per_device_train_batch_size=10,
-        gradient_accumulation_steps=2,
+        gradient_accumulation_steps=5,
         per_device_eval_batch_size=32,
         auto_find_batch_size=True,
         save_steps=100,
@@ -222,7 +222,7 @@ if __name__ == "__main__":
         logging_dir='/dev/null',
         remove_unused_columns=False,
         fp16=True,
-        max_steps=3600,
+        max_steps=7200,
         include_num_input_tokens_seen=True,
     )
 
