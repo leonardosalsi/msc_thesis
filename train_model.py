@@ -208,12 +208,12 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
-        per_device_train_batch_size=5,
-        gradient_accumulation_steps=25,
-        per_device_eval_batch_size=64,
+        per_device_train_batch_size=10,
+        gradient_accumulation_steps=1, #50,
+        per_device_eval_batch_size=128,
         auto_find_batch_size=True,
-        save_steps=100,
-        logging_steps=100,
+        save_steps=500,
+        logging_steps=500,
         eval_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
@@ -222,7 +222,7 @@ if __name__ == "__main__":
         logging_dir='/dev/null',
         remove_unused_columns=False,
         fp16=True,
-        max_steps=7200,
+        max_steps=7500,
         include_num_input_tokens_seen=True,
     )
 
