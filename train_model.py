@@ -213,7 +213,7 @@ if __name__ == "__main__":
         per_device_eval_batch_size=32,
         auto_find_batch_size=True,
         save_steps=100,
-        logging_steps=1,
+        logging_steps=100,
         eval_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
