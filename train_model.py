@@ -99,7 +99,7 @@ if __name__ == "__main__":
     if train_from_scratch:
         from_scratch_txt = "_from_scratch"
 
-    created_model_name = f"{selected_tokenizer.lower()}_{selected_dataset.lower()}_{chunk_size_folder_name}{shannon_txt}{gc_txt}{from_scratch_txt}"
+    created_model_name = f"{selected_tokenizer.lower()}_{selected_dataset.lower()}_{chunk_size_folder_name}"
 
     """
     Get device
