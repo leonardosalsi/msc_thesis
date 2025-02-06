@@ -1,6 +1,7 @@
 import argparse
 import csv
 import os
+import random
 import sys
 import glob
 from io import StringIO
@@ -22,7 +23,9 @@ from config import datasets_cache_dir, results_dir, logan_datasets_dir
 ALPHABET = {"A", "T", "C", "G"}
 KMER = 31
 MAX_SEQ_LENGTH = 2048
-LOGAN_RATIOS_FILE = os.path.join(results_dir, "logan_ratios.csv")
+
+LOGAN_RATIOS_FILE = os.path.join(results_dir, "logan_ratios.json")
+
 
 def chop_at_first_repeated_kmer(sequence, k):
     kmers = set()
@@ -33,19 +36,15 @@ def chop_at_first_repeated_kmer(sequence, k):
         kmers.add(kmer)
     return sequence  # No repeated k-mers found, return the whole sequence
 
-
-# Reconstruct assembly graph
 def find_overlaps_and_build_graph(sequences, k_mer=3):
     min_overlap = k_mer - 1
     prefix_dict = defaultdict(list)
 
-    # Precompute the suffixes
     for i, seq in enumerate(sequences):
         prefix_dict[seq[:min_overlap]].append(i)
 
     graph = defaultdict(list)
 
-    # Check for overlaps
     for i, seq1 in enumerate(sequences):
         seq1_suffix = seq1[-min_overlap:]
         graph[i] = []
@@ -55,8 +54,6 @@ def find_overlaps_and_build_graph(sequences, k_mer=3):
 
     return graph
 
-
-# Perform random walk on the graph
 def dfs_paths(graph, start, path=None, all_paths=None, depth=10):
     if path is None:
         path = [start]  # Initialize the path with the starting node
@@ -76,12 +73,11 @@ def dfs_paths(graph, start, path=None, all_paths=None, depth=10):
     if len(path) >= depth:
         all_paths.append(path)
         return all_paths
-    # Explore each neighbor recursively, ensuring no cycles
+
     for neighbor in graph[start]:
         dfs_paths(graph, neighbor, path + [neighbor], all_paths)
 
     return all_paths
-
 
 def random_walk_graph_sequences(graph, sequences):
     random_walk_sequences = []
@@ -102,86 +98,109 @@ def fasta_parsing_func(fasta_path):
     data = dctx.decompress(data)
 
     if data is None:
-        return [[]]
+        return
 
-    sequences = []
-    decoded_lines = data.decode()  # .split("\n")
+    decoded_lines = data.decode()
 
     for s in SeqIO.parse(StringIO(decoded_lines), "fasta"):
         s = str(s.seq)
-        s = "".join([c for c in s if c in ALPHABET])  # make sure only ALPHABET
+        s = "".join([c for c in s if c in ALPHABET])
         s = chop_at_first_repeated_kmer(s, KMER)
         yield s
 
-def pre_select_fasta_files():
+
+def pre_select_fasta_files(sample_size=1000):
     logan_data = os.path.join(logan_datasets_dir, 'data')
-    contigs_files = glob.glob(os.path.join(logan_data) + "/*.contigs.fa.zst")
-    fieldnames = ['acc','kingdom','organism','organism_kmeans','mbases']
-    metadata_file = glob.glob(os.path.join(logan_data) + "/*.csv")[0]
-    metadata = pd.read_csv(metadata_file, names=fieldnames)
+    with open("./data/acc_list.txt") as filedata:
+        allowed_files = filedata.read().splitlines()
+    random.shuffle(allowed_files)
+    allowed_files = allowed_files[:sample_size]
     to_be_processed = []
-    for i, entry in tqdm(metadata[1:].iterrows(), desc="Processing fasta files"):
-        if entry['kingdom'] != "Viridiplantae":
-            to_be_processed.append(os.path.join(logan_data,f"{entry['acc']}.contigs.fa.zst"))
+    for entry in tqdm(allowed_files, desc="Processing fasta files"):
+        to_be_processed.append(os.path.join(logan_data, f"{entry}.contigs.fa.zst"))
     return to_be_processed
 
+def get_json_content():
+    if os.path.isfile(LOGAN_RATIOS_FILE):
+        with open(LOGAN_RATIOS_FILE, "r") as f:
+            return json.load(f)
+    return []
+
+
+def append_to_json_file(result):
+    """Append a result dictionary to the JSON file."""
+    data = get_json_content()
+    data.append(result)
+    with open(LOGAN_RATIOS_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+
 def calculate_ratios(fasta_files):
-    fieldnames = ["kingdom", "organism", "acc", "mbases", "kmeans", "ratio", "avg_seq_len_pre", "avg_seq_len_post"]
     logan_data = os.path.join(logan_datasets_dir, 'data')
-    metadata_file = glob.glob(os.path.join(logan_data) + "/*.csv")[0]
+    logan_data_eval = os.path.join(results_dir, 'logan_eval')
+    print(logan_data_eval)
+    os.makedirs(logan_data_eval, exist_ok=True)
+    metadata_file = glob.glob(os.path.join(logan_data, "*.csv"))[0]
     metadata = pd.read_csv(metadata_file)
     metadata['kingdom'] = metadata['kingdom'].fillna('Other')
-    known_accs = []
-    precomputed = get_file_content()
+    common_names_file_path = "./data/common_names.json"
+    groups_file_path = "./data/groups.json"
+    with open(common_names_file_path) as json_data:
+        common_names = json.load(json_data)
+    with open(groups_file_path) as json_data:
+        groups = json.load(json_data)
+
+    known_files = glob.glob(os.path.join(logan_data_eval, "*.json"))
+    known_accs = [os.path.splitext(os.path.basename(x))[0] for x in known_files]
+
     not_found = []
-    if not precomputed is None:
-        known_accs = list(precomputed.acc)
-    if not known_accs:
-        with open(LOGAN_RATIOS_FILE, "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
     for file in tqdm(fasta_files, desc="Processing fasta files"):
-        acc = file.split('/')[-1].split('.')[0]
+        acc = os.path.basename(file).split('.')[0]
         if acc not in known_accs:
             entry = metadata.loc[metadata['acc'] == acc]
             _kingdom = entry['kingdom'].values[0]
             _kingdom = _kingdom if pd.notna(_kingdom) else 'Other'
-            if _kingdom != 'Viridiplantae':
-                _organism = entry['organism'].values[0]
-                _mbases = entry['mbases'].values[0]
-                _mbases = _mbases if pd.notna(_mbases) else 0
-                _organism_kmeans = entry['organism_kmeans'].values[0]
-                _organism_kmeans = _organism_kmeans if pd.notna(_organism_kmeans) else 0
-                try:
-                    sequences = np.array(list(fasta_parsing_func(file)))
-                except FileNotFoundError:
-                    not_found.append(file)
-                    continue
-                graph = find_overlaps_and_build_graph(sequences, KMER)
-                random_walk_sequences = random_walk_graph_sequences(graph, sequences)
-                sequences_len = np.array([len(x) for x in sequences])
-                random_walk_sequences_len = np.array([len(x) for x in random_walk_sequences])
-                sequence_length_ratio = float(np.mean(sequences_len / random_walk_sequences_len))
-                result = {
-                    "kingdom": _kingdom,
-                    "organism": _organism,
-                    "acc": acc,
-                    "mbases": int(_mbases),
-                    "kmeans": int(_organism_kmeans),
-                    "ratio": sequence_length_ratio,
-                    "avg_seq_len_pre": np.mean(sequences_len),
-                    "avg_seq_len_post": np.mean(random_walk_sequences_len),
-                }
-                with open(LOGAN_RATIOS_FILE, "a", newline="") as f:
-                    writer = csv.DictWriter(f, fieldnames=fieldnames)
-                    writer.writerow(result)
-    print("The following fasta files were not found:")
-    pprint(not_found)
-    return
+            _organism = entry['organism'].values[0]
+            _mbases = entry['mbases'].values[0]
+            _mbases = _mbases if pd.notna(_mbases) else 0
+            _organism_kmeans = entry['organism_kmeans'].values[0]
+            _organism_kmeans = _organism_kmeans if pd.notna(_organism_kmeans) else 0
+
+            try:
+                sequences = np.array(list(fasta_parsing_func(file)))
+            except FileNotFoundError:
+                not_found.append(file)
+                continue
+
+            graph = find_overlaps_and_build_graph(sequences, KMER)
+            random_walk_sequences = random_walk_graph_sequences(graph, sequences)
+            sequences_len = np.array([len(x) for x in sequences])
+            random_walk_sequences_len = np.array([len(x) for x in random_walk_sequences])
+            sequence_length_ratio = float(np.mean(sequences_len / random_walk_sequences_len))
+            result = {
+                "acc": acc,
+                "kingdom": _kingdom,
+                "organism": _organism,
+                "common_name": common_names.get(_organism, "Unknown"),
+                "group": groups.get(_organism, "Unknown"),
+                "mbases": int(_mbases),
+                "kmeans": int(_organism_kmeans),
+                "ratio": sequence_length_ratio,
+                "sequences": [len(x) for x in sequences],
+                "random_walk_sequences": [len(x) for x in random_walk_sequences],
+                "actg_pre": [[s.count('A'), s.count('C'), s.count('T'), s.count('G')] for s in sequences],
+                "actg_post": [[s.count('A'), s.count('C'), s.count('T'), s.count('G')] for s in random_walk_sequences]
+            }
+            result_file = os.path.join(logan_data_eval, f"{acc}.json")
+            with open(result_file, "w") as f:
+                json.dump(result, f, indent=4)
 
 def get_file_content():
     if os.path.isfile(LOGAN_RATIOS_FILE):
-        return pd.read_csv(LOGAN_RATIOS_FILE)
+        with open(LOGAN_RATIOS_FILE, "r") as f:
+            return json.load(f)
+    return None
+
 
 if __name__ == "__main__":
     fasta_files = pre_select_fasta_files()
