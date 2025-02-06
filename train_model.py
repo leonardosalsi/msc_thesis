@@ -193,7 +193,7 @@ if __name__ == "__main__":
 
     logger.log(LOGLEVEL, "Dataset loaded")
     logger.log(LOGLEVEL, f"Total training tokens: {len(train_sequences) * 1000}")
-
+    logger.log(LOGLEVEL, f"Total validation tokens: {len(validation_sequences) * 1000}")
     """
     Enable retokenization per epoch
     """
@@ -221,8 +221,8 @@ if __name__ == "__main__":
         per_device_train_batch_size=10,
         gradient_accumulation_steps=25, #50,
         per_device_eval_batch_size=64,
-        save_steps=500,
-        logging_steps=500,
+        save_steps=1000,
+        logging_steps=1,
         eval_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
