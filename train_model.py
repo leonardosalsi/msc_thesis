@@ -220,7 +220,7 @@ if __name__ == "__main__":
         overwrite_output_dir=True,
         per_device_train_batch_size=10,
         gradient_accumulation_steps=25, #50,
-        per_device_eval_batch_size=128,
+        per_device_eval_batch_size=256,
         save_steps=1000,
         logging_steps=1,
         eval_strategy="steps",
