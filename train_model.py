@@ -164,7 +164,7 @@ if __name__ == "__main__":
 
 
     def tokenize_function(examples):
-        outputs = tokenizer(examples['sequence'])
+        outputs = tokenizer(examples['sequence'], max_length=2048, truncation=True)
         return outputs
 
     tf = lambda examples: tokenize_function(examples)
@@ -202,7 +202,8 @@ if __name__ == "__main__":
 
     tokenized_validation_sequences = validation_sequences.shuffle()
     tokenized_validation_sequences.set_transform(tokenize_function)
-
+    sample = tokenized_train_sequences[0]
+    print(len(sample['input_ids']))
     """
     Instantiate collator
     """
@@ -219,7 +220,7 @@ if __name__ == "__main__":
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
         per_device_train_batch_size=10,
-        gradient_accumulation_steps=50, #50,
+        gradient_accumulation_steps=50,
         per_device_eval_batch_size=128,
         save_steps=500,
         logging_steps=500,
