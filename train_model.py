@@ -219,8 +219,8 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
-        per_device_train_batch_size=10,
-        gradient_accumulation_steps=50,
+        per_device_train_batch_size=5,
+        gradient_accumulation_steps=100,
         per_device_eval_batch_size=128,
         save_steps=500,
         logging_steps=500,
