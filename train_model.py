@@ -20,6 +20,7 @@ from config import models_cache_dir, pretrained_models_cache_dir, tokenizer_cach
     datasets_cache_dir, logs_dir, generated_datasets_dir
 from overrides.tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 from overrides.tokenizer.OverlappingEsmTokenizerWithNSkipping import OverlappingEsmTokenizerWithNSkipping
+from overrides.tokenizer.PaperTokenizer import PaperTokenizer
 from util import init_logger, LOGLEVEL, get_chunk_size_file_name, get_filtered_dataset_name
 
 
@@ -139,13 +140,18 @@ if __name__ == "__main__":
     Load tokenizer
     """
     if selected_tokenizer == "Default":
-        tokenizer = AutoTokenizer.from_pretrained(
+        """tokenizer = AutoTokenizer.from_pretrained(
             "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
             model_max_length=1000,
             cache_dir=models_cache_dir,
             remove_columns=['sequence'],
             trust_remote_code=True,
             local_files_only=True
+        )"""
+        tokenizer = PaperTokenizer(
+            vocab_file="model_configs/vocab.txt",
+            model_max_length=2048,
+            num_tokens=num_tokens
         )
     elif selected_tokenizer == "OverlappingEsmTokenizer":
         tokenizer = OverlappingEsmTokenizer(
@@ -219,8 +225,8 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
         overwrite_output_dir=True,
-        per_device_train_batch_size=5,
-        gradient_accumulation_steps=100,
+        per_device_train_batch_size=10,
+        gradient_accumulation_steps=50,
         per_device_eval_batch_size=128,
         save_steps=500,
         logging_steps=500,
