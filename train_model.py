@@ -21,7 +21,6 @@ from config import models_cache_dir, pretrained_models_cache_dir, tokenizer_cach
     datasets_cache_dir, logs_dir, generated_datasets_dir
 from overrides.tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 from overrides.tokenizer.OverlappingEsmTokenizerWithNSkipping import OverlappingEsmTokenizerWithNSkipping
-from overrides.tokenizer.PaperTokenizer import PaperTokenizer
 from util import init_logger, LOGLEVEL, get_chunk_size_file_name, get_filtered_dataset_name
 
 
