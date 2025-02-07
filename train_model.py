@@ -5,6 +5,7 @@ import math
 import os
 
 import json
+import random
 import time
 
 import torch
@@ -140,18 +141,13 @@ if __name__ == "__main__":
     Load tokenizer
     """
     if selected_tokenizer == "Default":
-        """tokenizer = AutoTokenizer.from_pretrained(
+        tokenizer = AutoTokenizer.from_pretrained(
             "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
             model_max_length=1000,
             cache_dir=models_cache_dir,
             remove_columns=['sequence'],
             trust_remote_code=True,
             local_files_only=True
-        )"""
-        tokenizer = PaperTokenizer(
-            vocab_file="model_configs/vocab.txt",
-            model_max_length=2048,
-            num_tokens=num_tokens
         )
     elif selected_tokenizer == "OverlappingEsmTokenizer":
         tokenizer = OverlappingEsmTokenizer(
@@ -170,7 +166,7 @@ if __name__ == "__main__":
 
 
     def tokenize_function(examples):
-        outputs = tokenizer(examples['sequence'], max_length=2048, truncation=True)
+        outputs = tokenizer(examples['sequence'], max_length=1000, truncation=True)
         return outputs
 
     tf = lambda examples: tokenize_function(examples)
@@ -189,7 +185,9 @@ if __name__ == "__main__":
         )
     else:
         dataset_train = load_from_disk(
-            os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train'))
+            os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train')
+        )
+
     columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
     dataset_train = dataset_train.remove_columns(columns_to_remove)
     dataset_train = dataset_train.train_test_split(test_size=0.01)
