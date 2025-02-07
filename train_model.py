@@ -141,7 +141,7 @@ if __name__ == "__main__":
     if selected_tokenizer == "Default":
         tokenizer = AutoTokenizer.from_pretrained(
             "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
-            model_max_length=2048,
+            model_max_length=1000,
             cache_dir=models_cache_dir,
             remove_columns=['sequence'],
             trust_remote_code=True,
