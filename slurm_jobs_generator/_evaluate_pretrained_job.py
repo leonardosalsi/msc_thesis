@@ -97,7 +97,7 @@ f"""#!/bin/bash
 #SBATCH --job-name={filename}
 #SBATCH --output=out/{filename}.txt
 #SBATCH --cpus-per-task=2
-#SBATCH --time=40:00:00
+#SBATCH --time=100:00:00
 #SBATCH --mem-per-cpu=4G
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
