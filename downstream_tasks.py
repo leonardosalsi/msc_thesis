@@ -41,6 +41,10 @@ MODELS = [
     {'modelId': 7,'repo': os.path.join(pretrained_models_cache_dir , "enhanced_model_01/checkpoint-3000/"), 'name': 'nucleotide-transformer-v2-50m-multi-species-it01', 'data_alias': 'NT-MS V2 (50M) IT01', 'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species"},
 ]
 
+PRETRAINED_MODELS = [
+    {'modelId': 1,'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'name': 'nucleotide-transformer-v2-50m-multi-species-sh-1-35-1-8-gc-0-4-0-6-6B', 'data_alias': 'NT-MS V2 (50M) (Shannon 1.35-1.8, GC 0.4-0.6, 6B)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'checkpoint': 'overlappingesmtokenizerwithnskipping_multi_genome_dataset_1_2kbp_sh_1_35_1_8_gc_0_4_0_6/checkpoint-6000/'},
+]
+
 def generate_file(job_name, modelId, taskId, no_lora=False, random_weights=False):
     args = ''
     if no_lora:

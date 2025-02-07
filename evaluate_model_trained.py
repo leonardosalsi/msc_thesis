@@ -4,9 +4,9 @@ from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelFor
     AutoConfig, EsmConfig
 from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
-from config import models_cache_dir, datasets_cache_dir
+from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir
 from datasets.utils.logging import disable_progress_bar, set_verbosity
-from util import LOGLEVEL, init_logger, get_model_by_id, get_task_by_id
+from util import LOGLEVEL, init_logger, get_model_by_id, get_task_by_id, get_pretrained_model_by_id
 import numpy as np
 from peft import LoraConfig, TaskType, get_peft_model
 import traceback
@@ -24,7 +24,7 @@ def compute_metrics_mcc(eval_pred):
     r={'mcc_score': matthews_corrcoef(references, predictions)}
     return r
 
-def finetune_model_by_task_mcc(logger, device, model_dict, mode, task, random_weights):
+def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
     disable_progress_bar()
     set_verbosity(logging.ERROR)
     logging.set_verbosity_error()
@@ -49,19 +49,14 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task, random_we
     logger.log(LOGLEVEL, f"Dataset {task['name']} loaded and splits created")
 
     """Load model and move to device"""
-    if random_weights:
-        logger.log(LOGLEVEL, f"Loading model with random weights.")
-        config = EsmConfig.from_pretrained(f"model_configs/config-{model_dict['name']}.json", num_labels=task["num_labels"], local_files_only=True, trust_remote_code=True)
-        model = AutoModelForSequenceClassification.from_config(config)
-    else:
-        logger.log(LOGLEVEL, f"Loading model with pretrained weights.")
-        model = AutoModelForSequenceClassification.from_pretrained(
-            model_dict['repo'],
-            cache_dir=models_cache_dir,
-            num_labels=task["num_labels"],
-            trust_remote_code=True,
-            local_files_only=True
-        )
+    logger.log(LOGLEVEL, f"Loading model with pretrained weights.")
+    model = AutoModelForSequenceClassification.from_pretrained(
+        os.path.join(pretrained_models_cache_dir, model_dict['checkpoint']),
+        cache_dir=models_cache_dir,
+        num_labels=task["num_labels"],
+        trust_remote_code=True,
+        local_files_only=True
+    )
     model = model.to(device)
 
 
@@ -132,7 +127,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task, random_we
         remove_unused_columns=False,
         eval_strategy="steps",
         save_strategy="no",
-        learning_rate=5e-4,
+        learning_rate=3e-3,
         per_device_train_batch_size=batch_size,
         gradient_accumulation_steps= 1,
         per_device_eval_batch_size= 64,
@@ -147,24 +142,14 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task, random_we
         disable_tqdm=True
     )
 
-    if lora:
-        trainer = Trainer(
-            lora_classifier,
-            training_args,
-            train_dataset= tokenized_train_sequences,
-            eval_dataset= tokenized_validation_sequences,
-            processing_class=tokenizer,
-            compute_metrics=compute_metrics_mcc,
-        )
-    else:
-        trainer = Trainer(
-            model,
-            training_args,
-            train_dataset=tokenized_train_sequences,
-            eval_dataset=tokenized_validation_sequences,
-            processing_class=tokenizer,
-            compute_metrics=compute_metrics_mcc,
-        )
+    trainer = Trainer(
+        lora_classifier,
+        training_args,
+        train_dataset=tokenized_train_sequences,
+        eval_dataset=tokenized_validation_sequences,
+        processing_class=tokenizer,
+        compute_metrics=compute_metrics_mcc,
+    )
 
     """Finetune pre-trained model"""
     _ = trainer.train()
@@ -205,11 +190,6 @@ def parse_args():
         help="The task ID (integer)."
     )
     parser.add_argument(
-        "--random-weights",
-        action="store_true",
-        help="Use random weights. Default is False."
-    )
-    parser.add_argument(
         "--samples",
         type=int,
         default=1,
@@ -220,18 +200,14 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    model = get_model_by_id(args.modelId)
+    model = get_pretrained_model_by_id(args.modelId)
     task = get_task_by_id(args.taskId)
 
     iterations = args.samples
     mode = f"-{task['alias']}"
-    if args.random_weights:
-        mode += "-with-random-weights"
-    if not args.lora:
-        mode += "-no-lora"
 
     filename = f"{model['name'] + mode}-{task['alias']}"
-    logger = init_logger(filename)
+    logger = init_logger()
     logger.log(LOGLEVEL, f"{model['name']}{mode} on {task['alias']}")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -241,14 +217,13 @@ if __name__ == "__main__":
         logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
 
     output_file = f"data/{filename}.json"
-    print(output_file)
     if os.path.exists(output_file):
         with open(output_file, "r") as file:
             results = json.load(file)
 
     all_results = []
     for i in range(iterations):
-        results = finetune_model_by_task_mcc(logger, device, model, mode, task, args.random_weights)
+        results = finetune_model_by_task_mcc(logger, device, model, mode, task)
         all_results.append(results)
     logger.log(LOGLEVEL, f"MCC of {model['name']}{mode} on {task['alias']} => mean: {results['mean']}, std: {results['std']}")
 
