@@ -4,7 +4,7 @@ from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelFor
     AutoConfig, EsmConfig
 from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
-from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir
+from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir, results_dir
 from datasets.utils.logging import disable_progress_bar, set_verbosity
 from util import LOGLEVEL, init_logger, get_model_by_id, get_task_by_id, get_pretrained_model_by_id
 import numpy as np
@@ -120,8 +120,10 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
         remove_columns=["data"],
     )
 
+    print(tokenized_validation_sequences)
+
     """Configure trainer"""
-    batch_size = 8
+    batch_size = 1
     training_args = TrainingArguments(
         f"{model_dict['name']}{mode}-{task['alias']}",
         remove_unused_columns=False,
@@ -216,7 +218,7 @@ if __name__ == "__main__":
     else:
         logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
 
-    output_file = f"data/{filename}.json"
+    output_file = os.path.join(results_dir, 'eval_trained',f"{filename}.json")
     if os.path.exists(output_file):
         with open(output_file, "r") as file:
             results = json.load(file)
