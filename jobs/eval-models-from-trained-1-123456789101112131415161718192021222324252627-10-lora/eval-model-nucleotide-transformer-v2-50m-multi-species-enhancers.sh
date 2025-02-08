@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=eval-model-nucleotide-transformer-v2-50m-multi-species-enhancers
 #SBATCH --output=out/eval-model-nucleotide-transformer-v2-50m-multi-species-enhancers.txt
-#SBATCH --cpus-per-task=2
+#SBATCH --cpus-per-task=4
 #SBATCH --time=100:00:00
 #SBATCH --mem-per-cpu=10G
 #SBATCH -p gpu
