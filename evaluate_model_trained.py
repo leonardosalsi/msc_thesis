@@ -17,7 +17,8 @@ import signal
 
 faulthandler.enable()
 faulthandler.register(signal.SIGUSR1)
-
+print("faulthandler.enable()")
+faulthandler.enable()
 def check_memory_usage():
     process = psutil.Process()
     memory_info = process.memory_info()
