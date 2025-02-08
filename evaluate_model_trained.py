@@ -231,7 +231,7 @@ if __name__ == "__main__":
         logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
 
     eval_trained_dir = os.path.join(results_dir, f"eval_pretrained_model_{model['modelId']}")
-    os.makedirs(eval_trained_dir, exist_ok=True)
+    #os.makedirs(eval_trained_dir, exist_ok=True)
 
     output_file = os.path.join(eval_trained_dir, 'eval_trained',f"{task['alias']}.json")
     if os.path.exists(output_file):
