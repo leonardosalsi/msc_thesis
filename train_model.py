@@ -19,9 +19,10 @@ from transformers import (
 )
 from config import models_cache_dir, pretrained_models_cache_dir, tokenizer_cache_dir, \
     datasets_cache_dir, logs_dir, generated_datasets_dir
+from downstream_tasks import PRETRAINED_MODELS
 from overrides.tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 from overrides.tokenizer.OverlappingEsmTokenizerWithNSkipping import OverlappingEsmTokenizerWithNSkipping
-from util import init_logger, LOGLEVEL, get_chunk_size_file_name, get_filtered_dataset_name
+from util import init_logger, LOGLEVEL, get_chunk_size_file_name, get_filtered_dataset_name, get_pretrained_model_by_id
 
 
 def parse_args():
@@ -65,6 +66,13 @@ def parse_args():
         dest="from_scratch",
         help="Train model from scratch. Default is false."
     )
+    parser.add_argument(
+        "--checkpoint",
+        type=int,
+        nargs=1,
+        metavar=("modelId in PRETRAINED_MODELS"),
+        help="Use checkpoint instead of pretrained weights."
+    )
     return parser.parse_args()
 
 def memory_safe_train_test_split(data, test_proportion=99.95):
@@ -80,6 +88,7 @@ if __name__ == "__main__":
     chunk_size_folder_name = get_filtered_dataset_name(args.chunk_size, args.shannon, args.gc)
     shannon = args.shannon
     gc = args.gc
+    checkpoint = args.checkpoint
     train_from_scratch = args.from_scratch
     logger = init_logger()
 
@@ -127,6 +136,7 @@ if __name__ == "__main__":
             local_files_only=True,
             low_cpu_mem_usage=True
         )
+
     model = model.to(device)
     torch.cuda.empty_cache()
 
@@ -162,7 +172,6 @@ if __name__ == "__main__":
         )
     else:
         raise ValueError("The specified tokenizer does not exist.")
-
 
     def tokenize_function(examples):
         outputs = tokenizer(examples['sequence'], max_length=1000, truncation=True)
@@ -206,7 +215,7 @@ if __name__ == "__main__":
     tokenized_validation_sequences = validation_sequences.shuffle()
     tokenized_validation_sequences.set_transform(tokenize_function)
     sample = tokenized_train_sequences[0]
-    print(len(sample['input_ids']))
+
     """
     Instantiate collator
     """
@@ -225,8 +234,8 @@ if __name__ == "__main__":
         per_device_train_batch_size=10,
         gradient_accumulation_steps=50,
         per_device_eval_batch_size=128,
-        save_steps=500,
-        logging_steps=500,
+        save_steps=1,
+        logging_steps=1,
         eval_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
@@ -235,7 +244,7 @@ if __name__ == "__main__":
         logging_dir='/dev/null',
         remove_unused_columns=False,
         fp16=True,
-        max_steps=6000,
+        max_steps=12000,
         include_num_input_tokens_seen=True,
     )
 
@@ -247,7 +256,7 @@ if __name__ == "__main__":
         data_collator=data_collator,
     )
 
-    trainer.train()
+    trainer.train(resume_from_checkpoint=True)
 
     logger.log(LOGLEVEL, "Training complete!")
     log_history_path = os.path.join(logs_dir, f"log_history_{created_model_name}.json")
