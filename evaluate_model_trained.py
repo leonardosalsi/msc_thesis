@@ -233,10 +233,9 @@ if __name__ == "__main__":
     eval_trained_dir = os.path.join(results_dir, f"eval_pretrained_model_{model['modelId']}")
     #os.makedirs(eval_trained_dir, exist_ok=True)
 
-    output_file = os.path.join(eval_trained_dir, 'eval_trained',f"{task['alias']}.json")
+    output_file = os.path.join(eval_trained_dir ,f"{task['alias']}.json")
     if os.path.exists(output_file):
-        with open(output_file, "r") as file:
-            results = json.load(file)
+        exit(0)
 
     all_results = []
     for i in range(iterations):
