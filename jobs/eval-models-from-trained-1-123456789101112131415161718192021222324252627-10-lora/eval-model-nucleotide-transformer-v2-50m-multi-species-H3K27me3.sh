@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=eval-model-nucleotide-transformer-v2-50m-multi-species-H3K27me3
-#SBATCH --output=out/eval-model-nucleotide-transformer-v2-50m-multi-species-H3K27me3.txt
+#SBATCH --job-name=H3K27me3
+#SBATCH --output=out/H3K27me3.txt
 #SBATCH --cpus-per-task=2
 #SBATCH --time=100:00:00
 #SBATCH --mem-per-cpu=4G

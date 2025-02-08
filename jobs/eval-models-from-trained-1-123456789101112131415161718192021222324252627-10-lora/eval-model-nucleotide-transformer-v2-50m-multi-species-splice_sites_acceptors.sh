@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=eval-model-nucleotide-transformer-v2-50m-multi-species-splice_sites_acceptors
-#SBATCH --output=out/eval-model-nucleotide-transformer-v2-50m-multi-species-splice_sites_acceptors.txt
+#SBATCH --job-name=splice_sites_acceptors
+#SBATCH --output=out/splice_sites_acceptors.txt
 #SBATCH --cpus-per-task=2
 #SBATCH --time=100:00:00
 #SBATCH --mem-per-cpu=4G
