@@ -120,10 +120,9 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
         remove_columns=["data"],
     )
 
-    print(tokenized_validation_sequences)
 
     """Configure trainer"""
-    batch_size = 1
+    batch_size = 8
     training_args = TrainingArguments(
         f"{model_dict['name']}{mode}-{task['alias']}",
         remove_unused_columns=False,
@@ -132,15 +131,15 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
         learning_rate=3e-3,
         per_device_train_batch_size=batch_size,
         gradient_accumulation_steps= 1,
-        per_device_eval_batch_size= 64,
-        num_train_epochs= 2,
+        per_device_eval_batch_size= min(64, len(tokenized_validation_sequences)),
+        num_train_epochs= 10000,
         logging_steps= 100,
         load_best_model_at_end=False,
         metric_for_best_model="mcc_score",
         label_names=["labels"],
         dataloader_drop_last=True,
         max_steps= 10000,
-        logging_dir='./log',
+        logging_dir='/dev/null',
         disable_tqdm=True
     )
 
@@ -161,14 +160,16 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
     preduction_results = trainer.predict(tokenized_test_sequences)
     predictions = np.argmax(preduction_results.predictions, axis=-1)
     labels = preduction_results.label_ids
-    """Apply Bootstrapping"""
+
+    """Apply Bootstrapping
     scores = []
     for _ in range(10000):
         idx = np.random.choice(len(predictions), size=len(predictions), replace=True)
         score = matthews_corrcoef(labels[idx], predictions[idx])
         scores.append(score)
+    """
 
-    return {'mean': np.mean(scores), 'std': np.std(scores), 'scores': scores, 'training': train_history}
+    return {'labels': labels, 'predictions': predictions, 'training': train_history}
 
 import sys
 import torch
@@ -218,7 +219,10 @@ if __name__ == "__main__":
     else:
         logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
 
-    output_file = os.path.join(results_dir, 'eval_trained',f"{filename}.json")
+    eval_trained_dir = os.path.join(results_dir, f"eval_pretrained_model_{model['modelId']}")
+    os.makedirs(eval_trained_dir, exist_ok=True)
+
+    output_file = os.path.join(eval_trained_dir, 'eval_trained',f"{task['alias']}.json")
     if os.path.exists(output_file):
         with open(output_file, "r") as file:
             results = json.load(file)

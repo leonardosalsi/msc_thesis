@@ -40,6 +40,7 @@ def get_model_by_id(modelId):
     return None
 
 def get_pretrained_model_by_id(modelId):
+    print(modelId)
     for model in PRETRAINED_MODELS:
         if model['modelId'] == modelId:
             return model
