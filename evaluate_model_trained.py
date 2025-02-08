@@ -143,13 +143,13 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
         per_device_train_batch_size=batch_size,
         gradient_accumulation_steps= 1,
         per_device_eval_batch_size= eval_batch_size,
-        num_train_epochs= 100,
-        logging_steps= 100,
+        num_train_epochs= 1,
+        logging_steps= 1,
         load_best_model_at_end=False,
         metric_for_best_model="mcc_score",
         label_names=["labels"],
         dataloader_drop_last=True,
-        max_steps= 10000,
+        max_steps= 1,
         logging_dir='./log',
         disable_tqdm=True
     )
@@ -180,7 +180,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
         scores.append(score)
     """
 
-    return {'labels': labels, 'predictions': predictions, 'training': train_history}
+    return {'labels': labels.tolist(), 'predictions': predictions.tolist(), 'training': train_history}
 
 import sys
 import torch
@@ -241,7 +241,7 @@ if __name__ == "__main__":
     for i in range(iterations):
         results = finetune_model_by_task_mcc(logger, device, model, mode, task)
         all_results.append(results)
-
+    print(all_results)
     with open(output_file, 'w') as f:
         json.dump(all_results, f, indent=4)
     logger.info(f"Results saved to {output_file}")
