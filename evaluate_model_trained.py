@@ -241,7 +241,6 @@ if __name__ == "__main__":
     for i in range(iterations):
         results = finetune_model_by_task_mcc(logger, device, model, mode, task)
         all_results.append(results)
-    logger.log(LOGLEVEL, f"MCC of {model['name']}{mode} on {task['alias']} => mean: {results['mean']}, std: {results['std']}")
 
     with open(output_file, 'w') as f:
         json.dump(all_results, f, indent=4)
