@@ -11,6 +11,12 @@ import numpy as np
 from peft import LoraConfig, TaskType, get_peft_model
 import traceback
 import psutil
+import faulthandler
+import signal
+
+
+faulthandler.enable()
+faulthandler.register(signal.SIGUSR1)
 
 def check_memory_usage():
     process = psutil.Process()
@@ -136,7 +142,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
         per_device_train_batch_size=batch_size,
         gradient_accumulation_steps= 1,
         per_device_eval_batch_size= eval_batch_size,
-        num_train_epochs= 10000,
+        num_train_epochs= 100,
         logging_steps= 100,
         load_best_model_at_end=False,
         metric_for_best_model="mcc_score",
