@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=eval-model-nucleotide-transformer-v2-50m-multi-species-enhancers_types
-#SBATCH --output=out/eval-model-nucleotide-transformer-v2-50m-multi-species-enhancers_types.txt
+#SBATCH --job-name=enhancers_types
+#SBATCH --output=out/enhancers_types.txt
 #SBATCH --cpus-per-task=2
 #SBATCH --time=100:00:00
 #SBATCH --mem-per-cpu=4G
