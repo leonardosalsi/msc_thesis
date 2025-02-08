@@ -4,7 +4,7 @@
 #SBATCH --output=out/eval-model-nucleotide-transformer-v2-50m-multi-species-Genomic_Benchmarks_demo_human_or_worm.txt
 #SBATCH --cpus-per-task=2
 #SBATCH --time=100:00:00
-#SBATCH --mem-per-cpu=5G
+#SBATCH --mem-per-cpu=10G
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
 
