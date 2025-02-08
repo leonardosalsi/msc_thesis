@@ -123,6 +123,10 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
 
     """Configure trainer"""
     batch_size = 8
+    if task["taskId"] == 23:
+        eval_batch_size = 32
+    else:
+        eval_batch_size = 64
     training_args = TrainingArguments(
         f"{model_dict['name']}{mode}-{task['alias']}",
         remove_unused_columns=False,
@@ -131,7 +135,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
         learning_rate=3e-3,
         per_device_train_batch_size=batch_size,
         gradient_accumulation_steps= 1,
-        per_device_eval_batch_size= min(64, len(tokenized_validation_sequences)),
+        per_device_eval_batch_size= eval_batch_size,
         num_train_epochs= 10000,
         logging_steps= 100,
         load_best_model_at_end=False,
@@ -139,7 +143,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
         label_names=["labels"],
         dataloader_drop_last=True,
         max_steps= 10000,
-        logging_dir='/dev/null',
+        logging_dir='./log',
         disable_tqdm=True
     )
 

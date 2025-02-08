@@ -1,4 +1,4 @@
-
+ --checkpoint 1
 # Msc Thesis - The Impact of Sequence Diversity on DNA Foundation Model Performance
 
 ## Models and Datasets
