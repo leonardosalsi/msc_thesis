@@ -1,11 +1,6 @@
 #!/bin/bash
 cd ..
 
-sbatch jobs/evaluate_trained_modelId_0/promoter_all.sh
-sbatch jobs/evaluate_trained_modelId_0/promoter_tata.sh
-sbatch jobs/evaluate_trained_modelId_0/promoter_no_tata.sh
-sbatch jobs/evaluate_trained_modelId_0/enhancers.sh
-sbatch jobs/evaluate_trained_modelId_0/enhancers_types.sh
 sbatch jobs/evaluate_trained_modelId_0/splice_sites_all.sh
 sbatch jobs/evaluate_trained_modelId_0/splice_sites_acceptors.sh
 sbatch jobs/evaluate_trained_modelId_0/splice_sites_donors.sh
