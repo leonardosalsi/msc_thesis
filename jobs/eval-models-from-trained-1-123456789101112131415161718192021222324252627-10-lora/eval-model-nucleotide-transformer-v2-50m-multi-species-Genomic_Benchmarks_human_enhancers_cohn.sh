@@ -4,7 +4,7 @@
 #SBATCH --output=out/Genomic_Benchmarks_human_enhancers_cohn.txt
 #SBATCH --cpus-per-task=2
 #SBATCH --time=100:00:00
-#SBATCH --mem-per-cpu=20G
+#SBATCH --mem-per-cpu=30G
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
 
