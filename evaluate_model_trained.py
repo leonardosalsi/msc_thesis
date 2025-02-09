@@ -186,7 +186,7 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Script to evaluate model and task by MCC with optional random weights and LoRA configurations."
+        description="Script to logan model and task by MCC with optional random weights and LoRA configurations."
     )
     parser.add_argument(
         "modelId",
@@ -205,7 +205,6 @@ def parse_args():
         help="Number of times training and prediction process is repeated. Default is 1."
     )
     return parser.parse_args()
-
 
 if __name__ == "__main__":
     args = parse_args()
@@ -226,7 +225,7 @@ if __name__ == "__main__":
         logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
 
     eval_trained_dir = os.path.join(results_dir, f"eval_pretrained_model_{model['modelId']}")
-    #os.makedirs(eval_trained_dir, exist_ok=True)
+    os.makedirs(eval_trained_dir, exist_ok=True)
 
     output_file = os.path.join(eval_trained_dir ,f"{task['alias']}.json")
     if os.path.exists(output_file):

@@ -192,7 +192,7 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Script to evaluate model and task by MCC with optional random weights and LoRA configurations."
+        description="Script to logan model and task by MCC with optional random weights and LoRA configurations."
     )
     parser.add_argument(
         "modelId",

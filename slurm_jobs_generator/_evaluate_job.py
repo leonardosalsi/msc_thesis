@@ -7,7 +7,7 @@ from util import get_chunk_size_file_name, get_model_by_id, get_task_by_id
 def ask_evaluation(parent_folder):
     model_ids = [model['modelId'] for model in MODELS]
     model_names = [model['data_alias'] for model in MODELS]
-    print("What models do you want to evaluate? [Multiple selections possible, separate by space. Type 0 for all.]")
+    print("What models do you want to logan? [Multiple selections possible, separate by space. Type 0 for all.]")
     for i in range(len(model_ids)):
         print(f"[{model_ids[i]}]\t{model_names[i]}")
     while True:
@@ -36,7 +36,7 @@ def ask_evaluation(parent_folder):
 def ask_task(parent_folder, verified_model_ids):
     task_ids = [task['taskId'] for task in TASKS]
     task_names = [task['data_alias'] for task in TASKS]
-    print("On what tasks do you want to evaluate the models? [Multiple selections possible, separate by space. Type 0 for all.]")
+    print("On what tasks do you want to logan the models? [Multiple selections possible, separate by space. Type 0 for all.]")
     for i in range(len(task_ids)):
         print(f"[{task_ids[i]}]\t{task_names[i]}")
     while True:
@@ -63,7 +63,7 @@ def ask_task(parent_folder, verified_model_ids):
             break
 
 def ask_random_weights(parent_folder, model_ids, task_ids):
-    print("Additionally evaluate models with random weights (where applicable)? [y|n]")
+    print("Additionally logan models with random weights (where applicable)? [y|n]")
     while True:
         ans = input("> ").lower()
         random_weights = False
@@ -91,7 +91,7 @@ def ask_lora(parent_folder, model_ids, task_ids, random_weights):
     ask_samples(parent_folder, model_ids, task_ids, random_weights, lora)
 
 def ask_samples(parent_folder, model_ids, task_ids, random_weights, lora):
-    print("How many times do you want to train and evaluate per model? [1-20]")
+    print("How many times do you want to train and logan per model? [1-20]")
     while True:
         ans = input("> ").lower()
         try:
