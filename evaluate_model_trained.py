@@ -1,5 +1,6 @@
 import os
 from datasets import load_dataset, Dataset
+from tqdm import tqdm
 from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification, logging, \
     AutoConfig, EsmConfig
 from sklearn.metrics import matthews_corrcoef
@@ -9,16 +10,10 @@ from datasets.utils.logging import disable_progress_bar, set_verbosity
 from util import LOGLEVEL, init_logger, get_model_by_id, get_task_by_id, get_pretrained_model_by_id
 import numpy as np
 from peft import LoraConfig, TaskType, get_peft_model
-import traceback
 import psutil
-import faulthandler
-import signal
 
 
-faulthandler.enable()
-faulthandler.register(signal.SIGUSR1)
-print("faulthandler.enable()")
-faulthandler.enable()
+
 def check_memory_usage():
     process = psutil.Process()
     memory_info = process.memory_info()
@@ -53,10 +48,10 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
         split='train'
     )
 
-    logger.log(LOGLEVEL, f"Dataset {task['name']} loaded and splits created")
+    #logger.log(LOGLEVEL, f"Dataset {task['name']} loaded and splits created")
 
     """Load model and move to device"""
-    logger.log(LOGLEVEL, f"Loading model with pretrained weights.")
+    #logger.log(LOGLEVEL, f"Loading model with pretrained weights.")
     model = AutoModelForSequenceClassification.from_pretrained(
         os.path.join(pretrained_models_cache_dir, model_dict['checkpoint']),
         cache_dir=models_cache_dir,
@@ -67,7 +62,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
     model = model.to(device)
 
 
-    logger.log(LOGLEVEL, f"LoRA model loaded")
+    #logger.log(LOGLEVEL, f"LoRA model loaded")
     """Employ LoRA """
     peft_config = LoraConfig(
         task_type=TaskType.SEQ_CLS, inference_mode=False, r=1, lora_alpha=32, lora_dropout=0.1,
@@ -77,7 +72,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
     lora_classifier = get_peft_model(model, peft_config)
     lora_classifier.to(device)
 
-    logger.log(LOGLEVEL, f"Model {model_dict['name']} loaded on device {device}")
+    #logger.log(LOGLEVEL, f"Model {model_dict['name']} loaded on device {device}")
 
     """Get corresponding feature name and load"""
     sequence_feature = task["sequence_feature"]
@@ -99,7 +94,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
         trust_remote_code=True,
         local_files_only = True
     )
-    logger.log(LOGLEVEL, f"Tokenizer {model_dict['name']} loaded")
+    #logger.log(LOGLEVEL, f"Tokenizer {model_dict['name']} loaded")
     """Repack splits"""
     _ds_train = Dataset.from_dict({"data": train_sequences,'labels':train_labels})
     _ds_validation = Dataset.from_dict({"data": validation_sequences,'labels':validation_labels})
@@ -238,10 +233,10 @@ if __name__ == "__main__":
         exit(0)
 
     all_results = []
-    for i in range(iterations):
+    for i in tqdm(range(iterations)):
         results = finetune_model_by_task_mcc(logger, device, model, mode, task)
         all_results.append(results)
-    print(all_results)
+
     with open(output_file, 'w') as f:
         json.dump(all_results, f, indent=4)
     logger.info(f"Results saved to {output_file}")
