@@ -2,8 +2,6 @@
 cd ..
 
 sbatch jobs/evaluate_trained_modelId_1/gb_human_ensembl_regulatory.sh
-sbatch jobs/evaluate_trained_modelId_1/gb_human_ocr_ensembl.sh
-sbatch jobs/evaluate_trained_modelId_1/gb_dummy_mouse_enhancers_ensembl.sh
 sbatch jobs/evaluate_trained_modelId_1/gb_human_enhancers_ensembl.sh
 sbatch jobs/evaluate_trained_modelId_1/gb_human_enhancers_cohn.sh
 sbatch jobs/evaluate_trained_modelId_1/gb_human_nontata_promoters.sh
