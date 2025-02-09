@@ -4,7 +4,7 @@
 #SBATCH --output=out/H3K36me3.txt
 #SBATCH --cpus-per-task=2
 #SBATCH --time=100:00:00
-#SBATCH --mem-per-cpu=4G
+#SBATCH --mem-per-cpu=10G
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
 

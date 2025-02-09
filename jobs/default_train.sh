@@ -9,6 +9,7 @@
 #SBATCH --gres=gpu:v100:1
 
 source ~/.bashrc
+conda init
 conda activate gpu_env
 
 export HF_DATASETS_OFFLINE=1
