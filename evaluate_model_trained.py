@@ -52,8 +52,9 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
 
     """Load model and move to device"""
     #logger.log(LOGLEVEL, f"Loading model with pretrained weights.")
+    path = os.path.join(pretrained_models_cache_dir, model_dict['checkpoint']) if model_dict['checkpoint'] != '' else model_dict['repo']
     model = AutoModelForSequenceClassification.from_pretrained(
-        os.path.join(pretrained_models_cache_dir, model_dict['checkpoint']),
+        path,
         cache_dir=models_cache_dir,
         num_labels=task["num_labels"],
         trust_remote_code=True,
