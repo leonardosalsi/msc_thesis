@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=train-default-1_2kbp
-#SBATCH --output=out/train-default-1_2kbp.txt
+#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/train-default-1_2kbp.txt
 #SBATCH --cpus-per-task=4
 #SBATCH --time=72:00:00
 #SBATCH --mem-per-cpu=40G

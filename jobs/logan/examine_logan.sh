@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=evaluate_logan_data
-#SBATCH --output=out/evaluate_logan_data.txt
+#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/evaluate_logan_data.txt
 #SBATCH --cpus-per-task=4
 #SBATCH --time=100:00:00
 #SBATCH --mem-per-cpu=80G
