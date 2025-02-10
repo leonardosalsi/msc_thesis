@@ -4,7 +4,7 @@ from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelFor
     AutoConfig, EsmConfig
 from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
-from config import models_cache_dir, datasets_cache_dir
+from config import models_cache_dir, datasets_cache_dir, temp_dir
 from datasets.utils.logging import disable_progress_bar, set_verbosity
 from util import LOGLEVEL, init_logger, get_model_by_id, get_task_by_id
 import numpy as np
@@ -128,7 +128,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task, random_we
     """Configure trainer"""
     batch_size = 8
     training_args = TrainingArguments(
-        f"{model_dict['name']}{mode}-{task['alias']}",
+        os.path.join(temp_dir, f"{model_dict['name']}{mode}-{task['alias']}"),
         remove_unused_columns=False,
         eval_strategy="steps",
         save_strategy="no",
