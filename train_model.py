@@ -109,12 +109,8 @@ if __name__ == "__main__":
     if train_from_scratch:
         from_scratch_txt = "_from_scratch"
 
-    use_default_dataset = False
-    if shannon is None and gc is None:
-        use_default_dataset = True
-
     created_model_name = f"{selected_tokenizer.lower()}_{selected_dataset.lower()}_{chunk_size_folder_name}"
-
+    print(created_model_name)
     """
     Get device
     """
@@ -188,7 +184,7 @@ if __name__ == "__main__":
     """
     Load dataset
     """
-    if selected_tokenizer == "Default" or use_default_dataset:
+    if selected_tokenizer == "Default":
         dataset_train = load_dataset(
             "InstaDeepAI/multi_species_genomes",
             cache_dir=datasets_cache_dir,
@@ -230,10 +226,23 @@ if __name__ == "__main__":
     )
 
     """
+    Check if resume possible
+    """
+    model_path = os.path.join(pretrained_models_cache_dir, created_model_name)
+    dir_exists = os.path.isdir(model_path)
+    if dir_exists:
+        if len(os.listdir(model_path)) == 0:
+            resume_from_checkpoint = False
+        else:
+            resume_from_checkpoint = True
+    else:
+        resume_from_checkpoint  = False
+
+    """
     Train model
     """
     training_args = TrainingArguments(
-        output_dir=os.path.join(pretrained_models_cache_dir, created_model_name),
+        output_dir=model_path,
         overwrite_output_dir=True,
         per_device_train_batch_size=10,
         gradient_accumulation_steps=50,
@@ -260,7 +269,7 @@ if __name__ == "__main__":
         data_collator=data_collator,
     )
 
-    trainer.train(resume_from_checkpoint=True)
+    trainer.train(resume_from_checkpoint=resume_from_checkpoint)
 
     logger.log(LOGLEVEL, "Training complete!")
     log_history_path = os.path.join(logs_dir, f"log_history_{created_model_name}.json")
