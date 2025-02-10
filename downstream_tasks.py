@@ -44,63 +44,10 @@ PRETRAINED_MODELS = [
     {'modelId': 0,'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'name': 'nucleotide-transformer-v2-50m-multi-species', 'data_alias': 'NT-MS V2 (50M)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'checkpoint': ''},
     {'modelId': 1,'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'name': 'nucleotide-transformer-v2-50m-multi-species-overlap-sh-1-35-1-8-gc-0-4-0-6-6B', 'data_alias': 'NT-MS V2 (50M) (Overlapping, Shannon 1.35-1.8, GC 0.4-0.6, 6B)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'checkpoint': 'overlappingesmtokenizerwithnskipping_multi_genome_dataset_1_2kbp_sh_1_35_1_8_gc_0_4_0_6/checkpoint-6000/'},
     {'modelId': 2,'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'name': 'nucleotide-transformer-v2-50m-multi-species-overlap-sh-1-35-1-8-gc-0-4-0-6-12B', 'data_alias': 'NT-MS V2 (50M) (Overlapping, Shannon 1.35-1.8, GC 0.4-0.6, 12B)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'checkpoint': 'overlappingesmtokenizerwithnskipping_multi_genome_dataset_1_2kbp_sh_1_35_1_8_gc_0_4_0_6/checkpoint-12000/'},
-    {'modelId': 3,'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'name': 'nucleotide-transformer-v2-50m-multi-species-sh-1-35-1-8-gc-0-4-0-6-6B', 'data_alias': 'NT-MS V2 (50M) (6B)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'checkpoint': 'default_multi_genome_dataset_1_2kbp_sh_1_35_1_8_gc_0_4_0_6/checkpoint-6000/'},
-    {'modelId': 4,'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'name': 'nucleotide-transformer-v2-50m-multi-species-sh-1-35-1-8-gc-0-4-0-6-12B', 'data_alias': 'NT-MS V2 (50M) (12B)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'checkpoint': 'default_multi_genome_dataset_1_2kbp_sh_1_35_1_8_gc_0_4_0_6/checkpoint-12000/'},
+    {'modelId': 3,'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'name': 'nucleotide-transformer-v2-50m-multi-species-sh-1-35-1-8-gc-0-4-0-6-6B', 'data_alias': 'NT-MS V2 (50M) (Shannon 1.35-1.8, GC 0.4-0.6, 6B)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'checkpoint': 'default_multi_genome_dataset_1_2kbp_sh_1_35_1_8_gc_0_4_0_6/checkpoint-6000/'},
+    {'modelId': 4,'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'name': 'nucleotide-transformer-v2-50m-multi-species-sh-1-35-1-8-gc-0-4-0-6-12B', 'data_alias': 'NT-MS V2 (50M) (Shannon 1.35-1.8, GC 0.4-0.6, 12B)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'checkpoint': 'default_multi_genome_dataset_1_2kbp_sh_1_35_1_8_gc_0_4_0_6/checkpoint-12000/'},
+    {'modelId': 5,'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'name': 'nucleotide-transformer-v2-50m-multi-species-overlap-6B', 'data_alias': 'NT-MS V2 (50M) (Overlapping, 6B)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'checkpoint': 'overlappingesmtokenizerwithnskipping_multi_genome_dataset_1_2kbp/checkpoint-6000/'},
+    {'modelId': 6,'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'name': 'nucleotide-transformer-v2-50m-multi-species-overlap-12B', 'data_alias': 'NT-MS V2 (50M) (Overlapping, 12B)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'checkpoint': 'overlappingesmtokenizerwithnskipping_multi_genome_dataset_1_2kbp/checkpoint-12000/'},
+    {'modelId': 7,'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'name': 'nucleotide-transformer-v2-50m-multi-species-6B', 'data_alias': 'NT-MS V2 (50M) (6B)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'checkpoint': 'default_multi_genome_dataset_1_2kbp/checkpoint-6000/'},
+    {'modelId': 8,'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'name': 'nucleotide-transformer-v2-50m-multi-species-12B', 'data_alias': 'NT-MS V2 (50M) (12B)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'checkpoint': 'default_multi_genome_dataset_1_2kbp/checkpoint-12000/'},
 ]
-
-def generate_file(job_name, modelId, taskId, no_lora=False, random_weights=False):
-    args = ''
-    if no_lora:
-        args += ' --no-lora'
-
-    if random_weights:
-        args += ' --random-weights'
-
-    content = f'''#!/bin/bash
-
-#SBATCH --job-name={job_name}
-#SBATCH --output=out/{job_name}.txt
-#SBATCH --cpus-per-task=2
-#SBATCH --time=20:00:00
-#SBATCH --mem-per-cpu=2G
-#SBATCH -p gpu
-#SBATCH --gres=gpu:1
-
-source ~/.bashrc
-conda activate gpu_env
-
-HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \\
-python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/evaluate_model_mcc.py {modelId} {taskId}{args} '''
-    with open(f'jobs/evaluate_mcc/{job_name}.sh', 'w') as rsh:
-        rsh.writelines(content)
-
-def generate_jobs():
-    jobs = []
-    for model in MODELS:
-        for task in TASKS:
-            generate_file(f"{model['name']}-{task['alias']}-lora", model['modelId'], task['taskId'])
-            jobs.append(f"{model['name']}-{task['alias']}-lora")
-        if (model['modelId'] == 1 or model['modelId'] == 4):
-            for task in TASKS:
-                generate_file(f"{model['name']}-random-weights-{task['alias']}-lora", model['modelId'], task['taskId'], random_weights=True)
-                jobs.append(f"{model['name']}-random-weights-{task['alias']}-lora")
-    """
-    for model in MODELS:
-        for task in TASKS:
-            generate_file(f"{model['name']}-{task['alias']}", model['modelId'], task['taskId'], no_lora=True)
-            jobs.append(f"{model['name']}-{task['alias']}-{task['alias']}")
-        if (model['modelId'] == 1 or model['modelId'] == 4):
-            for task in TASKS:
-                generate_file(f"{model['name']}-random-weights-{task['alias']}", model['modelId'], task['taskId'], no_lora=True, random_weights=True)
-                jobs.append(f"{model['name']}-random-weights-{task['alias']}")
-    """
-    content = '''#!/bin/bash\n\n'''
-
-    for job in jobs:
-        content += f"sbatch jobs/evaluate_mcc/{job}.sh\n"
-
-    with open(f'evaluate_all.sh', 'w') as rsh:
-        rsh.writelines(content)
-
-if __name__ == '__main__':
-    generate_jobs()

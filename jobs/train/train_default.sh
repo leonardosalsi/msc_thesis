@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=train-default-1_2kbp
-#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/train-default-1_2kbp.txt
+#SBATCH --job-name=train_default
+#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/train_default.txt
 #SBATCH --cpus-per-task=4
 #SBATCH --time=72:00:00
 #SBATCH --mem-per-cpu=40G
@@ -15,4 +15,4 @@ export HF_DATASETS_OFFLINE=1
 export HF_HUB_OFFLINE=1
 
 python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/train_model.py \
-    multi_genome_dataset Default 1200 --shannon 1.35 1.8 --gc 0.4 0.6
+    multi_genome_dataset Default 1200
