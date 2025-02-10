@@ -26,7 +26,7 @@ def compute_metrics_mcc(eval_pred):
     r={'mcc_score': matthews_corrcoef(references, predictions)}
     return r
 
-def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
+def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task):
     disable_progress_bar()
     set_verbosity(logging.ERROR)
     logging.set_verbosity_error()
@@ -131,7 +131,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
     else:
         eval_batch_size = 64
     training_args = TrainingArguments(
-        f"{model_dict['name']}{mode}-{task['alias']}",
+        f"eval_model_id_{model_id}_{task['alias']}",
         remove_unused_columns=False,
         eval_strategy="steps",
         save_strategy="no",
@@ -234,7 +234,7 @@ if __name__ == "__main__":
 
     all_results = []
     for i in tqdm(range(iterations)):
-        results = finetune_model_by_task_mcc(logger, device, model, mode, task)
+        results = finetune_model_by_task_mcc(logger, device, model, args.modelId, mode, task)
         all_results.append(results)
 
     with open(output_file, 'w') as f:
