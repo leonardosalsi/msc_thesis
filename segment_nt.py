@@ -79,6 +79,13 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     max_length = 16 + 1
+    print("cache dir: {}".format(models_cache_dir))
+    model = AutoModel.from_pretrained(
+        "InstaDeepAI/segment_nt",
+        cache_dir=models_cache_dir,
+        trust_remote_code=True,
+        local_files_only=True
+    )
 
     tokenizer = AutoTokenizer.from_pretrained(
         "InstaDeepAI/segment_nt",
@@ -86,12 +93,7 @@ if __name__ == "__main__":
         trust_remote_code=True,
         local_files_only=True
     )
-    model = AutoModel.from_pretrained(
-        "InstaDeepAI/segment_nt",
-        cache_dir=models_cache_dir,
-        trust_remote_code=True,
-        local_files_only=True
-    )
+
     model.to(device)
     model.eval()
     dataloader = DataLoader(dataset, batch_size=64, collate_fn=collate_fn, num_workers=4, pin_memory=True)
