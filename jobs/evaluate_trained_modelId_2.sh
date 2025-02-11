@@ -2,11 +2,4 @@
 cd ..
 
 sbatch jobs/evaluate_trained_modelId_2/promoter_all.sh
-sbatch jobs/evaluate_trained_modelId_2/splice_sites_acceptors.sh
-sbatch jobs/evaluate_trained_modelId_2/splice_sites_donors.sh
-sbatch jobs/evaluate_trained_modelId_2/H2AFZ.sh
-sbatch jobs/evaluate_trained_modelId_2/H3K27ac.sh
-sbatch jobs/evaluate_trained_modelId_2/gb_human_ensembl_regulatory.sh
-sbatch jobs/evaluate_trained_modelId_2/gb_human_ocr_ensembl.sh
-sbatch jobs/evaluate_trained_modelId_2/gb_dummy_mouse_enhancers_ensembl.sh
-sbatch jobs/evaluate_trained_modelId_2/gb_human_enhancers_ensembl.sh
+sbatch jobs/evaluate_trained_modelId_2/H4K20me1.sh
