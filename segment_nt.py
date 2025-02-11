@@ -77,6 +77,9 @@ if __name__ == "__main__":
         dataset_path = os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, train_folder)
         dataset = load_from_disk(dataset_path)
 
+    dataset = dataset.shuffle().select(range(4000000))
+    print(dataset)
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     max_length = 16 + 1
     print("cache dir: {}".format(models_cache_dir))
