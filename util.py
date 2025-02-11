@@ -5,7 +5,10 @@ LOGLEVEL = 22
 
 
 def get_chunk_size_file_name(chunk_size) -> str:
-    return (str(chunk_size / 1000).replace(".", "_") + "kbp").replace("_0", "")
+    if chunk_size is not None:
+        return (str(chunk_size / 1000).replace(".", "_") + "kbp").replace("_0", "")
+    else:
+        return ""
 
 def get_filtered_dataset_name(chunk_size, shannon, gc) -> str:
     shannon_txt = ""

@@ -33,7 +33,7 @@ def parse_args():
         "dataset",
         type=str,
         help="Name of the dataset",
-        choices=["multi_genome_dataset"]
+        choices=["multi_genome_dataset", "logan"]
     )
     parser.add_argument(
         "tokenizer",
@@ -42,7 +42,7 @@ def parse_args():
         choices=["Default", "OverlappingEsmTokenizer", "OverlappingEsmTokenizerWithNSkipping"],
     )
     parser.add_argument(
-        "chunk_size",
+        "--chunk_size",
         type=int,
         help="Chunk size (defined when further splitting data)",
     )
@@ -192,9 +192,9 @@ if __name__ == "__main__":
             trust_remote_code=True
         )
     else:
-        dataset_train = load_from_disk(
-            os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, 'train')
-        )
+        train_folder = "train" if selected_dataset == "multi_genome_dataset" else ""
+        dataset_path = os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, train_folder)
+        dataset_train = load_from_disk(dataset_path)
 
     columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
     dataset_train = dataset_train.remove_columns(columns_to_remove)
