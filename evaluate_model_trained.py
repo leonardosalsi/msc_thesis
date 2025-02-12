@@ -238,7 +238,7 @@ if __name__ == "__main__":
         exit(0)
 
     all_results = []
-    for i in tqdm(range(1)):
+    for i in tqdm(range(3)):
         results = finetune_model_by_task_mcc(logger, device, model, args.modelId, mode, task)
         all_results.append(results)
 
