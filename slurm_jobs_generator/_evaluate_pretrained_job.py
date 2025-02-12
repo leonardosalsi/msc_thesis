@@ -117,3 +117,12 @@ cd ..
 
     with open(os.path.join(jobs_folder_local, f"{slurm_jobs_folder_name}.sh"), "w") as file:
         file.write(shell)
+
+if __name__ == "__main__":
+    parent_folder = "/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis"
+    model_ids = [model['modelId'] for model in PRETRAINED_MODELS]
+    task_ids = [task['taskId'] for task in TASKS]
+    samples = 10
+
+    for model_id in model_ids:
+        _generate_file_for_training(parent_folder, model_id, task_ids, samples)

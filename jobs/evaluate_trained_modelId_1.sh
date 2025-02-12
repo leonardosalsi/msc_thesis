@@ -10,8 +10,8 @@ sbatch jobs/evaluate_trained_modelId_1/splice_sites_all.sh
 sbatch jobs/evaluate_trained_modelId_1/splice_sites_acceptors.sh
 sbatch jobs/evaluate_trained_modelId_1/splice_sites_donors.sh
 sbatch jobs/evaluate_trained_modelId_1/H2AFZ.sh
-sbatch jobs/evaluate_trained_modelId_1/H3K21ac.sh
-sbatch jobs/evaluate_trained_modelId_1/H3K21me3.sh
+sbatch jobs/evaluate_trained_modelId_1/H3K27ac.sh
+sbatch jobs/evaluate_trained_modelId_1/H3K27me3.sh
 sbatch jobs/evaluate_trained_modelId_1/H3K36me3.sh
 sbatch jobs/evaluate_trained_modelId_1/H3K4me1.sh
 sbatch jobs/evaluate_trained_modelId_1/H3K4me2.sh
