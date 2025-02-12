@@ -140,7 +140,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task)
         remove_unused_columns=False,
         eval_strategy="steps",
         save_strategy="no",
-        learning_rate=3e-3,
+        learning_rate=5e-4,
         per_device_train_batch_size=batch_size,
         gradient_accumulation_steps= 1,
         per_device_eval_batch_size= eval_batch_size,
