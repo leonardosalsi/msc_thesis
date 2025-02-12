@@ -1,4 +1,8 @@
 import os
+import random
+import datetime
+import time
+
 from datasets import load_dataset, Dataset
 from tqdm import tqdm
 from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification, logging, \
@@ -86,7 +90,8 @@ def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task)
     test_labels = dataset_test[label_feature]
 
     """Generate validation splits"""
-    train_sequences, validation_sequences, train_labels, validation_labels = train_test_split(train_sequences, train_labels, test_size=0.05)
+    random_seed = random.randint(0, 10000)
+    train_sequences, validation_sequences, train_labels, validation_labels = train_test_split(train_sequences, train_labels, test_size=0.05, random_state=random_seed)
 
     """Load model overrides"""
     tokenizer = AutoTokenizer.from_pretrained(
@@ -131,7 +136,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task)
     else:
         eval_batch_size = 64
     training_args = TrainingArguments(
-        os.path.join(temp_dir, f"{model_dict['name']}{mode}-{task['alias']}"),
+        os.path.join(temp_dir, f"{model_dict['name']}{mode}-{task['alias']}{str(time.time()).replace('.', '')}"),
         remove_unused_columns=False,
         eval_strategy="steps",
         save_strategy="no",
@@ -233,7 +238,7 @@ if __name__ == "__main__":
         exit(0)
 
     all_results = []
-    for i in tqdm(range(iterations)):
+    for i in tqdm(range(1)):
         results = finetune_model_by_task_mcc(logger, device, model, args.modelId, mode, task)
         all_results.append(results)
 
