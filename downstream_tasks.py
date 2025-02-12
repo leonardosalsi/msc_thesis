@@ -1,6 +1,3 @@
-import os
-from config import pretrained_models_cache_dir
-
 TASKS = [
     {'taskId': 1,'repo': "InstaDeepAI/nucleotide_transformer_downstream_tasks_revised", 'name': "promoter_all", 'alias': "promoter_all", 'len': 300, 'sequence_feature': 'sequence', 'label_feature': 'label', 'num_labels': 2, 'data_alias': 'Promoter (all)'},
     {'taskId': 2,'repo': "InstaDeepAI/nucleotide_transformer_downstream_tasks_revised", 'name': "promoter_tata", 'alias': "promoter_tata", 'len': 300, 'sequence_feature': 'sequence', 'label_feature': 'label', 'num_labels': 2, 'data_alias': 'Promoter (TATA)'},
