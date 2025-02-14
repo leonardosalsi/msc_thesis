@@ -97,13 +97,20 @@ if __name__ == "__main__":
     gc_txt = ""
     from_scratch_txt = ""
     if shannon is not None:
-        shannon_txt = f"_sh_{shannon[0]}_{shannon[1]}"
+        shannon_txt = f"_sh"
     if gc is not None:
-        gc_txt = f"_gc_{gc[0]}_{gc[1]}"
+        gc_txt = f"_gc"
     if train_from_scratch:
         from_scratch_txt = "_from_scratch"
 
-    created_model_name = f"{selected_tokenizer.lower()}_{selected_dataset.lower()}_{chunk_size_folder_name}"
+    if selected_tokenizer == "Default":
+        named_tokenizer = 'default'
+    elif selected_tokenizer == "OverlappingEsmTokenizer":
+        named_tokenizer = 'overlap'
+    elif selected_tokenizer == "OverlappingEsmTokenizerWithNSkipping":
+        named_tokenizer = 'overlap'
+
+    created_model_name = f"{named_tokenizer}_{selected_dataset.lower()}{shannon_txt}{gc_txt}{from_scratch_txt}"
     print(created_model_name)
     """
     Get device
@@ -195,6 +202,8 @@ if __name__ == "__main__":
         validation_folder = "validation" if selected_dataset == "multi_genome_dataset" else ""
         dataset_path = os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, train_folder)
         validation_path = os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, validation_folder)
+        logger.log(LOGLEVEL, f"Train data: {dataset_path}")
+        logger.log(LOGLEVEL, f"Validation data: {validation_path}")
         dataset_train = load_from_disk(dataset_path)
         dataset_validation = load_from_disk(validation_path)
 
@@ -266,7 +275,6 @@ if __name__ == "__main__":
         eval_dataset=tokenized_validation_sequences,
         data_collator=data_collator,
     )
-    trainer.add_callback(ShuffleEvalCallback(tokenized_validation_sequences, sample_size=2000))
 
     _ = trainer.train()
 
