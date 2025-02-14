@@ -75,12 +75,6 @@ def parse_args():
     )
     return parser.parse_args()
 
-def memory_safe_train_test_split(data, test_proportion=99.95):
-    ratio = int(len(data)/test_proportion) #should be int
-    data_train = data[ratio:,:]
-    data_test =  data[:ratio,:]
-    return data_train, data_test
-
 if __name__ == "__main__":
     args = parse_args()
     selected_tokenizer = args.tokenizer
@@ -140,7 +134,6 @@ if __name__ == "__main__":
     model = model.to(device)
     torch.cuda.empty_cache()
 
-
     baseline_memory = torch.cuda.memory_allocated(device)
 
 
@@ -191,30 +184,35 @@ if __name__ == "__main__":
             split='train',
             trust_remote_code=True
         )
+        dataset_validation = load_dataset(
+            "InstaDeepAI/multi_species_genomes",
+            cache_dir=datasets_cache_dir,
+            split='dataset_validation',
+            trust_remote_code=True
+        )
     else:
         train_folder = "train" if selected_dataset == "multi_genome_dataset" else ""
+        validation_folder = "validation" if selected_dataset == "multi_genome_dataset" else ""
         dataset_path = os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, train_folder)
+        validation_path = os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, validation_folder)
         dataset_train = load_from_disk(dataset_path)
+        dataset_validation = load_from_disk(validation_path)
 
     columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
     dataset_train = dataset_train.remove_columns(columns_to_remove)
-    dataset_train = dataset_train.train_test_split(test_size=0.01)
-    logger.log(LOGLEVEL, "Splits created")
-    train_sequences = dataset_train['train']
-    validation_sequences = dataset_train['test']
+    dataset_validation = dataset_validation.remove_columns(columns_to_remove)
 
     logger.log(LOGLEVEL, "Dataset loaded")
-    logger.log(LOGLEVEL, f"Total training tokens: {len(train_sequences) * 1000}")
-    logger.log(LOGLEVEL, f"Total validation tokens: {len(validation_sequences) * 1000}")
+    logger.log(LOGLEVEL, f"Total training tokens: {len(dataset_train) * 1000}")
+    logger.log(LOGLEVEL, f"Total validation tokens: {len(dataset_validation) * 1000}")
     """
     Enable retokenization per epoch
     """
-    tokenized_train_sequences = train_sequences.shuffle()
+    tokenized_train_sequences = dataset_train.shuffle()
     tokenized_train_sequences.set_transform(tokenize_function)
 
-    tokenized_validation_sequences = validation_sequences.shuffle()
+    tokenized_validation_sequences = dataset_validation.shuffle().select(range(10000))
     tokenized_validation_sequences.set_transform(tokenize_function)
-    sample = tokenized_train_sequences[0]
 
     """
     Instantiate collator
@@ -244,15 +242,15 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=model_path,
         overwrite_output_dir=True,
-        per_device_train_batch_size=10,
-        gradient_accumulation_steps=50,
-        per_device_eval_batch_size=128,
-        save_steps=500,
+        per_device_train_batch_size=5,
+        gradient_accumulation_steps=100,
+        per_device_eval_batch_size=64,
+        save_steps=6000,
         logging_steps=500,
         eval_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
-        dataloader_num_workers=2,
+        dataloader_num_workers=4,
         gradient_checkpointing=False,
         logging_dir='/dev/null',
         remove_unused_columns=False,
@@ -268,8 +266,9 @@ if __name__ == "__main__":
         eval_dataset=tokenized_validation_sequences,
         data_collator=data_collator,
     )
+    trainer.add_callback(ShuffleEvalCallback(tokenized_validation_sequences, sample_size=2000))
 
-    trainer.train(resume_from_checkpoint=resume_from_checkpoint)
+    _ = trainer.train()
 
     logger.log(LOGLEVEL, "Training complete!")
     log_history_path = os.path.join(logs_dir, f"log_history_{created_model_name}.json")
