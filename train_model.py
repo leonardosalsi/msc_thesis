@@ -194,7 +194,7 @@ if __name__ == "__main__":
         dataset_validation = load_dataset(
             "InstaDeepAI/multi_species_genomes",
             cache_dir=datasets_cache_dir,
-            split='dataset_validation',
+            split='validation',
             trust_remote_code=True
         )
     else:
