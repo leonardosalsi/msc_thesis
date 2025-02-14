@@ -72,18 +72,18 @@ def filter_dataset(dataset_split, chunk_size, shannon, gc):
         def_num_groups += 1
         i = last_entry_idx
         full_sequence = restore_original_sequence(group)
+
         """Evaluate if allowed"""
-        shannon_ok = True
-        gc_ok = True
+        is_allowed = True
         if shannon is not None:
             shannon_entropy = calculate_shannon_entropy(full_sequence)
             if shannon_entropy < shannon[0] or shannon_entropy > shannon[1]:
-                shannon_ok = False
+                is_allowed = is_allowed and False
         if gc is not None:
             gc_content = calculate_gc_content(full_sequence)
             if gc_content < gc[0] or gc_content > gc[1]:
-                gc_ok = False
-        is_allowed = shannon_ok and gc_ok
+                is_allowed = is_allowed and False
+
         if is_allowed:
             """Create smaller chunks"""
             splits = split_with_overlap(full_sequence, description, chunk_size)
@@ -145,9 +145,6 @@ if __name__ == "__main__":
     chunk_size = args.chunk_size
     shannon = args.shannon
     gc = args.gc
-    if shannon is None and gc is None:
-        print("You must specify either --shannon or --gc")
-        exit(1)
 
     """
     Select dataset to filter by entropy
