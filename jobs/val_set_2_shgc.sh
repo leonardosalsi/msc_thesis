@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=mt_gen_val_2_2
-#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/mt_gen_val_2_2.txt
+#SBATCH --job-name=mt_gen_val_2_2_shgc
+#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/mt_gen_val_2_2_shgc.txt
 #SBATCH --cpus-per-task=4
 #SBATCH --time=12:00:00
 #SBATCH --mem-per-cpu=4G
