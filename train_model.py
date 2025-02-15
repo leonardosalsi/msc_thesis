@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
     num = math.floor(args.chunk_size / 1000)
     num_tokens = num * 1000
-    gradient_accumulation_steps = int(100 / num)
+    gradient_accumulation_steps = int(50 / num)
 
     """
     Define setup name
