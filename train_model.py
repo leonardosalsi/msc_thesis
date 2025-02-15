@@ -220,11 +220,12 @@ if __name__ == "__main__":
     Enable retokenization per epoch
     """
 
-    dataset_train = dataset_train.shuffle()
-    dataset_validation = dataset_validation.shuffle().select(range(6000))
+    tokenized_train_sequences = dataset_train.shuffle()
+    tokenized_train_sequences.set_transform(tokenize_function)
 
-    tokenized_train_sequences = dataset_train.map(tokenize_function, remove_columns='sequence', batched=True)
-    tokenized_validation_sequences = dataset_validation.map(tokenize_function, remove_columns='sequence', batched=True)
+    tokenized_validation_sequences = dataset_validation.shuffle()
+    tokenized_validation_sequences = tokenized_validation_sequences
+    tokenized_validation_sequences.set_transform(tokenize_function)
 
     """
     Instantiate collator
@@ -254,8 +255,8 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=model_path,
         overwrite_output_dir=True,
-        per_device_train_batch_size=5,
-        gradient_accumulation_steps=100,
+        per_device_train_batch_size=10,
+        gradient_accumulation_steps=50,
         per_device_eval_batch_size=64,
         save_steps=6000,
         logging_steps=500,
