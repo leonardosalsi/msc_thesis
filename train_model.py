@@ -23,7 +23,8 @@ from downstream_tasks import PRETRAINED_MODELS
 from overrides.tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 from overrides.tokenizer.OverlappingEsmTokenizerWithNSkipping import OverlappingEsmTokenizerWithNSkipping
 from util import init_logger, LOGLEVEL, get_chunk_size_file_name, get_filtered_dataset_name, get_pretrained_model_by_id
-
+import torch
+torch.backends.cudnn.benchmark = True
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -111,7 +112,7 @@ if __name__ == "__main__":
         named_tokenizer = 'overlap'
 
     created_model_name = f"{named_tokenizer}_{selected_dataset.lower()}{shannon_txt}{gc_txt}{from_scratch_txt}"
-    print(created_model_name)
+
     """
     Get device
     """
@@ -214,14 +215,16 @@ if __name__ == "__main__":
     logger.log(LOGLEVEL, "Dataset loaded")
     logger.log(LOGLEVEL, f"Total training tokens: {len(dataset_train) * 1000}")
     logger.log(LOGLEVEL, f"Total validation tokens: {len(dataset_validation) * 1000}")
+
     """
     Enable retokenization per epoch
     """
-    tokenized_train_sequences = dataset_train.shuffle()
-    tokenized_train_sequences.set_transform(tokenize_function)
 
-    tokenized_validation_sequences = dataset_validation.shuffle().select(range(10000))
-    tokenized_validation_sequences.set_transform(tokenize_function)
+    dataset_train = dataset_train.shuffle()
+    dataset_validation = dataset_validation.shuffle().select(range(6000))
+
+    tokenized_train_sequences = dataset_train.map(tokenize_function, remove_columns='sequence', batched=True)
+    tokenized_validation_sequences = dataset_validation.map(tokenize_function, remove_columns='sequence', batched=True)
 
     """
     Instantiate collator
@@ -252,7 +255,7 @@ if __name__ == "__main__":
         output_dir=model_path,
         overwrite_output_dir=True,
         per_device_train_batch_size=10,
-        gradient_accumulation_steps=100,
+        gradient_accumulation_steps=50,
         per_device_eval_batch_size=64,
         save_steps=6000,
         logging_steps=500,
