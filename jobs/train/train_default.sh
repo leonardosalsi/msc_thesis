@@ -3,7 +3,7 @@
 #SBATCH --job-name=train_default
 #SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/train_default.txt
 #SBATCH --cpus-per-task=4
-#SBATCH --time=72:00:00
+#SBATCH --time=96:00:00
 #SBATCH --mem-per-cpu=40G
 #SBATCH -p gpu
 #SBATCH --gres=gpu:rtx4090:1
