@@ -254,7 +254,7 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=model_path,
         overwrite_output_dir=True,
-        per_device_train_batch_size=10,
+        per_device_train_batch_size=50,
         gradient_accumulation_steps=50,
         per_device_eval_batch_size=64,
         save_steps=6000,
@@ -267,7 +267,7 @@ if __name__ == "__main__":
         logging_dir='/dev/null',
         remove_unused_columns=False,
         fp16=True,
-        max_steps=12000,
+        max_steps=24000,
         include_num_input_tokens_seen=True,
     )
 
