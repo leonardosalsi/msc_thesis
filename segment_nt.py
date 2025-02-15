@@ -94,7 +94,8 @@ if __name__ == "__main__":
         "InstaDeepAI/segment_nt",
         cache_dir=models_cache_dir,
         trust_remote_code=True,
-        local_files_only=True
+        local_files_only=True,
+        model_max_length=2000
     )
 
     model.to(device)

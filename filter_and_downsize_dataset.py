@@ -155,7 +155,7 @@ if __name__ == "__main__":
             cache_dir=datasets_cache_dir,
             split=split,
             trust_remote_code=True
-        )
+        ).select(range(10000))
     else:
         print(f"Unknown dataset {selected_dataset}")
         exit(1)
