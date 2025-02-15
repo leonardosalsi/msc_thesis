@@ -223,8 +223,8 @@ if __name__ == "__main__":
     dataset_train = dataset_train.shuffle()
     dataset_validation = dataset_validation.shuffle().select(range(6000))
 
-    tokenized_train_sequences = dataset_train.map(tokenize_function, remove_columns='sequence', batched=True)
-    tokenized_validation_sequences = dataset_validation.map(tokenize_function, remove_columns='sequence', batched=True)
+    tokenized_train_sequences = dataset_train.map(tokenize_function, remove_columns='sequence', batched=True, num_proc=4, batch_size=5000)
+    tokenized_validation_sequences = dataset_validation.map(tokenize_function, remove_columns='sequence', batched=True, num_proc=4, batch_size=5000)
 
     """
     Instantiate collator
@@ -262,7 +262,7 @@ if __name__ == "__main__":
         eval_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
-        dataloader_num_workers=4,
+        dataloader_num_workers=8,
         gradient_checkpointing=False,
         logging_dir='/dev/null',
         remove_unused_columns=False,
