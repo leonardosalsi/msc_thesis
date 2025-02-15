@@ -17,6 +17,7 @@ from transformers import (
     TrainingArguments,
     DataCollatorForLanguageModeling, AutoTokenizer, EsmConfig, TrainerCallback,
 )
+
 from config import models_cache_dir, pretrained_models_cache_dir, tokenizer_cache_dir, \
     datasets_cache_dir, logs_dir, generated_datasets_dir
 from downstream_tasks import PRETRAINED_MODELS
@@ -76,6 +77,17 @@ def parse_args():
     )
     return parser.parse_args()
 
+def print_gpu_memory_usage(device):
+    """Print the currently allocated and reserved GPU memory (in MB)."""
+    if device.type == "cuda":
+        allocated = torch.cuda.memory_allocated(device) / (1024 ** 2)
+        reserved = torch.cuda.memory_reserved(device) / (1024 ** 2)
+        print(f"GPU Memory allocated: {allocated:.2f} MB")
+        print(f"GPU Memory reserved: {reserved:.2f} MB")
+    else:
+        print("Running on CPU; GPU memory usage is not applicable.")
+
+
 if __name__ == "__main__":
     args = parse_args()
     selected_tokenizer = args.tokenizer
@@ -89,7 +101,7 @@ if __name__ == "__main__":
 
     num = math.floor(args.chunk_size / 1000)
     num_tokens = num * 1000
-    gradient_accumulation_steps = 2 / num
+    gradient_accumulation_steps = 100 / num
 
     """
     Define setup name
@@ -121,11 +133,11 @@ if __name__ == "__main__":
         logger.log(LOGLEVEL, f"Using GPU: {torch.cuda.get_device_name(0)}")
     else:
         logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
-
+    torch.cuda.empty_cache()
     """
     Load model
     """
-
+    print_gpu_memory_usage(device)
     if train_from_scratch:
         config = EsmConfig.from_pretrained(f"model_configs/config-nucleotide-transformer-v2-50m-multi-species.json",
                                            local_files_only=True, trust_remote_code=True)
@@ -136,11 +148,10 @@ if __name__ == "__main__":
             cache_dir=models_cache_dir,
             trust_remote_code=True,
             local_files_only=True,
-            low_cpu_mem_usage=True
         )
 
     model = model.to(device)
-    torch.cuda.empty_cache()
+    print_gpu_memory_usage(device)
 
     baseline_memory = torch.cuda.memory_allocated(device)
 
@@ -153,7 +164,7 @@ if __name__ == "__main__":
     if selected_tokenizer == "Default":
         tokenizer = AutoTokenizer.from_pretrained(
             "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
-            model_max_length=1000,
+            model_max_length=2048,
             cache_dir=models_cache_dir,
             remove_columns=['sequence'],
             trust_remote_code=True,
@@ -175,7 +186,7 @@ if __name__ == "__main__":
         raise ValueError("The specified tokenizer does not exist.")
 
     def tokenize_function(examples):
-        outputs = tokenizer(examples['sequence'], max_length=1000, truncation=True)
+        outputs = tokenizer(examples['sequence'], max_length=num_tokens, truncation=True)
         return outputs
 
     tf = lambda examples: tokenize_function(examples)
@@ -255,8 +266,8 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=model_path,
         overwrite_output_dir=True,
-        per_device_train_batch_size=10,
-        gradient_accumulation_steps=50,
+        per_device_train_batch_size=3,
+        gradient_accumulation_steps=gradient_accumulation_steps,
         per_device_eval_batch_size=64,
         save_steps=6000,
         logging_steps=500,
@@ -267,7 +278,7 @@ if __name__ == "__main__":
         gradient_checkpointing=False,
         logging_dir='/dev/null',
         remove_unused_columns=False,
-        fp16=True,
+        bf16=True,
         max_steps=12000,
         include_num_input_tokens_seen=True,
     )
