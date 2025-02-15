@@ -235,7 +235,7 @@ if __name__ == "__main__":
     tokenized_train_sequences.set_transform(tokenize_function)
 
     tokenized_validation_sequences = dataset_validation.shuffle()
-    tokenized_validation_sequences = tokenized_validation_sequences
+    tokenized_validation_sequences = tokenized_validation_sequences.select(range(5000))
     tokenized_validation_sequences.set_transform(tokenize_function)
 
     """
@@ -266,7 +266,7 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=model_path,
         overwrite_output_dir=True,
-        per_device_train_batch_size=3,
+        per_device_train_batch_size=5,
         gradient_accumulation_steps=gradient_accumulation_steps,
         per_device_eval_batch_size=64,
         save_steps=6000,
