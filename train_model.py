@@ -267,7 +267,7 @@ if __name__ == "__main__":
         logging_dir='/dev/null',
         remove_unused_columns=False,
         fp16=True,
-        max_steps=24000,
+        max_steps=12000,
         include_num_input_tokens_seen=True,
     )
 
