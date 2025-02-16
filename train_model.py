@@ -103,6 +103,11 @@ if __name__ == "__main__":
     num_tokens = num * 1000
     gradient_accumulation_steps = int(50 / num)
 
+    kb = ""
+    if num != 1:
+        kb = f"_{num}kb"
+
+    print(kb)
     """
     Define setup name
     """
@@ -123,7 +128,7 @@ if __name__ == "__main__":
     elif selected_tokenizer == "OverlappingEsmTokenizerWithNSkipping":
         named_tokenizer = 'overlap'
 
-    created_model_name = f"{named_tokenizer}_{selected_dataset.lower()}{shannon_txt}{gc_txt}{from_scratch_txt}"
+    created_model_name = f"{named_tokenizer}_{selected_dataset.lower()}{kb}{shannon_txt}{gc_txt}{from_scratch_txt}"
 
     """
     Get device
@@ -246,6 +251,7 @@ if __name__ == "__main__":
         mlm=True,
         mlm_probability=0.15
     )
+
 
     """
     Check if resume possible
