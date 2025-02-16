@@ -25,7 +25,6 @@ from overrides.tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 from overrides.tokenizer.OverlappingEsmTokenizerWithNSkipping import OverlappingEsmTokenizerWithNSkipping
 from util import init_logger, LOGLEVEL, get_chunk_size_file_name, get_filtered_dataset_name, get_pretrained_model_by_id
 import torch
-torch.backends.cudnn.benchmark = True
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -281,7 +280,7 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=model_path,
         overwrite_output_dir=True,
-        per_device_train_batch_size=3,#train_batch_size,
+        per_device_train_batch_size=train_batch_size,
         gradient_accumulation_steps=gradient_accumulation_steps,
         per_device_eval_batch_size=eval_batch_size,
         save_steps=6000,
