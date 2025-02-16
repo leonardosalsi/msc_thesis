@@ -26,6 +26,7 @@ from overrides.tokenizer.OverlappingEsmTokenizerWithNSkipping import Overlapping
 from util import init_logger, LOGLEVEL, get_chunk_size_file_name, get_filtered_dataset_name, get_pretrained_model_by_id
 import torch
 torch.backends.cudnn.benchmark = True
+torch.backends.cuda.matmul.allow_tf32 = True
 
 def parse_args():
     parser = argparse.ArgumentParser(
