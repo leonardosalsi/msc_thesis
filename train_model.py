@@ -102,7 +102,8 @@ if __name__ == "__main__":
     num = math.floor(args.chunk_size / 1000)
     num_tokens = num * 1000
     gradient_accumulation_steps = int(50 / num)
-
+    train_batch_size = int(10 / num)
+    eval_batch_size = int(64 / num)
     kb = ""
     if num != 1:
         kb = f"_{num}kb"
@@ -272,9 +273,9 @@ if __name__ == "__main__":
     training_args = TrainingArguments(
         output_dir=model_path,
         overwrite_output_dir=True,
-        per_device_train_batch_size=10,
+        per_device_train_batch_size=train_batch_size,
         gradient_accumulation_steps=gradient_accumulation_steps,
-        per_device_eval_batch_size=64,
+        per_device_eval_batch_size=eval_batch_size,
         save_steps=6000,
         logging_steps=500,
         eval_strategy="steps",
