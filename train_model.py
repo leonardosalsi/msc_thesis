@@ -101,12 +101,20 @@ if __name__ == "__main__":
 
     num = math.floor(args.chunk_size / 1000)
     num_tokens = num * 1000
-    gradient_accumulation_steps = int(50 * num)
-    train_batch_size = int(10 / num)
-    eval_batch_size = int(64 / num)
+
+
     kb = ""
     if num != 1:
+        # 2kbp -> 2000 tokens per sequence
         kb = f"_{num}kb"
+        train_batch_size = 2
+        eval_batch_size = 32
+        gradient_accumulation_steps = 125
+    else:
+        # 1kbp -> 1000 tokens per sequence
+        train_batch_size = 10
+        gradient_accumulation_steps = 50
+        eval_batch_size = 64
 
     print(kb)
     """
