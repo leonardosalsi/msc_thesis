@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
     num = math.floor(args.chunk_size / 1000)
     num_tokens = num * 1000
-    gradient_accumulation_steps = int(50 / num)
+    gradient_accumulation_steps = int(50 * num)
     train_batch_size = int(10 / num)
     eval_batch_size = int(64 / num)
     kb = ""
