@@ -21,7 +21,6 @@ from collections import defaultdict
 from config import datasets_cache_dir, results_dir, logan_datasets_dir
 
 ALPHABET = {"A", "T", "C", "G"}
-KMER = 31
 MAX_SEQ_LENGTH = 2048
 
 LOGAN_RATIOS_FILE = os.path.join(results_dir, "logan_ratios.json")
@@ -79,18 +78,18 @@ def dfs_paths(graph, start, path=None, all_paths=None, depth=10):
 
     return all_paths
 
-def random_walk_graph_sequences(graph, sequences):
+def random_walk_graph_sequences(graph, sequences, kmer):
     random_walk_sequences = []
     for node in graph:
         paths = dfs_paths(graph, node)
         idx = np.random.randint(len(paths))
         path = paths[idx]
-        seq = sequences[path[0]] + "".join([sequences[p][KMER - 1:] for p in path[1:]])
+        seq = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
         seq = seq[:MAX_SEQ_LENGTH]
         random_walk_sequences.append(seq)
     return random_walk_sequences
 
-def fasta_parsing_func(fasta_path):
+def fasta_parsing_func(fasta_path, kmer):
     with open(fasta_path, "rb") as f:
         data = f.read()
 
@@ -101,11 +100,10 @@ def fasta_parsing_func(fasta_path):
         return
 
     decoded_lines = data.decode()
-
     for s in SeqIO.parse(StringIO(decoded_lines), "fasta"):
         s = str(s.seq)
         s = "".join([c for c in s if c in ALPHABET])
-        s = chop_at_first_repeated_kmer(s, KMER)
+        s = chop_at_first_repeated_kmer(s, kmer)
         yield s
 
 
@@ -134,12 +132,18 @@ def append_to_json_file(result):
     with open(LOGAN_RATIOS_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
+def add_reverse_complements(sequences):
+    reversed_sequences = np.array([s[::-1] for s in sequences])
+    return np.concatenate((sequences, reversed_sequences))
 
-def calculate_ratios(fasta_files):
+def calculate_ratios(fasta_files, kmer, reverse_complement):
     logan_data = os.path.join(logan_datasets_dir, 'data')
     logan_data_eval = os.path.join(results_dir, 'logan_eval')
     print(logan_data_eval)
     os.makedirs(logan_data_eval, exist_ok=True)
+    data_eval = os.path.join(logan_data_eval, f'{kmer}')
+    os.makedirs(data_eval, exist_ok=True)
+
     metadata_file = glob.glob(os.path.join(logan_data, "*.csv"))[0]
     metadata = pd.read_csv(metadata_file)
     metadata['kingdom'] = metadata['kingdom'].fillna('Other')
@@ -150,7 +154,7 @@ def calculate_ratios(fasta_files):
     with open(groups_file_path) as json_data:
         groups = json.load(json_data)
 
-    known_files = glob.glob(os.path.join(logan_data_eval, "*.json"))
+    known_files = glob.glob(os.path.join(data_eval, "*.json"))
     known_accs = [os.path.splitext(os.path.basename(x))[0] for x in known_files]
 
     not_found = []
@@ -167,13 +171,15 @@ def calculate_ratios(fasta_files):
             _organism_kmeans = _organism_kmeans if pd.notna(_organism_kmeans) else 0
 
             try:
-                sequences = np.array(list(fasta_parsing_func(file)))
+                sequences = np.array(list(fasta_parsing_func(file, kmer)))
+                if reverse_complement:
+                    sequences = add_reverse_complements(sequences)
             except FileNotFoundError:
                 not_found.append(file)
                 continue
 
-            graph = find_overlaps_and_build_graph(sequences, KMER)
-            random_walk_sequences = random_walk_graph_sequences(graph, sequences)
+            graph = find_overlaps_and_build_graph(sequences, kmer)
+            random_walk_sequences = random_walk_graph_sequences(graph, sequences, kmer)
             sequences_len = np.array([len(x) for x in sequences])
             random_walk_sequences_len = np.array([len(x) for x in random_walk_sequences])
             sequence_length_ratio = float(np.mean(sequences_len / random_walk_sequences_len))
@@ -191,7 +197,7 @@ def calculate_ratios(fasta_files):
                 "actg_pre": [[s.count('A'), s.count('C'), s.count('T'), s.count('G')] for s in sequences],
                 "actg_post": [[s.count('A'), s.count('C'), s.count('T'), s.count('G')] for s in random_walk_sequences]
             }
-            result_file = os.path.join(logan_data_eval, f"{acc}.json")
+            result_file = os.path.join(data_eval, f"{acc}.json")
             with open(result_file, "w") as f:
                 json.dump(result, f, indent=4)
 
@@ -201,7 +207,29 @@ def get_file_content():
             return json.load(f)
     return None
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Script to train model either from scratch or from pretrained weights with specified tokenization."
+    )
+    parser.add_argument(
+        "kmer",
+        type=int,
+        help="Kmer length",
+        choices=[31, 28, 25, 20]
+    )
+
+    parser.add_argument(
+        "--reverse_complement",
+        action="store_true",
+        dest="reverse_complement",
+        help="Also include reverse complements to graph."
+    )
+    return parser.parse_args()
+
 
 if __name__ == "__main__":
+    args = parse_args()
     fasta_files = pre_select_fasta_files()
-    calculate_ratios(fasta_files)
+    kmer = args.kmer
+    reverse_complement = args.reverse_complement
+    calculate_ratios(fasta_files, kmer, reverse_complement)
