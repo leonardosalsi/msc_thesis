@@ -141,7 +141,10 @@ def calculate_ratios(fasta_files, kmer, reverse_complement):
     logan_data_eval = os.path.join(results_dir, 'logan_eval')
     print(logan_data_eval)
     os.makedirs(logan_data_eval, exist_ok=True)
-    data_eval = os.path.join(logan_data_eval, f'{kmer}')
+    if reverse_complement:
+        data_eval = os.path.join(logan_data_eval, f'kmer_{kmer}_reverse')
+    else:
+        data_eval = os.path.join(logan_data_eval, f'kmer_{kmer}')
     os.makedirs(data_eval, exist_ok=True)
 
     metadata_file = glob.glob(os.path.join(logan_data, "*.csv"))[0]
