@@ -119,6 +119,15 @@ def pre_select_fasta_files(sample_size=1000):
         to_be_processed.append(os.path.join(logan_data, f"{entry}.contigs.fa.zst"))
     return to_be_processed
 
+def pre_select_fasta_files_pre():
+    logan_data = os.path.join(logan_datasets_dir, 'data')
+    with open("./data/acc_list.txt") as filedata:
+        allowed_files = filedata.read().splitlines()
+    to_be_processed = []
+    for entry in tqdm(allowed_files, desc="Processing fasta files"):
+        to_be_processed.append(os.path.join(logan_data, f"{entry}.contigs.fa.zst"))
+    return to_be_processed
+
 def get_json_content():
     if os.path.isfile(LOGAN_RATIOS_FILE):
         with open(LOGAN_RATIOS_FILE, "r") as f:
@@ -231,7 +240,7 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    fasta_files = pre_select_fasta_files()
+    fasta_files = pre_select_fasta_files_pre()
     kmer = args.kmer
     reverse_complement = args.reverse_complement
     calculate_ratios(fasta_files, kmer, reverse_complement)
