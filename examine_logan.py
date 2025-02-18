@@ -1,5 +1,6 @@
 import argparse
 import csv
+import gc
 import os
 import random
 import sys
@@ -194,6 +195,10 @@ def calculate_ratios(fasta_files, kmer, reverse_complement):
                 "sequences": [len(x) for x in sequences],
                 "random_walk_sequences": [len(x) for x in random_walk_sequences],
             }
+            del graph
+            del random_walk_sequences
+            del sequences
+            gc.collect()
             result_file = os.path.join(data_eval, f"{acc}.json")
             with open(result_file, "w") as f:
                 json.dump(result, f, indent=4)
