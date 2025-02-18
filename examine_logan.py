@@ -231,7 +231,7 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    fasta_files = pre_select_fasta_files(200)
+    fasta_files = pre_select_fasta_files()
     kmer = args.kmer
     reverse_complement = args.reverse_complement
     calculate_ratios(fasta_files, kmer, reverse_complement)
