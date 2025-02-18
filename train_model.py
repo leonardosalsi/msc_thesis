@@ -107,7 +107,10 @@ if __name__ == "__main__":
         # 2kbp -> 2000 tokens per sequence
         kb = f"_{num}kb"
         train_batch_size = 2
-        eval_batch_size = 32
+        if selected_tokenizer == "Default":
+            eval_batch_size = 32
+        else:
+            eval_batch_size = 16
         gradient_accumulation_steps = 125
     else:
         # 1kbp -> 1000 tokens per sequence
