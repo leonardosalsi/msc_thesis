@@ -90,6 +90,16 @@ def random_walk_graph_sequences(graph, sequences, kmer):
         random_walk_sequences.append(seq)
     return random_walk_sequences
 
+def random_walk_graph_sequences_length(graph, sequences, kmer):
+    random_walk_sequences_lengths = []
+    for node in graph:
+        paths = dfs_paths(graph, node)
+        idx = np.random.randint(len(paths))
+        path = paths[idx]
+        seq = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
+        random_walk_sequences_lengths.append(len(seq))
+    return random_walk_sequences_lengths
+
 def fasta_parsing_func(fasta_path, kmer):
     with open(fasta_path, "rb") as f:
         data = f.read()
@@ -192,7 +202,7 @@ def calculate_ratios(fasta_files, kmer, reverse_complement):
                 continue
 
             graph = find_overlaps_and_build_graph(sequences, kmer)
-            random_walk_sequences = random_walk_graph_sequences(graph, sequences, kmer)
+            random_walk_sequences_length = random_walk_graph_sequences_length(graph, sequences, kmer)
             result = {
                 "acc": acc,
                 "kingdom": _kingdom,
@@ -202,10 +212,10 @@ def calculate_ratios(fasta_files, kmer, reverse_complement):
                 "mbases": int(_mbases),
                 "kmeans": int(_organism_kmeans),
                 "sequences": [len(x) for x in sequences],
-                "random_walk_sequences": [len(x) for x in random_walk_sequences],
+                "random_walk_sequences": random_walk_sequences_length,
             }
             del graph
-            del random_walk_sequences
+            del random_walk_sequences_length
             del sequences
             gc.collect()
             result_file = os.path.join(data_eval, f"{acc}.json")
