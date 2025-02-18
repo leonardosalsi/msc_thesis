@@ -183,9 +183,6 @@ def calculate_ratios(fasta_files, kmer, reverse_complement):
 
             graph = find_overlaps_and_build_graph(sequences, kmer)
             random_walk_sequences = random_walk_graph_sequences(graph, sequences, kmer)
-            sequences_len = np.array([len(x) for x in sequences])
-            random_walk_sequences_len = np.array([len(x) for x in random_walk_sequences])
-            sequence_length_ratio = float(np.mean(sequences_len / random_walk_sequences_len))
             result = {
                 "acc": acc,
                 "kingdom": _kingdom,
@@ -194,11 +191,8 @@ def calculate_ratios(fasta_files, kmer, reverse_complement):
                 "group": groups.get(_organism, "Unknown"),
                 "mbases": int(_mbases),
                 "kmeans": int(_organism_kmeans),
-                "ratio": sequence_length_ratio,
                 "sequences": [len(x) for x in sequences],
                 "random_walk_sequences": [len(x) for x in random_walk_sequences],
-                "actg_pre": [[s.count('A'), s.count('C'), s.count('T'), s.count('G')] for s in sequences],
-                "actg_post": [[s.count('A'), s.count('C'), s.count('T'), s.count('G')] for s in random_walk_sequences]
             }
             result_file = os.path.join(data_eval, f"{acc}.json")
             with open(result_file, "w") as f:
@@ -232,7 +226,7 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    fasta_files = pre_select_fasta_files()
+    fasta_files = pre_select_fasta_files(200)
     kmer = args.kmer
     reverse_complement = args.reverse_complement
     calculate_ratios(fasta_files, kmer, reverse_complement)
