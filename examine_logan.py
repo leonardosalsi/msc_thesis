@@ -36,20 +36,14 @@ def chop_at_first_repeated_kmer(sequence, k):
         kmers.add(kmer)
     return sequence  # No repeated k-mers found, return the whole sequence
 
-def find_overlaps_and_build_graph(sequences, k_mer=3, reverse_complement=False):
+def find_overlaps_and_build_graph(sequences, k_mer=3):
     min_overlap = k_mer - 1
     prefix_dict = defaultdict(list)
-
-    if reverse_complement:
-        for i, seq in enumerate(sequences):
-            reversed_seq = seq[::-1]
-            prefix_dict[seq[:min_overlap]].append(i)
-            prefix_dict[reversed_seq[:min_overlap]].append(i)
-    else:
-        for i, seq in enumerate(sequences):
-            prefix_dict[seq[:min_overlap]].append(i)
-
     graph = defaultdict(list)
+
+    for i, seq in enumerate(sequences):
+        prefix_dict[seq[:min_overlap]].append(i)
+
 
     for i, seq1 in enumerate(sequences):
         seq1_suffix = seq1[-min_overlap:]
@@ -96,14 +90,16 @@ def random_walk_graph_sequences(graph, sequences, kmer):
         random_walk_sequences.append(seq)
     return random_walk_sequences
 
-def random_walk_graph_sequences_length(graph, sequences, kmer):
+def random_walk_graph_sequences_length(graph, sequences, kmer, list_len):
     random_walk_sequences_lengths = []
-    for node in graph:
+    for i, node in enumerate(graph):
         paths = dfs_paths(graph, node)
         idx = np.random.randint(len(paths))
         path = paths[idx]
         seq = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
         random_walk_sequences_lengths.append(len(seq))
+        if i >= list_len:
+            break
     return random_walk_sequences_lengths
 
 def fasta_parsing_func(fasta_path, kmer):
@@ -158,9 +154,13 @@ def append_to_json_file(result):
     with open(LOGAN_RATIOS_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
+def compute_reverse_complement(seq):
+    complement_map = {"A": "T", "T": "A", "C": "G", "G": "C"}
+    return "".join(complement_map.get(base, base) for base in reversed(seq))
+
 def add_reverse_complements(sequences):
-    reversed_sequences = np.array([s[::-1] for s in sequences])
-    return np.concatenate((sequences, reversed_sequences))
+    reversed_complements = [compute_reverse_complement(seq) for seq in sequences]
+    return np.concatenate((sequences, reversed_complements))
 
 def calculate_ratios(fasta_files, kmer, reverse_complement):
     logan_data = os.path.join(logan_datasets_dir, 'data')
@@ -200,13 +200,16 @@ def calculate_ratios(fasta_files, kmer, reverse_complement):
             _organism_kmeans = _organism_kmeans if pd.notna(_organism_kmeans) else 0
 
             try:
-                sequences = np.array(list(fasta_parsing_func(file, kmer)))
+                _sequences = np.array(list(fasta_parsing_func(file, kmer)))
+                sequences = _sequences
+                if reverse_complement:
+                    _sequences = add_reverse_complements(_sequences)
             except FileNotFoundError:
                 not_found.append(file)
                 continue
 
-            graph = find_overlaps_and_build_graph(sequences, kmer, reverse_complement)
-            random_walk_sequences_length = random_walk_graph_sequences_length(graph, sequences, kmer)
+            graph = find_overlaps_and_build_graph(_sequences, kmer)
+            random_walk_sequences_length = random_walk_graph_sequences_length(graph, _sequences, kmer, len(sequences))
             result = {
                 "acc": acc,
                 "kingdom": _kingdom,
