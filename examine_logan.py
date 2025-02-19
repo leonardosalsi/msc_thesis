@@ -80,20 +80,18 @@ def dfs_paths(graph, start, path=None, all_paths=None, depth=10):
     return all_paths
 
 # Just generate one random path to save time
-def random_dfs_path(graph, start, depth=10):
+def random_dfs_path(graph, start, depth=10000):
     path = [start]
     visited = {start}
     current = start
 
     while len(path) < depth:
         neighbors = graph.get(current, [])
-        # Filter out neighbors already in path to avoid cycles
-        valid_neighbors = [n for n in neighbors if n not in visited]
+        valid_neighbors = [n for n in neighbors if n not in visited] # Filter out visited nodes to avoid cycles
         if not valid_neighbors:
-            # Leaf or no unvisited neighbors
             break
-        # Pick one random neighbor
-        nxt = random.choice(valid_neighbors)
+
+        nxt = random.choice(valid_neighbors) # Take next random node
         path.append(nxt)
         visited.add(nxt)
         current = nxt
