@@ -79,10 +79,33 @@ def dfs_paths(graph, start, path=None, all_paths=None, depth=10):
 
     return all_paths
 
+# Just generate one random path to save time
+def random_dfs_path(graph, start, depth=10):
+    path = [start]
+    visited = {start}
+    current = start
+
+    while len(path) < depth:
+        neighbors = graph.get(current, [])
+        # Filter out neighbors already in path to avoid cycles
+        valid_neighbors = [n for n in neighbors if n not in visited]
+        if not valid_neighbors:
+            # Leaf or no unvisited neighbors
+            break
+        # Pick one random neighbor
+        nxt = random.choice(valid_neighbors)
+        path.append(nxt)
+        visited.add(nxt)
+        current = nxt
+
+    return path
+
 def random_walk_graph_sequences(graph, sequences, kmer):
     random_walk_sequences = []
     for node in graph:
-        paths = dfs_paths(graph, node)
+        paths = random_dfs_path(graph, node)
+        print(paths)
+        print("found")
         idx = np.random.randint(len(paths))
         path = paths[idx]
         seq = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
@@ -93,9 +116,7 @@ def random_walk_graph_sequences(graph, sequences, kmer):
 def random_walk_graph_sequences_length(graph, sequences, kmer, list_len):
     random_walk_sequences_lengths = []
     for i, node in enumerate(graph):
-        paths = dfs_paths(graph, node)
-        idx = np.random.randint(len(paths))
-        path = paths[idx]
+        path = random_dfs_path(graph, node)
         seq = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
         random_walk_sequences_lengths.append(len(seq))
         if i >= list_len:
@@ -209,6 +230,7 @@ def calculate_ratios(fasta_files, kmer, reverse_complement):
                 continue
 
             graph = find_overlaps_and_build_graph(_sequences, kmer)
+            print("graph created")
             random_walk_sequences_length = random_walk_graph_sequences_length(graph, _sequences, kmer, len(sequences))
             result = {
                 "acc": acc,
