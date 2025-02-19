@@ -101,11 +101,7 @@ def random_dfs_path(graph, start, depth=10000):
 def random_walk_graph_sequences(graph, sequences, kmer):
     random_walk_sequences = []
     for node in graph:
-        paths = random_dfs_path(graph, node)
-        print(paths)
-        print("found")
-        idx = np.random.randint(len(paths))
-        path = paths[idx]
+        path = random_dfs_path(graph, node)
         seq = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
         seq = seq[:MAX_SEQ_LENGTH]
         random_walk_sequences.append(seq)
