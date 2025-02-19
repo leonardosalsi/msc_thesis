@@ -36,12 +36,18 @@ def chop_at_first_repeated_kmer(sequence, k):
         kmers.add(kmer)
     return sequence  # No repeated k-mers found, return the whole sequence
 
-def find_overlaps_and_build_graph(sequences, k_mer=3):
+def find_overlaps_and_build_graph(sequences, k_mer=3, reverse_complement=False):
     min_overlap = k_mer - 1
     prefix_dict = defaultdict(list)
 
-    for i, seq in enumerate(sequences):
-        prefix_dict[seq[:min_overlap]].append(i)
+    if reverse_complement:
+        for i, seq in enumerate(sequences):
+            reversed_seq = seq[::-1]
+            prefix_dict[seq[:min_overlap]].append(i)
+            prefix_dict[reversed_seq[:min_overlap]].append(i)
+    else:
+        for i, seq in enumerate(sequences):
+            prefix_dict[seq[:min_overlap]].append(i)
 
     graph = defaultdict(list)
 
@@ -195,13 +201,11 @@ def calculate_ratios(fasta_files, kmer, reverse_complement):
 
             try:
                 sequences = np.array(list(fasta_parsing_func(file, kmer)))
-                if reverse_complement:
-                    sequences = add_reverse_complements(sequences)
             except FileNotFoundError:
                 not_found.append(file)
                 continue
 
-            graph = find_overlaps_and_build_graph(sequences, kmer)
+            graph = find_overlaps_and_build_graph(sequences, kmer, reverse_complement)
             random_walk_sequences_length = random_walk_graph_sequences_length(graph, sequences, kmer)
             result = {
                 "acc": acc,
