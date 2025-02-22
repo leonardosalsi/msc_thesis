@@ -207,8 +207,9 @@ def calculate_ratios(fasta_files, kmer, reverse_complement):
     not_found = []
     for file in tqdm(fasta_files, desc="Processing fasta files"):
         acc = os.path.basename(file).split('.')[0]
-        logger.log(LOGLEVEL, f"{acc}")
+
         if acc not in known_accs:
+            logger.log(LOGLEVEL, f"{acc}")
             entry = metadata.loc[metadata['acc'] == acc]
             _kingdom = entry['kingdom'].values[0]
             _kingdom = _kingdom if pd.notna(_kingdom) else 'Other'
