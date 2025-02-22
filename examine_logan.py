@@ -21,6 +21,8 @@ from tqdm import tqdm
 from collections import defaultdict
 from config import datasets_cache_dir, results_dir, logan_datasets_dir
 
+from util import init_logger, LOGLEVEL
+
 ALPHABET = {"A", "T", "C", "G"}
 MAX_SEQ_LENGTH = 2048
 
@@ -187,7 +189,7 @@ def calculate_ratios(fasta_files, kmer, reverse_complement):
     else:
         data_eval = os.path.join(logan_data_eval, f'kmer_{kmer}')
     os.makedirs(data_eval, exist_ok=True)
-
+    logger = init_logger()
     metadata_file = glob.glob(os.path.join(logan_data, "*.csv"))[0]
     metadata = pd.read_csv(metadata_file)
     metadata['kingdom'] = metadata['kingdom'].fillna('Other')
@@ -205,6 +207,7 @@ def calculate_ratios(fasta_files, kmer, reverse_complement):
     not_found = []
     for file in tqdm(fasta_files, desc="Processing fasta files"):
         acc = os.path.basename(file).split('.')[0]
+        logger.log(LOGLEVEL, f"{acc}")
         if acc not in known_accs:
             entry = metadata.loc[metadata['acc'] == acc]
             _kingdom = entry['kingdom'].values[0]
@@ -225,7 +228,6 @@ def calculate_ratios(fasta_files, kmer, reverse_complement):
                 continue
 
             graph = find_overlaps_and_build_graph(_sequences, kmer)
-            print("graph created")
             random_walk_sequences_length = random_walk_graph_sequences_length(graph, _sequences, kmer, len(sequences))
             result = {
                 "acc": acc,
