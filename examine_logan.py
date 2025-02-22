@@ -203,7 +203,7 @@ def calculate_ratios(fasta_files, kmer, reverse_complement):
     known_files = glob.glob(os.path.join(data_eval, "*.json"))
     known_accs = [os.path.splitext(os.path.basename(x))[0] for x in known_files]
     ignored_accs = ['SRR21276900']
-    known_accs = [item for item in known_accs if item not in ignored_accs]
+    known_accs += ignored_accs
     not_found = []
     for file in tqdm(fasta_files, desc="Processing fasta files"):
         acc = os.path.basename(file).split('.')[0]
