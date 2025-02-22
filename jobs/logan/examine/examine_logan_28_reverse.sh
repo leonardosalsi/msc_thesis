@@ -2,9 +2,9 @@
 
 #SBATCH --job-name=eval_logan_28_rev
 #SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/eval_logan_28_rev.txt
-#SBATCH --cpus-per-task=10
+#SBATCH --cpus-per-task=8
 #SBATCH --time=100:00:00
-#SBATCH --mem-per-cpu=100G
+#SBATCH --mem-per-cpu=80G
 
 source ~/.bashrc
 conda activate gpu_env
