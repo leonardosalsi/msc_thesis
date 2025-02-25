@@ -78,7 +78,7 @@ if __name__ == "__main__":
     kmer = args.kmer
     reverse_complement = args.reverse_complement
 
-    if selected_dataset == "multi_genome_dataset" and shannon is None and gc is None:
+    if selected_dataset == "multi_genome_dataset":
         dataset = load_dataset(
             "InstaDeepAI/multi_species_genomes",
             cache_dir=datasets_cache_dir,
