@@ -143,8 +143,7 @@ if __name__ == "__main__":
             threshold = 0.5
             sequence_uncertain = certain_mask > threshold
             all_counts += certain_mask.int().sum(dim=0)
-    print(num_sequences)
-    pprint(all_counts)
+
     result = {
         'num_data': num_sequences,
         'results': {}
@@ -153,7 +152,7 @@ if __name__ == "__main__":
     for f in features:
         feat_idx = features.index(f)
         result['results'][f] = int(all_counts[feat_idx])
-    pprint(result)
+
     result_file = os.path.join(results_dir, f"{selected_dataset}_segment_nt.json")
     with open(result_file, "w") as f:
         json.dump(result, f, indent=4)
