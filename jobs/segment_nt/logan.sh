@@ -6,10 +6,10 @@
 #SBATCH --time=100:00:00
 #SBATCH --mem-per-cpu=4G
 #SBATCH -p gpu
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:rtx4090:1
 
 source ~/.bashrc
 conda activate gpu_env
 
 HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \
-python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/segment_nt.py logan
+python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/segment_nt.py logan --kmer 31
