@@ -2,9 +2,9 @@
 
 #SBATCH --job-name=segment_nt_logan
 #SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/segment_nt_logan.txt
-#SBATCH --cpus-per-task=2
+#SBATCH --cpus-per-task=6
 #SBATCH --time=100:00:00
-#SBATCH --mem-per-cpu=4G
+#SBATCH --mem-per-cpu=80G
 #SBATCH -p gpu
 #SBATCH --gres=gpu:rtx4090:1
 
