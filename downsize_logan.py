@@ -5,7 +5,7 @@ import sys
 from pprint import pprint
 
 import numpy as np
-from datasets import load_from_disk, load_dataset, Dataset
+from datasets import load_from_disk, load_dataset, Dataset, DatasetDict
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -18,9 +18,7 @@ from util import get_filtered_dataset_name
 def split_sequence(example):
     sequence = example["sequence"]
     if len(sequence) < min_size:
-        #print(f"NO: {len(sequence)}")
         return []  # Return an empty list to drop examples that are too short.
-    print(f"YES: {len(sequence)}")
     chunks = []
     # Iterate over the sequence in steps of min_size.
     for i in range(0, len(sequence), min_size):
@@ -73,7 +71,14 @@ if __name__ == "__main__":
 
     processed_datasets = {}
     for split, ds in dataset.items():
+        processed_datasets[split] = ds.filter(lambda x: len(x["sequence"]) == min_size)
 
-        processed_datasets[split] = flat_map(ds, split_sequence)
-
-
+    min_dataset = DatasetDict(processed_datasets)
+    logan_datasets_dir = os.path.join(generated_datasets_dir, f'logan')
+    os.makedirs(logan_datasets_dir, exist_ok=True)
+    if reverse_complement:
+        dataset_dir = os.path.join(logan_datasets_dir, f'kmer_{kmer}_reverse_2k')
+    else:
+        dataset_dir = os.path.join(logan_datasets_dir, f'kmer_{kmer}_2k')
+    os.makedirs(dataset_dir, exist_ok=True)
+    min_dataset.save_to_disk(dataset_dir)
