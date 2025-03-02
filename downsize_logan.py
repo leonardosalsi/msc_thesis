@@ -14,7 +14,6 @@ from transformers import AutoTokenizer, AutoModel
 from config import generated_datasets_dir, models_cache_dir, datasets_cache_dir, results_dir
 from util import get_filtered_dataset_name
 
-
 def split_sequence(example):
     sequence = example["sequence"]
     if len(sequence) < min_size:
@@ -52,7 +51,6 @@ def flat_map(dataset, function):
         # function should return a list of examples for each input example.
         all_examples.extend(function(example))
     return Dataset.from_list(all_examples)
-
 
 if __name__ == "__main__":
     args = parse_args()
