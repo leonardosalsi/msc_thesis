@@ -245,6 +245,7 @@ if __name__ == "__main__":
         dataset_dir = os.path.join(logan_datasets_dir, f'kmer_{kmer}_reverse')
     else:
         dataset_dir = os.path.join(logan_datasets_dir, f'kmer_{kmer}')
+    os.makedirs(dataset_dir, exist_ok=True)
     split_dataset = new_dataset.train_test_split(test_size=0.2, seed=112)
     train_dataset = split_dataset['train']
     test_val_dataset = split_dataset['test']
@@ -256,5 +257,5 @@ if __name__ == "__main__":
         "validation": val_dataset,
         "test": test_dataset
     })
-    os.makedirs(dataset_dir, exist_ok=True)
+
     dataset.save_to_disk(dataset_dir)
