@@ -82,3 +82,5 @@ if __name__ == "__main__":
         dataset_dir = os.path.join(logan_datasets_dir, f'kmer_{kmer}_2k')
     os.makedirs(dataset_dir, exist_ok=True)
     min_dataset.save_to_disk(dataset_dir)
+    print(dataset)
+    print(min_dataset)
