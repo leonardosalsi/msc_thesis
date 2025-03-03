@@ -85,6 +85,11 @@ def parse_args():
         metavar=("modelId in PRETRAINED_MODELS"),
         help="Use checkpoint instead of pretrained weights."
     )
+    parser.add_argument(
+        "--freeze",
+        type=float,
+        help="Freeze a pecentual number of layers (between 0.1 and 0.9)",
+    )
     return parser.parse_args()
 
 def print_gpu_memory_usage(device):
@@ -109,6 +114,7 @@ if __name__ == "__main__":
     train_from_scratch = args.from_scratch
     kmer = args.kmer
     reverse_complement = args.reverse_complement
+    freeze = args.freeze
     logger = init_logger()
 
     num = math.floor(args.chunk_size / 1000)
@@ -137,6 +143,7 @@ if __name__ == "__main__":
     shannon_txt = ""
     gc_txt = ""
     from_scratch_txt = ""
+    freeze_txt = ""
     if shannon is not None:
         shannon_txt = f"_sh"
     if gc is not None:
@@ -151,7 +158,10 @@ if __name__ == "__main__":
     elif selected_tokenizer == "OverlappingEsmTokenizerWithNSkipping":
         named_tokenizer = 'overlap'
 
-    created_model_name = f"{named_tokenizer}_{selected_dataset.lower()}{kb}{shannon_txt}{gc_txt}{from_scratch_txt}"
+    if freeze is not None:
+        freeze_txt = "_freeze"
+
+    created_model_name = f"{named_tokenizer}_{selected_dataset.lower()}{kb}{shannon_txt}{gc_txt}{from_scratch_txt}{freeze_txt}"
 
     """
     Get device
@@ -177,6 +187,19 @@ if __name__ == "__main__":
             trust_remote_code=True,
             local_files_only=True,
         )
+
+    if freeze is not None:
+        for idx, layer in enumerate(model.base_model.encoder.layer):
+                for param in layer.parameters():
+                    print(param)
+
+        n_layers_to_freeze = int(12 * freeze)
+        for idx, layer in enumerate(model.base_model.encoder.layer):
+            if idx < n_layers_to_freeze:
+                for param in layer.parameters():
+                    param.requires_grad = False
+            else:
+                break
 
     model = model.to(device)
     print_gpu_memory_usage(device)
@@ -285,7 +308,6 @@ if __name__ == "__main__":
         mlm=True,
         mlm_probability=0.15
     )
-
 
     """
     Check if resume possible
