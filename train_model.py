@@ -261,7 +261,7 @@ if __name__ == "__main__":
             dataset_name += "_reverse"
         dataset_path = os.path.join(generated_datasets_dir, selected_dataset, dataset_name)
         dataset_train = load_from_disk(dataset_path)['train']
-        validation_path = os.path.join(generated_datasets_dir, "multi_genome_dataset", f"{num}_2kbp", "validation")
+        validation_path = os.path.join(generated_datasets_dir, "multi_genome_dataset", f"_{num}kbp", "validation")
         dataset_validation = load_from_disk(validation_path)
     else:
         train_folder = "train" if selected_dataset == "multi_genome_dataset" else ""
