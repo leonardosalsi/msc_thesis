@@ -11,7 +11,7 @@ import time
 import torch
 from datasets import load_from_disk, Dataset, load_dataset
 torch.backends.cudnn.benchmark = True
-
+torch.backends.cuda.matmul.allow_tf32 = False
 from transformers import (
     AutoModelForMaskedLM,
     Trainer,
@@ -135,8 +135,8 @@ if __name__ == "__main__":
         gradient_accumulation_steps = 125
     else:
         # 1kbp -> 1000 tokens per sequence
-        train_batch_size = 10
-        gradient_accumulation_steps = 50
+        train_batch_size = 2 #10
+        gradient_accumulation_steps = 250
         eval_batch_size = 64
 
     """
@@ -197,11 +197,8 @@ if __name__ == "__main__":
                     param.requires_grad = False
 
     model.to(device)
-    model = torch.compile(
-        model,
-        backend="inductor",
-        options={"ALLOW_TF32": True}
-    )
+    torch.compiler.cudagraph_mark_step_begin()
+    model = torch.compile(model)
     logger.log(LOGLEVEL, "Model loaded")
 
     """
