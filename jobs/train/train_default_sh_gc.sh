@@ -15,4 +15,4 @@ export HF_DATASETS_OFFLINE=1
 export HF_HUB_OFFLINE=1
 
 python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/train_model.py \
-    multi_genome_dataset Default --chunk_size 1200 --shannon 1.35 1.8 --gc 0.4 0.6
+    multi_genome_dataset Default --chunk_size 1200 --shannon 1.35 1.8 --gc 0.4 0.6 --freeze 0.5
