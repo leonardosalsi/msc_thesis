@@ -197,7 +197,11 @@ if __name__ == "__main__":
                     param.requires_grad = False
 
     model.to(device)
-    model = torch.compile(model, mode="max-autotune")
+    model = torch.compile(
+        model,
+        backend="inductor",
+        options={"ALLOW_TF32": True}
+    )
     logger.log(LOGLEVEL, "Model loaded")
 
     """
@@ -343,21 +347,6 @@ if __name__ == "__main__":
         eval_dataset=tokenized_validation_sequences,
         data_collator=data_collator,
     )
-
-    """with torch.profiler.profile(
-            activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
-            record_shapes=True,
-            profile_memory=True,
-    ) as prof:
-        for step, batch in enumerate(trainer.get_train_dataloader()):
-            batch = {k: v.to(device) for k, v in batch.items()}
-            outputs = model(**batch)
-            loss = outputs.loss
-            loss.backward()
-            if step >= 10:  # just profile a few steps
-                break
-
-    print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))"""
 
     _ = trainer.train()
 
