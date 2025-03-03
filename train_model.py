@@ -48,6 +48,17 @@ def parse_args():
         help="Chunk size (defined when further splitting data)",
     )
     parser.add_argument(
+        "--kmer",
+        type=int,
+        help="Kmer size (only when using logan)",
+    )
+    parser.add_argument(
+        "--reverse_complement",
+        action="store_true",
+        dest="reverse_complement",
+        help="Use dataset generated with reverse complement (only when using logan)."
+    )
+    parser.add_argument(
         "--shannon",
         type=float,
         nargs=2,
@@ -96,6 +107,8 @@ if __name__ == "__main__":
     gc = args.gc
     checkpoint = args.checkpoint
     train_from_scratch = args.from_scratch
+    kmer = args.kmer
+    reverse_complement = args.reverse_complement
     logger = init_logger()
 
     num = math.floor(args.chunk_size / 1000)
@@ -118,7 +131,6 @@ if __name__ == "__main__":
         gradient_accumulation_steps = 50
         eval_batch_size = 64
 
-    print(kb)
     """
     Define setup name
     """
@@ -225,11 +237,22 @@ if __name__ == "__main__":
             split='validation',
             trust_remote_code=True
         )
+    elif selected_dataset == "logan":
+        if not kmer:
+            print("Kmer size must be specified when using logan.")
+            exit(1)
+        dataset_name = f"kmer_{kmer}_{num}k"
+        if reverse_complement:
+            dataset_name += "_reverse"
+        dataset_path = os.path.join(generated_datasets_dir, selected_dataset, dataset_name)
+        dataset_train = load_from_disk(dataset_path)['train']
+        validation_path = os.path.join(generated_datasets_dir, "multi_genome_dataset", f"{num}_2kbp", "validation")
+        dataset_validation = load_from_disk(validation_path)
     else:
         train_folder = "train" if selected_dataset == "multi_genome_dataset" else ""
         validation_folder = "validation" if selected_dataset == "multi_genome_dataset" else ""
         dataset_path = os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, train_folder)
-        validation_path = os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, validation_folder)
+        validation_path = os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, "validation")
         logger.log(LOGLEVEL, f"Train data: {dataset_path}")
         logger.log(LOGLEVEL, f"Validation data: {validation_path}")
         dataset_train = load_from_disk(dataset_path)
