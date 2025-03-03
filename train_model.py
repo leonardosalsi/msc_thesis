@@ -10,6 +10,7 @@ import time
 
 import torch
 from datasets import load_from_disk, Dataset, load_dataset
+torch.backends.cudnn.benchmark = True
 
 from transformers import (
     AutoModelForMaskedLM,
@@ -25,6 +26,7 @@ from overrides.tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
 from overrides.tokenizer.OverlappingEsmTokenizerWithNSkipping import OverlappingEsmTokenizerWithNSkipping
 from util import init_logger, LOGLEVEL, get_chunk_size_file_name, get_filtered_dataset_name, get_pretrained_model_by_id
 import torch
+import torch.profiler
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -175,7 +177,6 @@ if __name__ == "__main__":
     """
     Load model
     """
-    print_gpu_memory_usage(device)
     if train_from_scratch:
         config = EsmConfig.from_pretrained(f"model_configs/config-nucleotide-transformer-v2-50m-multi-species.json",
                                            local_files_only=True, trust_remote_code=True)
@@ -189,24 +190,14 @@ if __name__ == "__main__":
         )
 
     if freeze is not None:
-        for idx, layer in enumerate(model.base_model.encoder.layer):
-                for param in layer.parameters():
-                    print(param)
-
-        n_layers_to_freeze = int(12 * freeze)
-        for idx, layer in enumerate(model.base_model.encoder.layer):
+        n_layers_to_freeze = int(len(model.esm.encoder.layer) * freeze)
+        for idx, layer in enumerate(model.esm.encoder.layer):
             if idx < n_layers_to_freeze:
                 for param in layer.parameters():
                     param.requires_grad = False
-            else:
-                break
 
-    model = model.to(device)
-    print_gpu_memory_usage(device)
-
-    baseline_memory = torch.cuda.memory_allocated(device)
-
-
+    model.to(device)
+    model = torch.compile(model)
     logger.log(LOGLEVEL, "Model loaded")
 
     """
@@ -352,6 +343,21 @@ if __name__ == "__main__":
         eval_dataset=tokenized_validation_sequences,
         data_collator=data_collator,
     )
+
+    """with torch.profiler.profile(
+            activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
+            record_shapes=True,
+            profile_memory=True,
+    ) as prof:
+        for step, batch in enumerate(trainer.get_train_dataloader()):
+            batch = {k: v.to(device) for k, v in batch.items()}
+            outputs = model(**batch)
+            loss = outputs.loss
+            loss.backward()
+            if step >= 10:  # just profile a few steps
+                break
+
+    print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))"""
 
     _ = trainer.train()
 
