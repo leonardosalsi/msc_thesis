@@ -36,7 +36,7 @@ def parse_args():
         "dataset",
         type=str,
         help="Name of the dataset",
-        choices=["multi_genome_dataset", "logan"]
+        choices=["multi_genome_dataset", "logan", "logan_full"]
     )
     parser.add_argument(
         "tokenizer",
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     args = parse_args()
     selected_tokenizer = args.tokenizer
     selected_dataset = args.dataset
-    chunk_size_folder_name = get_filtered_dataset_name(args.chunk_size, args.shannon, args.gc)
+
     shannon = args.shannon
     gc = args.gc
     checkpoint = args.checkpoint
@@ -119,7 +119,12 @@ if __name__ == "__main__":
     freeze = args.freeze
     logger = init_logger()
 
-    num = math.floor(args.chunk_size / 1000)
+    chunk_size = args.chunk_size
+    if not chunk_size:
+        chunk_size = 2200
+    chunk_size_folder_name = get_filtered_dataset_name(chunk_size, args.shannon, args.gc)
+
+    num = math.floor(chunk_size / 1000)
     num_tokens = num * 1000
 
 
@@ -135,8 +140,8 @@ if __name__ == "__main__":
         gradient_accumulation_steps = 125
     else:
         # 1kbp -> 1000 tokens per sequence
-        train_batch_size = 10
-        gradient_accumulation_steps = 50
+        train_batch_size = 2
+        gradient_accumulation_steps = 2
         eval_batch_size = 64
 
     """
@@ -261,7 +266,18 @@ if __name__ == "__main__":
             dataset_name += "_reverse"
         dataset_path = os.path.join(generated_datasets_dir, selected_dataset, dataset_name)
         dataset_train = load_from_disk(dataset_path)['train']
-        validation_path = os.path.join(generated_datasets_dir, "multi_genome_dataset", f"_{num}kbp", "validation")
+        validation_path = os.path.join(generated_datasets_dir, "multi_genome_dataset", f"{num}_2kbp", "validation")
+        dataset_validation = load_from_disk(validation_path)
+    elif selected_dataset == "logan_full":
+        if not kmer:
+            print("Kmer size must be specified when using logan.")
+            exit(1)
+        dataset_name = f"kmer_{kmer}"
+        if reverse_complement:
+            dataset_name += "_reverse"
+        dataset_path = os.path.join(generated_datasets_dir, 'logan', dataset_name)
+        dataset_train = load_from_disk(dataset_path)['train']
+        validation_path = os.path.join(generated_datasets_dir, "multi_genome_dataset", f"2_2kbp", "validation")
         dataset_validation = load_from_disk(validation_path)
     else:
         train_folder = "train" if selected_dataset == "multi_genome_dataset" else ""
@@ -275,6 +291,7 @@ if __name__ == "__main__":
 
     columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
     dataset_train = dataset_train.remove_columns(columns_to_remove)
+    columns_to_remove = [col for col in dataset_validation.column_names if col != "sequence"]
     dataset_validation = dataset_validation.remove_columns(columns_to_remove)
 
     logger.log(LOGLEVEL, "Dataset loaded")
@@ -324,7 +341,7 @@ if __name__ == "__main__":
         gradient_accumulation_steps=gradient_accumulation_steps,
         per_device_eval_batch_size=eval_batch_size,
         save_steps=6000,
-        logging_steps=500,
+        logging_steps=5,
         eval_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
