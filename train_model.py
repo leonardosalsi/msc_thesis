@@ -135,8 +135,8 @@ if __name__ == "__main__":
         gradient_accumulation_steps = 125
     else:
         # 1kbp -> 1000 tokens per sequence
-        train_batch_size = 2 #10
-        gradient_accumulation_steps = 250
+        train_batch_size = 10
+        gradient_accumulation_steps = 50
         eval_batch_size = 64
 
     """
