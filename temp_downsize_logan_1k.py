@@ -9,7 +9,8 @@ def split_sequence_to_two(example):
     sequence = example["sequence"]
     chunks = []
     for i in range(0, len(sequence), 1000):
-        chunks.append(sequence[i:i+1200])
+        chunk = sequence[i:i+1200]
+        chunks.append({"sequence": chunk})  # Wrap the chunk in a dict.
     return chunks
 
 def custom_flat_map(dataset, func):
