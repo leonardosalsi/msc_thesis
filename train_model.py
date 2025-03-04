@@ -261,9 +261,10 @@ if __name__ == "__main__":
         if not kmer:
             print("Kmer size must be specified when using logan.")
             exit(1)
-        dataset_name = f"kmer_{kmer}_{num}k"
+        dataset_name = f"kmer_{kmer}"
         if reverse_complement:
             dataset_name += "_reverse"
+        dataset_name += "_{num}k"
         dataset_path = os.path.join(generated_datasets_dir, selected_dataset, dataset_name)
         dataset_train = load_from_disk(dataset_path)['train']
         validation_path = os.path.join(generated_datasets_dir, "multi_genome_dataset", f"{num}_2kbp", "validation")
