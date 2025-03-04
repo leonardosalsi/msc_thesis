@@ -61,6 +61,12 @@ def parse_args():
         help="Use dataset generated with reverse complement (only when using logan)."
     )
     parser.add_argument(
+        "--unfiltered",
+        action="store_true",
+        dest="unfiltered",
+        help="Use dataset that also includes shorter sequences (only when using logan)."
+    )
+    parser.add_argument(
         "--shannon",
         type=float,
         nargs=2,
@@ -116,6 +122,7 @@ if __name__ == "__main__":
     train_from_scratch = args.from_scratch
     kmer = args.kmer
     reverse_complement = args.reverse_complement
+    unfiltered = args.unfiltered
     freeze = args.freeze
     logger = init_logger()
 
@@ -264,7 +271,9 @@ if __name__ == "__main__":
         dataset_name = f"kmer_{kmer}"
         if reverse_complement:
             dataset_name += "_reverse"
-        dataset_name += "_{num}k"
+        dataset_name += f"_{num}k"
+        if unfiltered:
+            dataset_name += "_unfiltered"
         dataset_path = os.path.join(generated_datasets_dir, selected_dataset, dataset_name)
         dataset_train = load_from_disk(dataset_path)['train']
         validation_path = os.path.join(generated_datasets_dir, "multi_genome_dataset", f"{num}_2kbp", "validation")
