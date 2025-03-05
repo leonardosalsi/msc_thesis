@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=tr_logan
-#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/tr_logan.txt
+#SBATCH --job-name=tr_logan_unfilt
+#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/tr_logan_unfilt.txt
 #SBATCH --cpus-per-task=4
 #SBATCH --time=96:00:00
 #SBATCH --mem-per-cpu=40G
@@ -15,4 +15,4 @@ export HF_DATASETS_OFFLINE=1
 export HF_HUB_OFFLINE=1
 
 python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/train_model.py \
-    logan OverlappingEsmTokenizerWithNSkipping --chunk_size 1200 --freeze 0.5 --reverse_complement --unfiltered
+    logan OverlappingEsmTokenizerWithNSkipping --chunk_size 1200 --kmer 31 --freeze 0.5 --reverse_complement --unfiltered

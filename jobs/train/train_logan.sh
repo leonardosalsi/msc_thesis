@@ -15,4 +15,4 @@ export HF_DATASETS_OFFLINE=1
 export HF_HUB_OFFLINE=1
 
 python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/train_model.py \
-    logan OverlappingEsmTokenizerWithNSkipping --chunk_size 1200 --freeze 0.5 --reverse_complement
+    logan OverlappingEsmTokenizerWithNSkipping --chunk_size 1200 --kmer 31 --freeze 0.5 --reverse_complement
