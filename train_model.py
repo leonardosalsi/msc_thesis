@@ -147,7 +147,7 @@ if __name__ == "__main__":
     else:
         # 1kbp -> 1000 tokens per sequence
         train_batch_size = 10
-        gradient_accumulation_steps = 2
+        gradient_accumulation_steps = 50
         eval_batch_size = 64
 
     """
@@ -350,7 +350,7 @@ if __name__ == "__main__":
         gradient_accumulation_steps=gradient_accumulation_steps,
         per_device_eval_batch_size=eval_batch_size,
         save_steps=6000,
-        logging_steps=5,
+        logging_steps=500,
         eval_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
