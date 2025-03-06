@@ -134,7 +134,6 @@ if __name__ == "__main__":
     num = math.floor(chunk_size / 1000)
     num_tokens = num * 1000
 
-
     kb = ""
     if num != 1:
         # 2kbp -> 2000 tokens per sequence
@@ -147,7 +146,7 @@ if __name__ == "__main__":
         gradient_accumulation_steps = 125
     else:
         # 1kbp -> 1000 tokens per sequence
-        train_batch_size = 2
+        train_batch_size = 10
         gradient_accumulation_steps = 2
         eval_batch_size = 64
 
@@ -209,8 +208,8 @@ if __name__ == "__main__":
                     param.requires_grad = False
 
     model.to(device)
-    torch.compiler.cudagraph_mark_step_begin()
-    model = torch.compile(model)
+    #torch.compiler.cudagraph_mark_step_begin()
+    #model = torch.compile(model)
     logger.log(LOGLEVEL, "Model loaded")
 
     """
