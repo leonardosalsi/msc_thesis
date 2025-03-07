@@ -157,6 +157,7 @@ if __name__ == "__main__":
     gc_txt = ""
     from_scratch_txt = ""
     freeze_txt = ""
+    unfiltered_txt = ""
     if shannon is not None:
         shannon_txt = f"_sh"
     if gc is not None:
@@ -174,7 +175,10 @@ if __name__ == "__main__":
     if freeze is not None:
         freeze_txt = "_freeze"
 
-    created_model_name = f"{named_tokenizer}_{selected_dataset.lower()}{kb}{shannon_txt}{gc_txt}{from_scratch_txt}{freeze_txt}"
+    if unfiltered is not None:
+        unfiltered_txt = "_unfiltered"
+
+    created_model_name = f"{named_tokenizer}_{selected_dataset.lower()}{kb}{shannon_txt}{gc_txt}{from_scratch_txt}{freeze_txt}{unfiltered_txt}"
 
     """
     Get device
@@ -208,8 +212,8 @@ if __name__ == "__main__":
                     param.requires_grad = False
 
     model.to(device)
-    #torch.compiler.cudagraph_mark_step_begin()
-    #model = torch.compile(model)
+    torch.compiler.cudagraph_mark_step_begin()
+    model = torch.compile(model)
     logger.log(LOGLEVEL, "Model loaded")
 
     """
