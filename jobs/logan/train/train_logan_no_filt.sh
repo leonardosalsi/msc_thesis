@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#SBATCH --job-name=tr_logan_no_filt_v100
-#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/train_logan_no_filt_v100.txt
+#SBATCH --job-name=tr_logan_no_filt_gpu1
+#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/train_logan_no_filt_gpu1.txt
 #SBATCH --cpus-per-task=4
 #SBATCH --time=96:00:00
 #SBATCH --mem-per-cpu=40G
 #SBATCH -p gpu
-#SBATCH --gres=gpu:v100:1
+#SBATCH --gres=gpu:1
 
 source ~/.bashrc
 conda activate gpu_env
