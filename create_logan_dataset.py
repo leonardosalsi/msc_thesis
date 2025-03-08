@@ -42,7 +42,7 @@ def find_overlaps_and_build_graph(sequences, k_mer=3):
 
     return graph
 
-def random_dfs_path(graph, start, depth=10000):
+def random_dfs_path(graph, start, depth=5000):
     path = [start]
     visited = {start}
     current = start
@@ -115,43 +115,37 @@ def add_reverse_complements(sequences):
 
 
 def process_fasta_file(file, kmer, reverse_complement, chunk_size):
-    results = []
     acc = os.path.basename(file).split('.')[0]
     try:
-        _sequences = np.array(list(fasta_parsing_func(file, kmer)))
+        _sequences = list(fasta_parsing_func(file, kmer))
         sequences = _sequences
         if reverse_complement:
             _sequences = add_reverse_complements(_sequences)
     except FileNotFoundError:
-        return results
+        return
 
     graph = find_overlaps_and_build_graph(_sequences, kmer)
     random_walk_sequences = random_walk_graph_sequences(graph, _sequences, kmer, len(sequences), chunk_size)
 
     for s in random_walk_sequences:
-        entry = {"sequence": s, "acc": acc}
-        results.append(entry)
-    return results
+        yield {"sequence": s, "acc": acc}
+
 
 
 def generate_dataset(kmer, reverse_complement, chunk_size):
     logan_data = os.path.join(logan_datasets_dir, 'data')
     fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))
 
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        # Submit a processing task for each file.
+    with concurrent.futures.ProcessPoolExecutor(max_workers=8) as executor:
         futures = {executor.submit(process_fasta_file, file, kmer, reverse_complement, chunk_size): file
                    for file in fasta_files}
 
-        # As each future completes, yield its entries.
         for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures),
                            desc="Processing fasta files"):
             try:
-                file_entries = future.result()
-                for entry in file_entries:
+                for entry in future.result():
                     yield entry
             except Exception as e:
-                # Log error if needed
                 print(f"Error processing {futures[future]}: {e}")
 
 def parse_args():
