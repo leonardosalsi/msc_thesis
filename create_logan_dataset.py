@@ -12,8 +12,10 @@ from Bio import SeqIO
 from tqdm import tqdm
 from collections import defaultdict
 from config import results_dir, logan_datasets_dir, generated_datasets_dir
+from Bio.Seq import Seq
 
 ALPHABET = {"A", "T", "C", "G"}
+COMPLEMENT_MAP = str.maketrans("ATCG", "TAGC")
 
 def chop_at_first_repeated_kmer(sequence, k):
     kmers = set()
@@ -42,7 +44,7 @@ def find_overlaps_and_build_graph(sequences, k_mer=3):
 
     return graph
 
-def random_dfs_path(graph, start, depth=5000):
+def random_dfs_path(graph, start, depth):
     path = [start]
     visited = {start}
     current = start
@@ -105,48 +107,54 @@ def fasta_parsing_func(fasta_path, kmer):
         s = chop_at_first_repeated_kmer(s, kmer)
         yield s
 
+
 def compute_reverse_complement(seq):
-    complement_map = {"A": "T", "T": "A", "C": "G", "G": "C"}
-    return "".join(complement_map.get(base, base) for base in reversed(seq))
+    return seq.translate(COMPLEMENT_MAP)[::-1]
 
 def add_reverse_complements(sequences):
-    reversed_complements = [compute_reverse_complement(seq) for seq in sequences]
-    return np.concatenate((sequences, reversed_complements))
-
+    return sequences + [Seq(seq).reverse_complement() for seq in sequences]
 
 def process_fasta_file(file, kmer, reverse_complement, chunk_size):
+    results = []
     acc = os.path.basename(file).split('.')[0]
     try:
-        _sequences = list(fasta_parsing_func(file, kmer))
-        sequences = _sequences
+        sequences = list(fasta_parsing_func(file, kmer))
+        len_original_sequences = len(sequences)
         if reverse_complement:
-            _sequences = add_reverse_complements(_sequences)
+            sequences = add_reverse_complements(sequences)
     except FileNotFoundError:
-        return
+        return results
 
-    graph = find_overlaps_and_build_graph(_sequences, kmer)
-    random_walk_sequences = random_walk_graph_sequences(graph, _sequences, kmer, len(sequences), chunk_size)
+    graph = find_overlaps_and_build_graph(sequences, kmer)
+    random_walk_sequences = random_walk_graph_sequences(graph, sequences, kmer, len_original_sequences, chunk_size)
 
     for s in random_walk_sequences:
-        yield {"sequence": s, "acc": acc}
-
+        entry = {"sequence": s, "acc": acc}
+        results.append(entry)
+    return results
 
 
 def generate_dataset(kmer, reverse_complement, chunk_size):
+    batch_size = 50
     logan_data = os.path.join(logan_datasets_dir, 'data')
     fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=8) as executor:
-        futures = {executor.submit(process_fasta_file, file, kmer, reverse_complement, chunk_size): file
-                   for file in fasta_files}
+    batches = [fasta_files[i:i+batch_size] for i in range(0, len(fasta_files), batch_size)]
 
-        for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures),
-                           desc="Processing fasta files"):
-            try:
-                for entry in future.result():
-                    yield entry
-            except Exception as e:
-                print(f"Error processing {futures[future]}: {e}")
+    for batch in tqdm(batches, desc="Batch Processing"):
+        with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+            futures = {executor.submit(process_fasta_file, file, kmer, reverse_complement, chunk_size): file
+                       for file in batch}
+
+            for future in concurrent.futures.as_completed(futures):
+                file = futures[future]
+                try:
+                    file_entries = future.result()
+                    for entry in file_entries:
+                        yield entry
+                except Exception as e:
+                    print(f"Error processing {file}: {e}")
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
