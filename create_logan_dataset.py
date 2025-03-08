@@ -112,7 +112,7 @@ def compute_reverse_complement(seq):
     return seq.translate(COMPLEMENT_MAP)[::-1]
 
 def add_reverse_complements(sequences):
-    return sequences + [Seq(seq).reverse_complement() for seq in sequences]
+    return sequences + [compute_reverse_complement(seq) for seq in sequences]
 
 def process_fasta_file(file, kmer, reverse_complement, chunk_size):
     results = []
