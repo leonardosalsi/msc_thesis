@@ -1,7 +1,5 @@
 #!/bin/bash
 cd ..
 
-sbatch jobs/logan/generate/generate_logan_31_reverse.sh
-sbatch jobs/logan/generate/generate_logan_28_reverse.sh
-sbatch jobs/logan/generate/generate_logan_25_reverse.sh
-sbatch jobs/logan/generate/generate_logan_20_reverse.sh
+sbatch jobs/logan/generate/1k.sh
+sbatch jobs/logan/generate/2k.sh
