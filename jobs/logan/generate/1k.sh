@@ -3,7 +3,7 @@
 #SBATCH --job-name=gen_logan_1k
 #SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/gen_logan_1k.txt
 #SBATCH --cpus-per-task=8
-#SBATCH --time=200:00:00
+#SBATCH --time=100:00:00
 #SBATCH --mem-per-cpu=80G
 
 source ~/.bashrc
