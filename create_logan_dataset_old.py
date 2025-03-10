@@ -19,7 +19,7 @@ from Bio import SeqIO
 import plotnine as p9
 from tqdm import tqdm
 from collections import defaultdict
-from config import datasets_cache_dir, results_dir, logan_datasets_dir, generated_datasets_dir
+from config import datasets_cache_dir, results_dir, logan_datasets_dir, generated_datasets_dir, generator_cache_dir
 
 ALPHABET = {"A", "T", "C", "G"}
 KMER = 31
@@ -239,12 +239,15 @@ if __name__ == "__main__":
 
     new_dataset = Dataset.from_generator(lambda: generate_dataset(fasta_files, kmer, reverse_complement))
     logan_datasets_dir = os.path.join(generated_datasets_dir, f'logan')
-
+    generator_cache = os.path.join(generator_cache_dir, 'logan')
     os.makedirs(logan_datasets_dir, exist_ok=True)
+    os.makedirs(generator_cache, exist_ok=True)
     if reverse_complement:
         dataset_dir = os.path.join(logan_datasets_dir, f'kmer_{kmer}_reverse')
+        generator_cache= os.path.join(generator_cache, f'kmer_{kmer}_reverse')
     else:
         dataset_dir = os.path.join(logan_datasets_dir, f'kmer_{kmer}')
+        generator_cache = os.path.join(generator_cache, f'kmer_{kmer}')
     os.makedirs(dataset_dir, exist_ok=True)
     split_dataset = new_dataset.train_test_split(test_size=0.2, seed=112)
     train_dataset = split_dataset['train']
