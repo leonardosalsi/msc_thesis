@@ -133,7 +133,6 @@ def generate_dataset(kmer, reverse_complement, chunk_size):
     batch_size = 50
     logan_data = os.path.join(logan_datasets_dir, 'data')
     fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))
-
     batches = [fasta_files[i:i+batch_size] for i in range(0, len(fasta_files), batch_size)]
 
     for batch in tqdm(batches, desc="Batch Processing"):
@@ -187,15 +186,15 @@ if __name__ == "__main__":
 
     num = math.floor(chunk_size / 1000)
 
-    logan_datasets_dir = os.path.join(generated_datasets_dir, f'logan')
+    dataset_dir = os.path.join(generated_datasets_dir, f'logan')
     generator_cache = os.path.join(generator_cache_dir, 'logan')
     os.makedirs(logan_datasets_dir, exist_ok=True)
     os.makedirs(generator_cache, exist_ok=True)
     if reverse_complement:
-        dataset_dir = os.path.join(logan_datasets_dir, f'kmer_{kmer}_reverse')
+        dataset_dir = os.path.join(dataset_dir, f'kmer_{kmer}_reverse')
         generator_cache = os.path.join(generator_cache, f'kmer_{kmer}_reverse')
     else:
-        dataset_dir = os.path.join(logan_datasets_dir, f'kmer_{kmer}')
+        dataset_dir = os.path.join(dataset_dir, f'kmer_{kmer}')
         generator_cache = os.path.join(generator_cache, f'kmer_{kmer}')
     dataset_dir = dataset_dir + f"_{num}k"
     os.makedirs(dataset_dir, exist_ok=True)
