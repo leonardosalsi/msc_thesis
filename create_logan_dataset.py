@@ -61,22 +61,17 @@ def random_dfs_path(graph, start, depth):
         current = nxt
     return path
 
-
 def sample_longest_dfs_path_sequence(graph, start, sequences, kmer, samples=10, depth=10000):
-    best_path = None
     best_length = 0
+    longest_sequence = None
     for _ in range(samples):
         path = random_dfs_path(graph, start, depth)
-        if sequences is not None and kmer is not None:
-            seq = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
-            current_length = len(seq)
-        else:
-            current_length = len(path)  # fallback: compare by path length
+        sequence = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
+        current_length = len(sequence)
         if current_length > best_length:
             best_length = current_length
-            best_path = path
-    sequence = sequences[best_path[0]] + "".join([sequences[p][kmer - 1:] for p in best_path[1:]])
-    return sequence
+            longest_sequence = sequence
+    return longest_sequence
 
 def random_walk_graph_sequences(graph, sequences, kmer, list_len, chunk_size):
     random_walk_sequences = []
