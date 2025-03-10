@@ -187,19 +187,21 @@ if __name__ == "__main__":
     num = math.floor(chunk_size / 1000)
 
     dataset_dir = os.path.join(generated_datasets_dir, f'logan')
-    generator_cache = os.path.join(generator_cache_dir, 'logan')
+    cache_dir = os.path.join(generator_cache_dir, 'logan')
     os.makedirs(logan_datasets_dir, exist_ok=True)
-    os.makedirs(generator_cache, exist_ok=True)
+    os.makedirs(cache_dir, exist_ok=True)
     if reverse_complement:
         dataset_dir = os.path.join(dataset_dir, f'kmer_{kmer}_reverse')
-        generator_cache = os.path.join(generator_cache, f'kmer_{kmer}_reverse')
+        generator_cache = os.path.join(cache_dir, f'kmer_{kmer}_reverse')
     else:
         dataset_dir = os.path.join(dataset_dir, f'kmer_{kmer}')
-        generator_cache = os.path.join(generator_cache, f'kmer_{kmer}')
+        generator_cache = os.path.join(cache_dir, f'kmer_{kmer}')
     dataset_dir = dataset_dir + f"_{num}k"
+    cache_dir = cache_dir  + f"_{num}k"
     os.makedirs(dataset_dir, exist_ok=True)
+    os.makedirs(cache_dir, exist_ok=True)
 
-    new_dataset = Dataset.from_generator(lambda: generate_dataset(kmer, reverse_complement, chunk_size), cache_dir=generator_cache)
+    new_dataset = Dataset.from_generator(lambda: generate_dataset(kmer, reverse_complement, chunk_size), cache_dir=cache_dir)
 
     split_dataset = new_dataset.train_test_split(test_size=0.2, seed=112)
     train_dataset = split_dataset['train']
@@ -212,14 +214,14 @@ if __name__ == "__main__":
     dataset.save_to_disk(dataset_dir)
 
     dataset_dir = dataset_dir + f"_filtered"
-    generator_cache = dataset_dir + f"_filtered"
+    cache_dir = cache_dir + f"_filtered"
     def filtered_generator(split):
         for example in split:
             if len(example["sequence"]) == chunk_size:
                 yield example
 
-    filtered_train = Dataset.from_generator(lambda: filtered_generator(dataset["train"]), cache_dir=generator_cache + "_train")
-    filtered_test = Dataset.from_generator(lambda: filtered_generator(dataset["test"]), cache_dir=generator_cache + "_test")
+    filtered_train = Dataset.from_generator(lambda: filtered_generator(dataset["train"]), cache_dir=cache_dir + "_train")
+    filtered_test = Dataset.from_generator(lambda: filtered_generator(dataset["test"]), cache_dir=cache_dir + "_test")
 
     filtered_dataset = DatasetDict({
         "train": filtered_train,
