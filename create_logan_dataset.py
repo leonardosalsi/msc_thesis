@@ -11,7 +11,7 @@ from datasets import Dataset, DatasetDict
 from Bio import SeqIO
 from tqdm import tqdm
 from collections import defaultdict
-from config import results_dir, logan_datasets_dir, generated_datasets_dir
+from config import results_dir, logan_datasets_dir, generated_datasets_dir, generator_cache_dir
 from Bio.Seq import Seq
 
 ALPHABET = {"A", "T", "C", "G"}
@@ -191,44 +191,44 @@ if __name__ == "__main__":
     reverse_complement = args.reverse_complement
 
     num = math.floor(chunk_size / 1000)
-    new_dataset = Dataset.from_generator(lambda: generate_dataset(kmer, reverse_complement, chunk_size))
-    logan_datasets_dir = os.path.join(generated_datasets_dir, f'logan')
 
+    logan_datasets_dir = os.path.join(generated_datasets_dir, f'logan')
+    generator_cache = os.path.join(generator_cache_dir, 'logan')
     os.makedirs(logan_datasets_dir, exist_ok=True)
+    os.makedirs(generator_cache, exist_ok=True)
     if reverse_complement:
         dataset_dir = os.path.join(logan_datasets_dir, f'kmer_{kmer}_reverse')
+        generator_cache = os.path.join(generator_cache, f'kmer_{kmer}_reverse')
     else:
         dataset_dir = os.path.join(logan_datasets_dir, f'kmer_{kmer}')
+        generator_cache = os.path.join(generator_cache, f'kmer_{kmer}')
     dataset_dir = dataset_dir + f"_{num}k"
     os.makedirs(dataset_dir, exist_ok=True)
+
+    new_dataset = Dataset.from_generator(lambda: generate_dataset(kmer, reverse_complement, chunk_size), cache_dir=generator_cache)
+
     split_dataset = new_dataset.train_test_split(test_size=0.2, seed=112)
     train_dataset = split_dataset['train']
-    test_val_dataset = split_dataset['test']
-    split_dataset_2 = test_val_dataset.train_test_split(test_size=0.5, seed=112)
-    val_dataset = split_dataset_2["train"]
-    test_dataset = split_dataset_2["test"]
+    test_dataset = split_dataset['test']
     dataset = DatasetDict({
         "train": train_dataset,
-        "validation": val_dataset,
         "test": test_dataset
     })
 
     dataset.save_to_disk(dataset_dir)
 
     dataset_dir = dataset_dir + f"_filtered"
-
+    generator_cache = dataset_dir + f"_filtered"
     def filtered_generator(split):
         for example in split:
             if len(example["sequence"]) == chunk_size:
                 yield example
 
-    filtered_train = Dataset.from_generator(lambda: filtered_generator(dataset["train"]))
-    filtered_validation = Dataset.from_generator(lambda: filtered_generator(dataset["validation"]))
-    filtered_test = Dataset.from_generator(lambda: filtered_generator(dataset["test"]))
+    filtered_train = Dataset.from_generator(lambda: filtered_generator(dataset["train"]), cache_dir=generator_cache + "_train")
+    filtered_test = Dataset.from_generator(lambda: filtered_generator(dataset["test"]), cache_dir=generator_cache + "_test")
 
     filtered_dataset = DatasetDict({
         "train": filtered_train,
-        "validation": filtered_validation,
         "test": filtered_test
     })
 
