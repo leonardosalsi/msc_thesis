@@ -128,8 +128,14 @@ def generate_dataset(kmer, reverse_complement, chunk_size):
 
         for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures),
                            desc="Processing fasta files"):
-            for entry in future.result():
-                yield entry
+            file_name = futures[future]
+            acc = file_name.split('/')[-1].split('.')[0]
+            tqdm.write(f"Processing file: {acc}")
+            try:
+                for entry in future.result():
+                    yield entry
+            except Exception as e:
+                tqdm.write(f"Error processing {file_name}: {e}")
 
 
 def parse_args():
