@@ -61,7 +61,7 @@ def random_dfs_path(graph, start, depth):
         current = nxt
     return path
 
-def sample_longest_dfs_path_sequence(graph, start, sequences, kmer, samples=10, depth=10000):
+def sample_longest_dfs_path_sequence(graph, start, sequences, kmer, samples=10, depth=5000):
     best_length = 0
     longest_sequence = None
     for _ in range(samples):
@@ -76,7 +76,8 @@ def sample_longest_dfs_path_sequence(graph, start, sequences, kmer, samples=10, 
 def random_walk_graph_sequences(graph, sequences, kmer, list_len, chunk_size):
     random_walk_sequences = []
     for i, node in enumerate(graph):
-        sequence = sample_longest_dfs_path_sequence(graph, node, sequences, kmer)
+        path = random_dfs_path(graph, start, depth)
+        sequence = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
         chunks = [sequence[i:i + chunk_size] for i in range(0, len(sequence), chunk_size)]
         if chunks and len(chunks[-1]) < 50:
             chunks.pop()
@@ -130,24 +131,20 @@ def process_fasta_file(file, kmer, reverse_complement, chunk_size):
 
 
 def generate_dataset(kmer, reverse_complement, chunk_size):
-    batch_size = 50
     logan_data = os.path.join(logan_datasets_dir, 'data')
     fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))
-    batches = [fasta_files[i:i+batch_size] for i in range(0, len(fasta_files), batch_size)]
 
-    for batch in tqdm(batches, desc="Batch Processing"):
-        with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
-            futures = {executor.submit(process_fasta_file, file, kmer, reverse_complement, chunk_size): file
-                       for file in batch}
+    with concurrent.futures.ProcessPoolExecutor(max_workers=8) as executor:
+        futures = {executor.submit(process_fasta_file, file, kmer, reverse_complement, chunk_size): file
+                   for file in fasta_files}
 
-            for future in concurrent.futures.as_completed(futures):
-                file = futures[future]
-                try:
-                    file_entries = future.result()
-                    for entry in file_entries:
-                        yield entry
-                except Exception as e:
-                    print(f"Error processing {file}: {e}")
+        for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures),
+                           desc="Processing fasta files"):
+            try:
+                for entry in future.result():
+                    yield entry
+            except Exception as e:
+                print(f"Error processing {futures[future]}: {e}")
 
 
 def parse_args():
