@@ -121,7 +121,7 @@ def process_fasta_file(file, kmer, reverse_complement, chunk_size):
 def generate_dataset(kmer, reverse_complement, chunk_size):
     logan_data = os.path.join(logan_datasets_dir, 'data')
     fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))
-
+    print(fasta_files[2970])
     with concurrent.futures.ProcessPoolExecutor(max_workers=8) as executor:
         futures = {executor.submit(process_fasta_file, file, kmer, reverse_complement, chunk_size): file
                    for file in fasta_files}
