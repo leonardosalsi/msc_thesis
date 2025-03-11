@@ -6,7 +6,6 @@ import random
 import glob
 from io import StringIO
 import numpy as np
-import heapq
 import zstandard
 from datasets import Dataset, DatasetDict
 from Bio import SeqIO
@@ -31,11 +30,10 @@ def find_overlaps_and_build_graph(sequences, k_mer=3):
     min_overlap = k_mer - 1
     prefix_dict = defaultdict(list)
     graph = defaultdict(list)
-    node_values = {}
 
     for i, seq in enumerate(sequences):
         prefix_dict[seq[:min_overlap]].append(i)
-        node_values[i] = len(seq)
+
 
     for i, seq1 in enumerate(sequences):
         seq1_suffix = seq1[-min_overlap:]
@@ -44,56 +42,49 @@ def find_overlaps_and_build_graph(sequences, k_mer=3):
             if i != j:
                 graph[i].append(j)
 
-    return graph, node_values
+    return graph
 
-def find_longest_sequence_path(graph, node_values):
-    max_value = {node: float('-inf') for node in graph}
-    best_paths = {}
-    pq = []
+def random_dfs_path(graph, start, depth):
+    path = [start]
+    visited = {start}
+    current = start
 
-    for node in graph:
-        heapq.heappush(pq, (-node_values[node], [node]))
-        max_value[node] = node_values[node]
-        best_paths[node] = [node]
-
-    while pq:
-        curr_value, path = heapq.heappop(pq)
-        curr_value = -curr_value
-        last_node = path[-1]
-
-        for neighbor in graph[last_node]:
-            new_value = curr_value + node_values[neighbor]
-            if new_value > max_value[neighbor]:
-                max_value[neighbor] = new_value
-                best_paths[neighbor] = path + [neighbor]
-                heapq.heappush(pq, (-new_value, path + [neighbor]))
-
-    return best_paths
-
-
-def random_walk_graph_sequences(graph, node_values, sequences, kmer, list_len, chunk_size):
-    best_walk_sequences = []
-    longest_paths = find_longest_sequence_path(graph, node_values)
-
-    for i, node in enumerate(graph):
-        if node not in longest_paths:
-            continue
-
-        path = longest_paths[node]
-        if not path:
-            continue
-
-        sequence = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
-        chunks = [sequence[i:i + chunk_size] for i in range(0, len(sequence), chunk_size)]
-
-        if chunks and len(chunks[-1]) < 50:
-            chunks.pop()
-        best_walk_sequences.extend(chunks)
-
-        if i >= list_len:
+    while len(path) < depth:
+        neighbors = graph.get(current, [])
+        valid_neighbors = [n for n in neighbors if n not in visited]
+        if not valid_neighbors:
             break
 
-    return best_walk_sequences
+        nxt = random.choice(valid_neighbors)
+        path.append(nxt)
+        visited.add(nxt)
+        current = nxt
+    return path
+
+def sample_longest_dfs_path_sequence(graph, start, sequences, kmer, samples=10, depth=5000):
+    best_length = 0
+    longest_sequence = None
+    for _ in range(samples):
+        path = random_dfs_path(graph, start, depth)
+        sequence = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
+        current_length = len(sequence)
+        if current_length > best_length:
+            best_length = current_length
+            longest_sequence = sequence
+    return longest_sequence
+
+def random_walk_graph_sequences(graph, sequences, kmer, list_len, chunk_size):
+    random_walk_sequences = []
+    for i, node in enumerate(graph):
+        path = random_dfs_path(graph, node)
+        sequence = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
+        chunks = [sequence[i:i + chunk_size] for i in range(0, len(sequence), chunk_size)]
+        if chunks and len(chunks[-1]) < 50:
+            chunks.pop()
+        random_walk_sequences.extend(chunks)
+        if i >= list_len:
+            break
+    return random_walk_sequences
 
 def fasta_parsing_func(fasta_path, kmer):
     with open(fasta_path, "rb") as f:
@@ -130,8 +121,8 @@ def process_fasta_file(file, kmer, reverse_complement, chunk_size):
     except FileNotFoundError:
         return results
 
-    graph, node_values = find_overlaps_and_build_graph(sequences, kmer)
-    random_walk_sequences = random_walk_graph_sequences(graph, node_values, sequences, kmer, len_original_sequences, chunk_size)
+    graph = find_overlaps_and_build_graph(sequences, kmer)
+    random_walk_sequences = random_walk_graph_sequences(graph, sequences, kmer, len_original_sequences, chunk_size)
 
     for s in random_walk_sequences:
         entry = {"sequence": s, "acc": acc}
