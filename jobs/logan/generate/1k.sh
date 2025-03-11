@@ -4,7 +4,7 @@
 #SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/gen_logan_1k.txt
 #SBATCH --cpus-per-task=8
 #SBATCH --time=100:00:00
-#SBATCH --mem-per-cpu=60G
+#SBATCH --mem-per-cpu=100G
 
 source ~/.bashrc
 conda activate gpu_env
