@@ -76,7 +76,7 @@ def sample_longest_dfs_path_sequence(graph, start, sequences, kmer, samples=10, 
 def random_walk_graph_sequences(graph, sequences, kmer, list_len, chunk_size):
     random_walk_sequences = []
     for i, node in enumerate(graph):
-        path = random_dfs_path(graph, start, depth)
+        path = random_dfs_path(graph, node)
         sequence = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
         chunks = [sequence[i:i + chunk_size] for i in range(0, len(sequence), chunk_size)]
         if chunks and len(chunks[-1]) < 50:
@@ -138,9 +138,13 @@ def generate_dataset(kmer, reverse_complement, chunk_size):
         futures = {executor.submit(process_fasta_file, file, kmer, reverse_complement, chunk_size): file
                    for file in fasta_files}
 
-        for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures), desc="Processing fasta files"):
-            for entry in future.result():
-                yield entry
+        for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures),
+                           desc="Processing fasta files"):
+            try:
+                for entry in future.result():
+                    yield entry
+            except Exception as e:
+                print(f"Error processing {futures[future]}: {e}")
 
 
 def parse_args():
