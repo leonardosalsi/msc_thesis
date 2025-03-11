@@ -10,6 +10,9 @@ import time
 
 import torch
 from datasets import load_from_disk, Dataset, load_dataset
+
+from overrides.tokenizer.OverlappingTokenizer import OverlappingTokenizer
+
 torch.backends.cudnn.benchmark = True
 torch.backends.cuda.matmul.allow_tf32 = False
 from transformers import (
@@ -22,8 +25,6 @@ from transformers import (
 from config import models_cache_dir, pretrained_models_cache_dir, tokenizer_cache_dir, \
     datasets_cache_dir, logs_dir, generated_datasets_dir
 from downstream_tasks import PRETRAINED_MODELS
-from overrides.tokenizer.OverlappingEsmTokenizer import OverlappingEsmTokenizer
-from overrides.tokenizer.OverlappingEsmTokenizerWithNSkipping import OverlappingEsmTokenizerWithNSkipping
 from util import init_logger, LOGLEVEL, get_chunk_size_file_name, get_filtered_dataset_name, get_pretrained_model_by_id
 import torch
 import torch.profiler
@@ -36,13 +37,13 @@ def parse_args():
         "dataset",
         type=str,
         help="Name of the dataset",
-        choices=["multi_genome_dataset", "logan", "logan_full"]
+        choices=["multi_genome_species", "logan"]
     )
     parser.add_argument(
         "tokenizer",
         type=str,
         help="Tokenizer",
-        choices=["Default", "OverlappingEsmTokenizer", "OverlappingEsmTokenizerWithNSkipping"],
+        choices=["Default", "Overlapping"],
     )
     parser.add_argument(
         "--chunk_size",
@@ -96,7 +97,7 @@ def parse_args():
     parser.add_argument(
         "--freeze",
         type=float,
-        help="Freeze a pecentual number of layers (between 0.1 and 0.9)",
+        help="Freeze a percentual number of layers (between 0.1 and 0.9)",
     )
     return parser.parse_args()
 
@@ -167,9 +168,7 @@ if __name__ == "__main__":
 
     if selected_tokenizer == "Default":
         named_tokenizer = 'default'
-    elif selected_tokenizer == "OverlappingEsmTokenizer":
-        named_tokenizer = 'overlap'
-    elif selected_tokenizer == "OverlappingEsmTokenizerWithNSkipping":
+    elif selected_tokenizer == "Overlapping":
         named_tokenizer = 'overlap'
 
     if freeze is not None:
@@ -229,13 +228,7 @@ if __name__ == "__main__":
             local_files_only=True
         )
     elif selected_tokenizer == "OverlappingEsmTokenizer":
-        tokenizer = OverlappingEsmTokenizer(
-            vocab_file="model_configs/vocab.txt",
-            model_max_length=2048,
-            num_tokens=num_tokens
-        )
-    elif selected_tokenizer == "OverlappingEsmTokenizerWithNSkipping":
-        tokenizer = OverlappingEsmTokenizerWithNSkipping(
+        tokenizer = OverlappingTokenizer(
             vocab_file="model_configs/vocab.txt",
             model_max_length=2048,
             num_tokens=num_tokens
