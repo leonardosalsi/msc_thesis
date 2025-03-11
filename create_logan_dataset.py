@@ -138,13 +138,9 @@ def generate_dataset(kmer, reverse_complement, chunk_size):
         futures = {executor.submit(process_fasta_file, file, kmer, reverse_complement, chunk_size): file
                    for file in fasta_files}
 
-        for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures),
-                           desc="Processing fasta files"):
-            try:
-                for entry in future.result():
-                    yield entry
-            except Exception as e:
-                print(f"Error processing {futures[future]}: {e}")
+        for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures), desc="Processing fasta files"):
+            for entry in future.result():
+                yield entry
 
 
 def parse_args():
