@@ -18,7 +18,7 @@ from util import init_logger, LOGLEVEL
 
 ALPHABET = {"A", "T", "C", "G"}
 COMPLEMENT_MAP = str.maketrans("ATCG", "TAGC")
-MAX_WORKERS = 8
+MAX_WORKERS = 16
 
 def chop_at_first_repeated_kmer(sequence, k):
     kmers = set()
