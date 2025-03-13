@@ -5,6 +5,8 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --time=100:00:00
 #SBATCH --mem-per-cpu=100G
+#SBATCH -p gpu
+#SBATCH --gres=gpu:1
 
 source ~/.bashrc
 conda activate gpu_env
