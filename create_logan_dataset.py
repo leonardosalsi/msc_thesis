@@ -122,7 +122,6 @@ def process_fasta_file(file, kmer, reverse_complement, chunk_size):
 
 
 def generate_dataset(kmer, reverse_complement, chunk_size):
-    logger = init_logger()
     logan_data = os.path.join(logan_datasets_dir, 'data')
     fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))
     with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
@@ -133,7 +132,6 @@ def generate_dataset(kmer, reverse_complement, chunk_size):
                            desc="Processing fasta files"):
             file_name = futures[future]
             acc = file_name.split('/')[-1].split('.')[0]
-            logger.log(LOGLEVEL, acc)
             try:
                 for entry in future.result():
                     yield entry
