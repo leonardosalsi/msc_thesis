@@ -18,6 +18,7 @@ from util import init_logger, LOGLEVEL
 
 ALPHABET = {"A", "T", "C", "G"}
 COMPLEMENT_MAP = str.maketrans("ATCG", "TAGC")
+MAX_WORKERS = 8
 
 def chop_at_first_repeated_kmer(sequence, k):
     kmers = set()
@@ -124,7 +125,7 @@ def generate_dataset(kmer, reverse_complement, chunk_size):
     logger = init_logger()
     logan_data = os.path.join(logan_datasets_dir, 'data')
     fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))
-    with concurrent.futures.ProcessPoolExecutor(max_workers=16) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {executor.submit(process_fasta_file, file, kmer, reverse_complement, chunk_size): file
                    for file in fasta_files}
 
@@ -201,7 +202,7 @@ if __name__ == "__main__":
         "test": test_dataset
     })
 
-    dataset.save_to_disk(dataset_dir, num_proc=16)
+    dataset.save_to_disk(dataset_dir, num_proc=MAX_WORKERS)
 
     dataset_dir = dataset_dir + f"_filtered"
     cache_dir = cache_dir + f"_filtered"
@@ -218,4 +219,4 @@ if __name__ == "__main__":
         "test": filtered_test
     })
 
-    filtered_dataset.save_to_disk(dataset_dir, num_proc=16)
+    filtered_dataset.save_to_disk(dataset_dir, num_proc=MAX_WORKERS)
