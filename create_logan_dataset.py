@@ -67,7 +67,7 @@ def random_dfs_path(graph, start, depth):
 def random_walk_graph_sequences(graph, sequences, kmer, list_len, chunk_size):
     random_walk_sequences = []
     for i, node in enumerate(graph):
-        path = random_dfs_path(graph, node, depth=10000)
+        path = random_dfs_path(graph, node, depth=500)
         sequence = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
         chunks = [sequence[i:i + chunk_size] for i in range(0, len(sequence), chunk_size)]
         if chunks and len(chunks[-1]) < 50:
