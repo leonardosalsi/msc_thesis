@@ -13,6 +13,8 @@ from tqdm import tqdm
 from collections import defaultdict
 from config import results_dir, logan_datasets_dir, generated_datasets_dir, generator_cache_dir
 from Bio.Seq import Seq
+import time
+import logging  # For logging retry messages
 
 from util import init_logger, LOGLEVEL
 
@@ -36,7 +38,6 @@ def find_overlaps_and_build_graph(sequences, k_mer=3):
 
     for i, seq in enumerate(sequences):
         prefix_dict[seq[:min_overlap]].append(i)
-
 
     for i, seq1 in enumerate(sequences):
         seq1_suffix = seq1[-min_overlap:]
@@ -67,7 +68,7 @@ def random_dfs_path(graph, start, depth):
 def random_walk_graph_sequences(graph, sequences, kmer, list_len, chunk_size):
     random_walk_sequences = []
     for i, node in enumerate(graph):
-        path = random_dfs_path(graph, node, depth=500)
+        path = random_dfs_path(graph, node, depth=10000)
         sequence = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
         chunks = [sequence[i:i + chunk_size] for i in range(0, len(sequence), chunk_size)]
         if chunks and len(chunks[-1]) < 50:
@@ -94,7 +95,6 @@ def fasta_parsing_func(fasta_path, kmer):
         s = chop_at_first_repeated_kmer(s, kmer)
         yield s
 
-
 def compute_reverse_complement(seq):
     return seq.translate(COMPLEMENT_MAP)[::-1]
 
@@ -120,7 +120,6 @@ def process_fasta_file(file, kmer, reverse_complement, chunk_size):
         results.append(entry)
     return results
 
-
 def generate_dataset(kmer, reverse_complement, chunk_size):
     logan_data = os.path.join(logan_datasets_dir, 'data')
     fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))
@@ -138,6 +137,19 @@ def generate_dataset(kmer, reverse_complement, chunk_size):
             except Exception as e:
                 tqdm.write(f"Error processing {file_name}: {e}")
 
+def save_dataset_with_retry(dataset, save_dir, num_proc, max_retries=3, delay=5):
+    """
+    Attempt to save the dataset to disk up to max_retries times with a delay between attempts.
+    """
+    for attempt in range(1, max_retries + 1):
+        try:
+            dataset.save_to_disk(save_dir, num_proc=num_proc)
+            logging.info(f"Dataset saved successfully to {save_dir} on attempt {attempt}.")
+            return
+        except OSError as e:
+            logging.warning(f"Attempt {attempt} failed to save dataset to {save_dir}. Error: {e}. Retrying in {delay} seconds.")
+            time.sleep(delay)
+    raise OSError(f"Failed to save dataset to {save_dir} after {max_retries} attempts.")
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -200,10 +212,11 @@ if __name__ == "__main__":
         "test": test_dataset
     })
 
-    dataset.save_to_disk(dataset_dir, num_proc=MAX_WORKERS)
+    save_dataset_with_retry(dataset, dataset_dir, num_proc=MAX_WORKERS)
 
     dataset_dir = dataset_dir + f"_filtered"
     cache_dir = cache_dir + f"_filtered"
+
     def filtered_generator(split):
         for example in split:
             if len(example["sequence"]) == chunk_size:
@@ -217,4 +230,4 @@ if __name__ == "__main__":
         "test": filtered_test
     })
 
-    filtered_dataset.save_to_disk(dataset_dir, num_proc=MAX_WORKERS)
+    save_dataset_with_retry(filtered_dataset, dataset_dir, num_proc=MAX_WORKERS)
