@@ -122,7 +122,7 @@ def process_fasta_file(file, kmer, reverse_complement, chunk_size):
 
 def generate_dataset(kmer, reverse_complement, chunk_size):
     logan_data = os.path.join(logan_datasets_dir, 'data')
-    fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))
+    fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))[0:200]
     with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {executor.submit(process_fasta_file, file, kmer, reverse_complement, chunk_size): file
                    for file in fasta_files}
@@ -138,9 +138,6 @@ def generate_dataset(kmer, reverse_complement, chunk_size):
                 tqdm.write(f"Error processing {file_name}: {e}")
 
 def save_dataset_with_retry(dataset, save_dir, num_proc, max_retries=3, delay=5):
-    """
-    Attempt to save the dataset to disk up to max_retries times with a delay between attempts.
-    """
     for attempt in range(1, max_retries + 1):
         try:
             dataset.save_to_disk(save_dir, num_proc=num_proc)
