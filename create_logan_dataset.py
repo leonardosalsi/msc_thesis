@@ -24,8 +24,10 @@ MAX_WORKERS = 8
 
 def generate_dataset(kmer, reverse_complement, chunk_size):
     logan_data = os.path.join(logan_datasets_dir, 'data')
+
     fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))[0:200]
-    with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
+    print(len(fasta_files))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {executor.submit(logan_compiler.process_fasta_file, file, kmer, reverse_complement, chunk_size): file
                    for file in fasta_files}
 
