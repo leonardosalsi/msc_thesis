@@ -5,6 +5,8 @@ import os
 import random
 import glob
 from io import StringIO
+from pprint import pprint
+
 import numpy as np
 import zstandard
 from datasets import Dataset, DatasetDict
@@ -15,116 +17,16 @@ from config import results_dir, logan_datasets_dir, generated_datasets_dir, gene
 from Bio.Seq import Seq
 import time
 import logging  # For logging retry messages
-
+import logan_compiler
 from util import init_logger, LOGLEVEL
 
-ALPHABET = {"A", "T", "C", "G"}
-COMPLEMENT_MAP = str.maketrans("ATCG", "TAGC")
-MAX_WORKERS = 16
-
-def chop_at_first_repeated_kmer(sequence, k):
-    kmers = set()
-    for i in range(len(sequence) - k + 1):
-        kmer = sequence[i:i + k]
-        if kmer in kmers:
-            return sequence[:i + k - 1]
-        kmers.add(kmer)
-    return sequence
-
-def find_overlaps_and_build_graph(sequences, k_mer=3):
-    min_overlap = k_mer - 1
-    prefix_dict = defaultdict(list)
-    graph = defaultdict(list)
-
-    for i, seq in enumerate(sequences):
-        prefix_dict[seq[:min_overlap]].append(i)
-
-    for i, seq1 in enumerate(sequences):
-        seq1_suffix = seq1[-min_overlap:]
-        graph[i] = []
-        for j in prefix_dict[seq1_suffix]:
-            if i != j:
-                graph[i].append(j)
-
-    return graph
-
-def random_dfs_path(graph, start, depth):
-    path = [start]
-    visited = {start}
-    current = start
-
-    while len(path) < depth:
-        neighbors = graph.get(current, [])
-        valid_neighbors = [n for n in neighbors if n not in visited]
-        if not valid_neighbors:
-            break
-
-        nxt = random.choice(valid_neighbors)
-        path.append(nxt)
-        visited.add(nxt)
-        current = nxt
-    return path
-
-def random_walk_graph_sequences(graph, sequences, kmer, list_len, chunk_size):
-    random_walk_sequences = []
-    for i, node in enumerate(graph):
-        path = random_dfs_path(graph, node, depth=10000)
-        sequence = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
-        chunks = [sequence[i:i + chunk_size] for i in range(0, len(sequence), chunk_size)]
-        if chunks and len(chunks[-1]) < 50:
-            chunks.pop()
-        random_walk_sequences.extend(chunks)
-        if i >= list_len:
-            break
-    return random_walk_sequences
-
-def fasta_parsing_func(fasta_path, kmer):
-    with open(fasta_path, "rb") as f:
-        data = f.read()
-
-    dctx = zstandard.ZstdDecompressor()
-    data = dctx.decompress(data)
-
-    if data is None:
-        return
-
-    decoded_lines = data.decode()
-    for s in SeqIO.parse(StringIO(decoded_lines), "fasta"):
-        s = str(s.seq)
-        s = "".join([c for c in s if c in ALPHABET])
-        s = chop_at_first_repeated_kmer(s, kmer)
-        yield s
-
-def compute_reverse_complement(seq):
-    return seq.translate(COMPLEMENT_MAP)[::-1]
-
-def add_reverse_complements(sequences):
-    return sequences + [compute_reverse_complement(seq) for seq in sequences]
-
-def process_fasta_file(file, kmer, reverse_complement, chunk_size):
-    results = []
-    acc = os.path.basename(file).split('.')[0]
-    try:
-        sequences = list(fasta_parsing_func(file, kmer))
-        len_original_sequences = len(sequences)
-        if reverse_complement:
-            sequences = add_reverse_complements(sequences)
-    except FileNotFoundError:
-        return results
-
-    graph = find_overlaps_and_build_graph(sequences, kmer)
-    random_walk_sequences = random_walk_graph_sequences(graph, sequences, kmer, len_original_sequences, chunk_size)
-
-    for s in random_walk_sequences:
-        entry = {"sequence": s, "acc": acc}
-        results.append(entry)
-    return results
+MAX_WORKERS = 8
 
 def generate_dataset(kmer, reverse_complement, chunk_size):
     logan_data = os.path.join(logan_datasets_dir, 'data')
     fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))[0:200]
     with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        futures = {executor.submit(process_fasta_file, file, kmer, reverse_complement, chunk_size): file
+        futures = {executor.submit(logan_compiler.process_fasta_file, file, kmer, reverse_complement, chunk_size): file
                    for file in fasta_files}
 
         for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures),
@@ -135,7 +37,7 @@ def generate_dataset(kmer, reverse_complement, chunk_size):
                 for entry in future.result():
                     yield entry
             except Exception as e:
-                tqdm.write(f"Error processing {file_name}: {e}")
+                tqdm.write(f"Error processing {acc}: {e}")
 
 def save_dataset_with_retry(dataset, save_dir, num_proc, max_retries=3, delay=5):
     for attempt in range(1, max_retries + 1):
