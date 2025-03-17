@@ -1,5 +1,6 @@
 import argparse
 import concurrent.futures
+import linecache
 import math
 import os
 import random
@@ -7,7 +8,7 @@ import glob
 import threading
 from io import StringIO
 from pprint import pprint
-
+import tracemalloc
 import numpy as np
 import psutil
 import zstandard
@@ -24,7 +25,32 @@ from util import init_logger, LOGLEVEL
 
 ALPHABET = {"A", "T", "C", "G"}
 COMPLEMENT_MAP = str.maketrans("ATCG", "TAGC")
-MAX_WORKERS = 16
+MAX_WORKERS = 8
+
+def display_top(snapshot, key_type='lineno', limit=3):
+    snapshot = snapshot.filter_traces((
+        tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
+        tracemalloc.Filter(False, "<unknown>"),
+    ))
+    top_stats = snapshot.statistics(key_type)
+
+    print("Top %s lines" % limit)
+    for index, stat in enumerate(top_stats[:limit], 1):
+        frame = stat.traceback[0]
+        # replace "/path/to/module/file.py" with "module/file.py"
+        filename = os.sep.join(frame.filename.split(os.sep)[-2:])
+        print("#%s: %s:%s: %.1f KiB"
+              % (index, filename, frame.lineno, stat.size / 1024))
+        line = linecache.getline(frame.filename, frame.lineno).strip()
+        if line:
+            print('    %s' % line)
+
+    other = top_stats[limit:]
+    if other:
+        size = sum(stat.size for stat in other)
+        print("%s other: %.1f KiB" % (len(other), size / 1024))
+    total = sum(stat.size for stat in top_stats)
+    print("Total allocated size: %.1f KiB" % (total / 1024))
 
 def chop_at_first_repeated_kmer(sequence, k):
 
@@ -134,7 +160,7 @@ def process_fasta_file(file, kmer, reverse_complement, chunk_size):
 
     random_walk_sequences = []
     for i, node in enumerate(graph):
-        path = random_dfs_path(graph, node, depth=10000)
+        path = random_dfs_path(graph, node, depth=1000)
         sequence = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
         chunks = [sequence[i:i + chunk_size] for i in range(0, len(sequence), chunk_size)]
         if chunks and len(chunks[-1]) < 50:
@@ -168,34 +194,27 @@ def monitor_memory(interval, stop_event, peak_memory):
             peak_memory[0] = mem
         time.sleep(interval)
 
-
-def benchmark_function_with_memory(func, *args, **kwargs):
-    stop_event = threading.Event()
-    # List to hold the peak memory usage (using a list so it's mutable)
-    peak_memory = [0]
-    monitor_thread = threading.Thread(target=monitor_memory, args=(0.01, stop_event, peak_memory))
-    monitor_thread.start()
-
-    start_time = time.time()
-    result = func(*args, **kwargs)
-    end_time = time.time()
-
-    stop_event.set()
-    monitor_thread.join()
-    return result, end_time - start_time, peak_memory[0]
-
-
 # Example usage in your benchmark:
-def benchmark(kmer, reverse_complement, chunk_size):
+def benchmark(use_rust, kmer, reverse_complement, chunk_size):
     import glob, os
     logan_data = os.path.join(logan_datasets_dir, 'data')
-    fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))[0:50]
+    fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))[0:20]
+    tracemalloc.start()
 
-    for file in tqdm(fasta_files):
-        sequences =  logan_compiler.process_fasta_file(file, kmer, reverse_complement, chunk_size)
-        pprint(sequences)
-
-
+    if use_rust:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            futures = {
+                executor.submit(logan_compiler.process_fasta_file, file, kmer, reverse_complement, chunk_size): file
+                for file in fasta_files}
+            for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures), desc="Processing fasta files"):
+                pass
+    else:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            futures = {
+                executor.submit(process_fasta_file, file, kmer, reverse_complement, chunk_size): file
+                for file in fasta_files}
+            for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures),  desc="Processing fasta files"):
+                pass
 
 # Example usage:
 if __name__ == "__main__":
@@ -210,4 +229,4 @@ if __name__ == "__main__":
     )
 
     use_rust = parser.parse_args().use_rust
-    benchmark(31, True, 1200)
+    benchmark(use_rust, 31, True, 1200)
