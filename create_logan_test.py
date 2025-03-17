@@ -198,25 +198,26 @@ def monitor_memory(interval, stop_event, peak_memory):
 def benchmark(use_rust, kmer, reverse_complement, chunk_size):
     import glob, os
     logan_data = os.path.join(logan_datasets_dir, 'data')
-    fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))[0:20]
+    fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))[0:3]
     tracemalloc.start()
 
     if use_rust:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
             futures = {
                 executor.submit(logan_compiler.process_fasta_file, file, kmer, reverse_complement, chunk_size): file
                 for file in fasta_files}
             for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures), desc="Processing fasta files"):
                 pass
     else:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
             futures = {
                 executor.submit(process_fasta_file, file, kmer, reverse_complement, chunk_size): file
                 for file in fasta_files}
             for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures),  desc="Processing fasta files"):
                 pass
+    snapshot = tracemalloc.take_snapshot()
+    display_top(snapshot)
 
-# Example usage:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Script to train model either from scratch or from pretrained weights with specified tokenization."
