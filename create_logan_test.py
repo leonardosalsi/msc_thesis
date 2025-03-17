@@ -198,7 +198,7 @@ def monitor_memory(interval, stop_event, peak_memory):
 def benchmark(use_rust, kmer, reverse_complement, chunk_size):
     import glob, os
     logan_data = os.path.join(logan_datasets_dir, 'data')
-    fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))[0:3]
+    fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))[0:100]
     tracemalloc.start()
 
     if use_rust:
