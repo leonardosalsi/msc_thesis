@@ -33,8 +33,52 @@ def chop_at_first_repeated_kmer(sequence, k):
         kmers.add(kmer)
     return sequence
 
+def find_overlaps_and_build_graph(sequences, k_mer=3):
+    min_overlap = k_mer - 1
+    prefix_dict = defaultdict(list)
+    graph = defaultdict(list)
 
+    for i, seq in enumerate(sequences):
+        prefix_dict[seq[:min_overlap]].append(i)
 
+    for i, seq1 in enumerate(sequences):
+        seq1_suffix = seq1[-min_overlap:]
+        graph[i] = []
+        for j in prefix_dict[seq1_suffix]:
+            if i != j:
+                graph[i].append(j)
+
+    return graph
+
+def random_dfs_path(graph, start, depth):
+    path = [start]
+    visited = {start}
+    current = start
+
+    while len(path) < depth:
+        neighbors = graph.get(current, [])
+        valid_neighbors = [n for n in neighbors if n not in visited]
+        if not valid_neighbors:
+            break
+
+        nxt = random.choice(valid_neighbors)
+        path.append(nxt)
+        visited.add(nxt)
+        current = nxt
+    return path
+
+def random_walk_graph_sequences(graph, sequences, kmer, list_len, chunk_size):
+    random_walk_sequences = []
+    for i, node in enumerate(graph):
+        path = random_dfs_path(graph, node, depth=10000)
+        sequence = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
+        chunks = [sequence[i:i + chunk_size] for i in range(0, len(sequence), chunk_size)]
+        if chunks and len(chunks[-1]) < 50:
+            chunks.pop()
+        random_walk_sequences.extend(chunks)
+        if i >= list_len:
+            break
+    return random_walk_sequences
 
 def fasta_parsing_func(fasta_path, kmer):
     with open(fasta_path, "rb") as f:
@@ -56,22 +100,8 @@ def fasta_parsing_func(fasta_path, kmer):
 def compute_reverse_complement(seq):
     return seq.translate(COMPLEMENT_MAP)[::-1]
 
-def random_dfs_path(graph, start, depth):
-    path = [start]
-    visited = {start}
-    current = start
-
-    while len(path) < depth:
-        neighbors = graph.get(current, [])
-        valid_neighbors = [n for n in neighbors if n not in visited]
-        if not valid_neighbors:
-            break
-
-        nxt = random.choice(valid_neighbors)
-        path.append(nxt)
-        visited.add(nxt)
-        current = nxt
-    return path
+def add_reverse_complements(sequences):
+    return sequences + [compute_reverse_complement(seq) for seq in sequences]
 
 def process_fasta_file(file, kmer, reverse_complement, chunk_size):
     results = []
@@ -80,34 +110,12 @@ def process_fasta_file(file, kmer, reverse_complement, chunk_size):
         sequences = list(fasta_parsing_func(file, kmer))
         len_original_sequences = len(sequences)
         if reverse_complement:
-            sequences = sequences + [compute_reverse_complement(seq) for seq in sequences]
+            sequences = add_reverse_complements(sequences)
     except FileNotFoundError:
         return results
 
-    min_overlap = kmer - 1
-    prefix_dict = defaultdict(list)
-    graph = defaultdict(list)
-
-    for i, seq in enumerate(sequences):
-        prefix_dict[seq[:min_overlap]].append(i)
-
-    for i, seq1 in enumerate(sequences):
-        seq1_suffix = seq1[-min_overlap:]
-        graph[i] = []
-        for j in prefix_dict[seq1_suffix]:
-            if i != j:
-                graph[i].append(j)
-
-    random_walk_sequences = []
-    for i, node in enumerate(graph):
-        path = random_dfs_path(graph, node, depth=10000)
-        sequence = sequences[path[0]] + "".join([sequences[p][kmer - 1:] for p in path[1:]])
-        chunks = [sequence[i:i + chunk_size] for i in range(0, len(sequence), chunk_size)]
-        if chunks and len(chunks[-1]) < 50:
-            chunks.pop()
-        random_walk_sequences.extend(chunks)
-        if i >= len_original_sequences:
-            break
+    graph = find_overlaps_and_build_graph(sequences, kmer)
+    random_walk_sequences = random_walk_graph_sequences(graph, sequences, kmer, len_original_sequences, chunk_size)
 
     for s in random_walk_sequences:
         entry = {"sequence": s, "acc": acc}
@@ -171,10 +179,9 @@ def parse_args():
     return parser.parse_args()
 
 if __name__ == "__main__":
-    args = parse_args()
-    kmer = args.kmer
-    chunk_size = args.chunk_size
-    reverse_complement = args.reverse_complement
+    kmer = 31
+    chunk_size = 1200
+    reverse_complement = True
 
     num = math.floor(chunk_size / 1000)
 
