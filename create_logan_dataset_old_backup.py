@@ -7,23 +7,24 @@ import random
 import glob
 from io import StringIO
 from pprint import pprint
-from collections import Counter
+from collections import defaultdict, Counter
+import numpy as np
 import zstandard
 from datasets import Dataset, DatasetDict
 from Bio import SeqIO
 from tqdm import tqdm
-from config import  logan_datasets_dir, generated_datasets_dir, generator_cache_dir
+from collections import defaultdict
+from config import results_dir, logan_datasets_dir, generated_datasets_dir, generator_cache_dir
+from Bio.Seq import Seq
 import time
-import logging
+import logging  # For logging retry messages
 import csv
 from collections import defaultdict
+from util import init_logger, LOGLEVEL
 
 ALPHABET = {"A", "T", "C", "G"}
 COMPLEMENT_MAP = str.maketrans("ATCG", "TAGC")
 MAX_WORKERS = 1
-
-LOGAN_DATA = os.path.join(logan_datasets_dir, 'data')
-METADATA_PATH = os.path.join(LOGAN_DATA, 'metadata.csv')
 
 def chop_at_first_repeated_kmer(sequence, k):
     kmers = set()
@@ -34,9 +35,9 @@ def chop_at_first_repeated_kmer(sequence, k):
         kmers.add(kmer)
     return sequence
 
-def group_acc_by_organism_kmeans():
+def group_acc_by_organism_kmeans(metadata_path):
     groups = defaultdict(list)
-    with open(METADATA_PATH, newline='') as csvfile:
+    with open(metadata_path, newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             acc = row["acc"]
@@ -99,14 +100,18 @@ def get_connected_components(graph):
     for comp in components:
         subgraph = {}
         for node in comp:
+            # Only include neighbors that are within the same component.
             subgraph[node] = [n for n in graph[node] if n in comp]
         subgraphs.append(subgraph)
 
     max_component_size = max(len(component) for component in components) if components else 0
     num_singletons = sum(1 for component in components if len(component) == 1)
+
+    # Create a dictionary: key = component size, value = count of components with that size
     size_distribution = Counter(len(component) for component in components)
 
     return subgraphs, components, max_component_size, num_singletons, dict(size_distribution)
+
 
 def random_dfs_path(graph, start, depth):
     path = [start]
@@ -136,18 +141,18 @@ def random_walk_graph_sequences(graph, sequences, kmer, chunk_size):
         random_walk_sequences.extend(chunks)
     return random_walk_sequences
 
-def fasta_parsing_func_streaming(fasta_path, kmer, seen):
+def fasta_parsing_func_streaming(fasta_path, kmer):
     with open(fasta_path, "rb") as f:
         dctx = zstandard.ZstdDecompressor()
         with dctx.stream_reader(f) as reader:
+            # Wrap the byte stream with a text wrapper so that it can be decoded on the fly.
             text_stream = io.TextIOWrapper(reader, encoding="utf-8")
+            # Now, SeqIO.parse can iterate over the file without loading it all at once.
             for record in SeqIO.parse(text_stream, "fasta"):
                 s = str(record.seq)
                 s = "".join([c for c in s if c in ALPHABET])
                 s = chop_at_first_repeated_kmer(s, kmer)
-                if s not in seen:
-                    seen.add(s)
-                    yield s
+                yield s
 
 def fasta_parsing_func(fasta_path, kmer):
     with open(fasta_path, "rb") as f:
@@ -169,28 +174,18 @@ def fasta_parsing_func(fasta_path, kmer):
 def compute_reverse_complement(seq):
     return seq.translate(COMPLEMENT_MAP)[::-1]
 
-def find_fasta_file(acc):
-    pattern = os.path.join(LOGAN_DATA, f"{acc}*.fa.zst")
-    files = glob.glob(pattern)
-    if files:
-        return files[0]
-    else:
-        raise FileNotFoundError(f"No file found for accession: {acc}")
-
-def process_fasta_organsim_group(organism_kmeans, acc_list, kmer, reverse_complement, chunk_size):
+def process_fasta_file(file, kmer, reverse_complement, chunk_size):
     results = []
-    sequences = ["|"]
-    seen = set()
-    print(f"Processing group {organism_kmeans} with {len(acc_list)} accessions.")
-    for acc in acc_list:
-        try:
-            fasta_path = find_fasta_file(acc)
-            sequences.extend(list(fasta_parsing_func_streaming(fasta_path, kmer, seen)))
-        except FileNotFoundError:
-            return results
+    acc = os.path.basename(file).split('.')[0]
+    try:
+        sequences = ["|"] + list(fasta_parsing_func_streaming(file, kmer))
+    except FileNotFoundError:
+        return results
+
     graph = find_overlaps_and_build_graph(sequences, kmer, reverse_complement)
     subgraphs, components, max_component_size, num_singletons, size_distributions = get_connected_components(graph)
-    print("Number of sequences:", len(sequences) - 1)
+    pprint(subgraphs)
+    print("NUmber of sequences:", len(sequences) - 1)
     if len(components) == 1:
         print("Graph is connected.")
     else:
@@ -198,23 +193,31 @@ def process_fasta_organsim_group(organism_kmeans, acc_list, kmer, reverse_comple
     print(components[0])
     print(f"Biggest component: {max_component_size}")
     print(f"Number of singletons: {num_singletons}")
+    pprint(size_distributions)
     exit(0)
     random_walk_sequences = random_walk_graph_sequences(graph, sequences, kmer, chunk_size)
 
     for s in random_walk_sequences:
-        entry = {"sequence": s, "organism_kmeans": organism_kmeans}
+        entry = {"sequence": s, "acc": acc}
         results.append(entry)
     return results
 
 def generate_dataset(kmer, reverse_complement, chunk_size):
-    fasta_groups = group_acc_by_organism_kmeans()
+    logan_data = os.path.join(logan_datasets_dir, 'data')
+    metadata_file = os.path.join(logan_data, 'metadata.csv')
+    fasta_groups = group_acc_by_organism_kmeans(metadata_file)
+    for _, files in fasta_groups.items():
+        print(f"Processing {files}")
+    exit(0)
+    fasta_files = glob.glob(os.path.join(logan_data, "*.contigs.fa.zst"))[0:200]
     with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        futures = {executor.submit(process_fasta_organsim_group, organism_kmeans, acc_list, kmer, reverse_complement, chunk_size): (organism_kmeans, acc_list)
-                   for organism_kmeans, acc_list in fasta_groups.items()}
+        futures = {executor.submit(process_fasta_file, file, kmer, reverse_complement, chunk_size): file
+                   for file in fasta_files}
 
         for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures),
                            desc="Processing fasta files"):
             file_name = futures[future]
+            acc = file_name.split('/')[-1].split('.')[0]
             try:
                 for entry in future.result():
                     yield entry
