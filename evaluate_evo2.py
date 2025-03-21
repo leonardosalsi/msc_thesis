@@ -15,11 +15,11 @@ from sklearn.model_selection import train_test_split
 from peft import LoraConfig, TaskType, get_peft_model
 import psutil
 
-from config import datasets_cache_dir, pretrained_models_cache_dir, results_dir
+from config import datasets_cache_dir, pretrained_models_cache_dir, results_dir, models_cache_dir, temp_dir
+from util import get_task_by_id
+import os
 
-# --------------------------
-# Basic logging configuration
-# --------------------------
+
 LOGLEVEL = logging.INFO
 
 
@@ -34,37 +34,11 @@ def check_memory_usage():
     memory_info = process.memory_info()
     print(f"Memory Usage: {memory_info.rss / (1024 ** 2):.2f} MB")
 
-
-# --------------------------
-# Dummy TASKS and MODEL dictionaries for demonstration.
-# Replace these with your actual task definitions.
-# --------------------------
-TASKS = {
-    1: {
-        "alias": "binary",
-        "name": "binary_classification",
-        "repo": "dummy_repo/binary",  # Replace with actual dataset repo if available
-        "sequence_feature": "data",
-        "label_feature": "labels",
-        "num_labels": 2,
-        "taskId": 1
-    },
-    2: {
-        "alias": "three_class",
-        "name": "three_class_classification",
-        "repo": "dummy_repo/three_class",  # Replace with actual dataset repo if available
-        "sequence_feature": "data",
-        "label_feature": "labels",
-        "num_labels": 3,
-        "taskId": 2
-    }
-}
-
 MODEL = {
     "name": "Evo2",
     "checkpoint": "",  # If using a local checkpoint, specify its name here; otherwise, leave empty to use repo.
-    "repo": "ArcInstitute/evo2",  # Hugging Face repository name for Evo2
-    "tokenizer": "ArcInstitute/evo2",  # Assume tokenizer is provided by the Evo2 repo
+    "repo": "ArcInstitute/evo2_1b_base",  # Hugging Face repository name for Evo2
+    "tokenizer": "ArcInstitute/evo2_1b_base",  # Assume tokenizer is provided by the Evo2 repo
     "modelId": 1
 }
 
@@ -145,7 +119,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
     path = os.path.join(pretrained_models_cache_dir, model_dict['checkpoint']) if model_dict['checkpoint'] != '' else \
     model_dict['repo']
 
-    evo2_model = Evo2(model_name=model_dict['repo'])
+    evo2_model = Evo2("evo2_1b_base")
     for param in evo2_model.parameters():
         param.requires_grad = False
 
@@ -165,14 +139,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, mode, task):
     model = get_peft_model(model, lora_config)
     model.to(device)
 
-    # Load tokenizer.
-    try:
-        tokenizer = evo2_model.tokenizer  # Use Evo2's provided tokenizer, if available.
-    except AttributeError:
-        from transformers import AutoTokenizer
-        tokenizer = AutoTokenizer.from_pretrained(model_dict['tokenizer'], cache_dir=models_cache_dir,
-                                                  local_files_only=True)
-
+    tokenizer = evo2_model.tokenizer
     # Ensure the tokenizer has a pad token.
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -263,7 +230,7 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    task = TASKS.get(args.taskId)
+    task = get_task_by_id(args.taskId)
     if task is None:
         print(f"Task with ID {args.taskId} not found in TASKS dictionary.")
         exit(1)
