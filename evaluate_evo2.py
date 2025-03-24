@@ -32,6 +32,9 @@ class Evo2WithClassificationHead(nn.Module):
         _model = Evo2(model_name)
         _model.model.train()
         self.evo2 = _model.model
+        self.evo2.config["use_fp8_input_projections"] = False
+        self.evo2.config["use_return_dict"] = True
+        self.evo2.config["inference_mode"] = False
         self.tokenizer = _model.tokenizer
         self.config = OmegaConf.load(f"./data/{model_name}.yml")
         if "use_return_dict" not in self.config:
