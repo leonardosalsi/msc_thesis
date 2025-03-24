@@ -6,7 +6,7 @@
 #SBATCH --time=100:00:00
 #SBATCH --mem-per-cpu=50G
 #SBATCH -p gpu
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:rtx4090:1
 
 source ~/.bashrc
 conda activate msc_thesis
