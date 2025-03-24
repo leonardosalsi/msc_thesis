@@ -9,7 +9,7 @@
 #SBATCH --gres=gpu:1
 
 source ~/.bashrc
-conda activate gpu_env
+conda activate msc_thesis
 
 HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \
 python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/evaluate_evo2.py evo2_1b_base 19 --samples 10
