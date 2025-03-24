@@ -40,8 +40,7 @@ class Evo2WithClassificationHead(nn.Module):
         if "use_return_dict" not in self.config:
             self.config.use_return_dict = True
         self.add_module("evo2", self.evo2)
-        hidden_dim = self.evo2.hidden_dim if hasattr(self.evo2, 'hidden_dim') else 1024
-        self.classifier = nn.Linear(hidden_dim, num_classes)
+        self.classifier = nn.Linear(self.evo2.config["hidden_size"], num_classes)
 
         # Monkey-patch: Register a forward hook to clone outputs for modules with a 'scale' attribute.
         def clone_hook(module, inputs, output):
@@ -64,6 +63,7 @@ class Evo2WithClassificationHead(nn.Module):
 
         print(outputs)
         pooled_output = outputs[0]  # Assuming the second output is the pooled output
+        pooled_output = pooled_output.mean(dim=1)
         pooled_output = pooled_output.to(torch.float32)
         logits = self.classifier(pooled_output)
         loss = None
