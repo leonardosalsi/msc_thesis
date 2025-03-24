@@ -35,6 +35,7 @@ class Evo2WithClassificationHead(nn.Module):
         self.evo2.config["use_fp8_input_projections"] = False
         self.evo2.config["use_return_dict"] = True
         self.evo2.config["inference_mode"] = False
+        print(self.evo2.config)
         self.tokenizer = _model.tokenizer
         self.config = OmegaConf.load(f"./data/{model_name}.yml")
         if "use_return_dict" not in self.config:
@@ -62,7 +63,8 @@ class Evo2WithClassificationHead(nn.Module):
         else:
             outputs = self.evo2(input_ids, attention_mask)
 
-        pooled_output = outputs[1]  # Assuming the second output is the pooled output
+        print(outputs)
+        pooled_output = outputs[0]  # Assuming the second output is the pooled output
         logits = self.classifier(pooled_output)
         loss = None
         if labels is not None:
