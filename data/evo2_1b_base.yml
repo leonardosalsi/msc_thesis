@@ -57,7 +57,7 @@ use_flash_rmsnorm: False
 use_flash_depthwise: False
 use_flashfft: False
 use_laughing_hyena: False
-inference_mode: True
+inference_mode: False
 tokenizer_type: CharLevelTokenizer 
 prefill_style: fft
 mlp_activation: gelu

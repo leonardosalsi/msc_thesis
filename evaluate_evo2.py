@@ -22,6 +22,9 @@ from evo2 import Evo2
 import contextlib
 torch.inference_mode = contextlib.nullcontext
 
+import transformer_engine.pytorch as te
+te.fp8_autocast(enabled=False)
+
 class Evo2WithClassificationHead(nn.Module):
     def __init__(self, model_name, num_classes):
         super(Evo2WithClassificationHead, self).__init__()
