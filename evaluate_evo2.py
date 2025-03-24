@@ -32,6 +32,7 @@ class Evo2WithClassificationHead(nn.Module):
         _model = Evo2(model_name)
         _model.model.train()
         self.evo2 = _model.model
+        self.num_labels = num_classes
         self.evo2.config["use_fp8_input_projections"] = False
         self.evo2.config["use_return_dict"] = True
         self.evo2.config["inference_mode"] = False
@@ -40,6 +41,9 @@ class Evo2WithClassificationHead(nn.Module):
         if "use_return_dict" not in self.config:
             self.config.use_return_dict = True
         self.add_module("evo2", self.evo2)
+
+        self.evo2.unembed = nn.Identity()
+
         self.classifier = nn.Linear(self.evo2.config["hidden_size"], num_classes)
 
         # Monkey-patch: Register a forward hook to clone outputs for modules with a 'scale' attribute.
@@ -268,6 +272,8 @@ if __name__ == "__main__":
         logger.log(LOGLEVEL, f"Using GPU: {torch.cuda.get_device_name(0)}")
     else:
         logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
+
+    device = "cpu"
 
     eval_trained_dir = os.path.join(results_dir, f"eval_pretrained_model_{model_name}")
     os.makedirs(eval_trained_dir, exist_ok=True)
