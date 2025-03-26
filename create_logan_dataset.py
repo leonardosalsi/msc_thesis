@@ -124,7 +124,7 @@ if __name__ == "__main__":
             metadata_group_id_column
         ),
         cache_dir=cache_dir,
-        features=features,
+        features=features
     )
 
     split_dataset = new_dataset.train_test_split(test_size=0.2, seed=112)
