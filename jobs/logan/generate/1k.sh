@@ -2,9 +2,9 @@
 
 #SBATCH --job-name=gen_logan_1k
 #SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/gen_logan_1k.txt
-#SBATCH --cpus-per-task=16
+#SBATCH --cpus-per-task=8
 #SBATCH --time=100:00:00
-#SBATCH --mem-per-cpu=32G
+#SBATCH --mem-per-cpu=64G
 
 source ~/.bashrc
 conda activate gpu_env
@@ -14,4 +14,4 @@ python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-ms
 /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/logan/data \
 --metadata_file_path /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/logan/data/metadata.csv \
 --chunk_size 1200 \
---reverse_complement --max_workers 16 --acc_column acc --group_id_column kmeans
+--reverse_complement --max_workers 8 --acc_column acc --group_id_column kmeans
