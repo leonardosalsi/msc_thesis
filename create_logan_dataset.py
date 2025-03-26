@@ -98,21 +98,6 @@ if __name__ == "__main__":
         f"{metadata_group_id_column}": Value("string"),
     })
 
-    """
-    gen = fasta_walker.create_random_walk_sequences(
-        kmer,
-        chunk_size,
-        reverse_complement,
-        fasta_files_path,
-        metadata_path,
-        metadata_acc_column,
-        metadata_group_id_column
-    )
-
-    for g in gen:
-        print(g)
-    """
-
     new_dataset = Dataset.from_generator(
         lambda: fasta_walker.create_random_walk_sequences(
             kmer,
