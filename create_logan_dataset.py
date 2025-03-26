@@ -121,7 +121,8 @@ if __name__ == "__main__":
             fasta_files_path,
             metadata_path,
             metadata_acc_column,
-            metadata_group_id_column
+            metadata_group_id_column,
+            max_workers
         ),
         cache_dir=cache_dir,
         features=features
