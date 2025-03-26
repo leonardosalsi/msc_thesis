@@ -14,4 +14,4 @@ python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-ms
 /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/logan/data \
 --metadata_file_path /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/logan/data/metadata.csv \
 --chunk_size 1200 \
---reverse_complement --max_workers 8 --acc_column acc --group_id_column kmeans
+--reverse_complement --max_workers 16 --acc_column acc --group_id_column kmeans
