@@ -28,7 +28,6 @@ te.fp8_autocast(enabled=False)
 class Evo2WithClassificationHead(nn.Module):
     def __init__(self, model_name, num_classes):
         super(Evo2WithClassificationHead, self).__init__()
-        print(model_name)
         _model = Evo2(model_name)
         _model.model.train()
         self.evo2 = _model.model
@@ -65,7 +64,6 @@ class Evo2WithClassificationHead(nn.Module):
         else:
             outputs = self.evo2(input_ids, attention_mask)
 
-        print(outputs)
         pooled_output = outputs[0]  # Assuming the second output is the pooled output
         pooled_output = pooled_output.mean(dim=1)
         pooled_output = pooled_output.to(torch.float32)
@@ -272,8 +270,6 @@ if __name__ == "__main__":
         logger.log(LOGLEVEL, f"Using GPU: {torch.cuda.get_device_name(0)}")
     else:
         logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
-
-    device = "cpu"
 
     eval_trained_dir = os.path.join(results_dir, f"eval_pretrained_model_{model_name}")
     os.makedirs(eval_trained_dir, exist_ok=True)
