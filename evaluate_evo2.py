@@ -20,6 +20,7 @@ import torch.nn as nn
 import torch
 from evo2 import Evo2
 import contextlib
+from transformers import DataCollatorWithPadding
 torch.inference_mode = contextlib.nullcontext
 
 import transformer_engine.pytorch as te
@@ -170,6 +171,8 @@ def finetune_model_by_task_mcc(logger, device, model_name, task):
         remove_columns=["data"],
     )
 
+    data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+
     """Configure trainer"""
     batch_size = 8
     if task["taskId"] == 23:
@@ -203,6 +206,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, task):
         eval_dataset=tokenized_validation_sequences,
         processing_class=tokenizer,
         compute_metrics=compute_metrics_mcc,
+        data_collator=data_collator
     )
 
     """Finetune pre-trained model"""
@@ -265,7 +269,7 @@ if __name__ == "__main__":
     logger = init_logger()
     logger.log(LOGLEVEL, f"{model_name} on {task['alias']}")
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
     if device.type == "cuda":
         logger.log(LOGLEVEL, f"Using GPU: {torch.cuda.get_device_name(0)}")
     else:
