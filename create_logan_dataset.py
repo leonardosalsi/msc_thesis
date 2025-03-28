@@ -65,6 +65,12 @@ def parse_args():
         help="Chunk size (defined when further splitting data)",
     )
 
+    parser.add_argument(
+        "--use_scratch",
+        action="store_true",
+        dest="use_scratch",
+    )
+
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -77,10 +83,18 @@ if __name__ == "__main__":
     metadata_path = args.metadata_file_path
     metadata_acc_column = args.acc_column
     metadata_group_id_column = args.group_id_column
+    use_scratch = args.use_scratch
 
-    dataset_dir = os.path.join(generated_datasets_dir, f'logan')
-    cache_dir = os.path.join(generator_cache_dir, 'logan')
-    os.makedirs(logan_datasets_dir, exist_ok=True)
+    TMP_DIR = os.environ["TMPDIR"]
+    print("TMPDIR:", TMP_DIR)
+
+    if use_scratch:
+        dataset_dir = os.path.join(TMP_DIR, 'datasets', f'logan')
+        cache_dir = os.path.join(TMP_DIR, 'cache', 'logan')
+    else:
+        dataset_dir = os.path.join(generated_datasets_dir, f'logan')
+        cache_dir = os.path.join(generator_cache_dir, 'logan')
+
     os.makedirs(cache_dir, exist_ok=True)
     if reverse_complement:
         dataset_dir = os.path.join(dataset_dir, f'kmer_{kmer}_reverse')
@@ -107,7 +121,8 @@ if __name__ == "__main__":
             metadata_path,
             metadata_acc_column,
             metadata_group_id_column,
-            max_workers
+            max_workers,
+            use_scratch
         ),
         cache_dir=cache_dir,
         features=features
