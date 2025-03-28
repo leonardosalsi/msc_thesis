@@ -20,11 +20,33 @@ import torch.nn as nn
 import torch
 from evo2 import Evo2
 import contextlib
-from transformers import DataCollatorWithPadding
 torch.inference_mode = contextlib.nullcontext
 
 import transformer_engine.pytorch as te
 te.fp8_autocast(enabled=False)
+
+def custom_data_collator(features):
+    input_ids = [f["input_ids"] for f in features]
+    labels = torch.tensor([f["labels"] for f in features])
+    max_len = max(len(ids) for ids in input_ids)
+
+    pad_token_id = 1
+
+    padded_input_ids = torch.tensor([
+        ids + [pad_token_id] * (max_len - len(ids))
+        for ids in input_ids
+    ])
+
+    attention_mask = torch.tensor([
+        [1] * len(ids) + [0] * (max_len - len(ids))
+        for ids in input_ids
+    ])
+
+    return {
+        "input_ids": padded_input_ids,
+        "attention_mask": attention_mask,
+        "labels": labels
+    }
 
 class Evo2WithClassificationHead(nn.Module):
     def __init__(self, model_name, num_classes):
@@ -171,8 +193,6 @@ def finetune_model_by_task_mcc(logger, device, model_name, task):
         remove_columns=["data"],
     )
 
-    data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
-
     """Configure trainer"""
     batch_size = 8
     if task["taskId"] == 23:
@@ -206,7 +226,7 @@ def finetune_model_by_task_mcc(logger, device, model_name, task):
         eval_dataset=tokenized_validation_sequences,
         processing_class=tokenizer,
         compute_metrics=compute_metrics_mcc,
-        data_collator=data_collator
+        data_collator=custom_data_collator,
     )
 
     """Finetune pre-trained model"""
