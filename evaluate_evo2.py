@@ -2,6 +2,8 @@ import os
 import random
 import datetime
 import time
+from pprint import pprint
+
 from datasets import load_dataset, Dataset
 from evo2 import Evo2
 from omegaconf import OmegaConf
@@ -41,6 +43,8 @@ def custom_data_collator(features):
         [1] * len(ids) + [0] * (max_len - len(ids))
         for ids in input_ids
     ])
+
+
 
     return {
         "input_ids": padded_input_ids,
@@ -83,9 +87,9 @@ class Evo2WithClassificationHead(nn.Module):
     def forward(self, input_ids, attention_mask=None, labels=None, inputs_embeds=None, **kwargs):
         # Pass the input tensor positionally since StripedHyena.forward() doesn't accept "input_ids" as a keyword.
         if inputs_embeds is not None:
-            outputs = self.evo2(inputs_embeds, attention_mask)
+            outputs = self.evo2(inputs_embeds)
         else:
-            outputs = self.evo2(input_ids, attention_mask)
+            outputs = self.evo2(input_ids)
 
         pooled_output = outputs[0]  # Assuming the second output is the pooled output
         pooled_output = pooled_output.mean(dim=1)
@@ -289,7 +293,7 @@ if __name__ == "__main__":
     logger = init_logger()
     logger.log(LOGLEVEL, f"{model_name} on {task['alias']}")
 
-    device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == "cuda":
         logger.log(LOGLEVEL, f"Using GPU: {torch.cuda.get_device_name(0)}")
     else:
