@@ -1,4 +1,6 @@
 import os
+os.environ["TRITON_ALLOW_TF32"] = "1"  # Allow using TF32 if available (safe fallback)
+os.environ["USE_BF16"] = "0"
 import random
 import datetime
 import time
