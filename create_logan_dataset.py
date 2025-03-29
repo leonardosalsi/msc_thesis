@@ -71,88 +71,108 @@ def parse_args():
         dest="use_scratch",
     )
 
+    parser.add_argument(
+        "--use_json",
+        action="store_true",
+        dest="use_json",
+    )
+
     return parser.parse_args()
 
 if __name__ == "__main__":
-    args = parse_args()
-    max_workers = args.max_workers
-    kmer = args.kmer
-    chunk_size = args.chunk_size
-    reverse_complement = args.reverse_complement
-    fasta_files_path = args.fasta_files_path
-    metadata_path = args.metadata_file_path
-    metadata_acc_column = args.acc_column
-    metadata_group_id_column = args.group_id_column
-    use_scratch = args.use_scratch
-
-    TMP_DIR = os.environ["TMPDIR"]
-    print("TMPDIR:", TMP_DIR)
-
-    if use_scratch:
-        dataset_dir = os.path.join(TMP_DIR, 'datasets', f'logan')
-        cache_dir = os.path.join(TMP_DIR, 'cache', 'logan')
-    else:
-        dataset_dir = os.path.join(generated_datasets_dir, f'logan')
-        cache_dir = os.path.join(generator_cache_dir, 'logan')
-
-    os.makedirs(cache_dir, exist_ok=True)
-    if reverse_complement:
-        dataset_dir = os.path.join(dataset_dir, f'kmer_{kmer}_reverse')
-        generator_cache = os.path.join(cache_dir, f'kmer_{kmer}_reverse')
-    else:
-        dataset_dir = os.path.join(dataset_dir, f'kmer_{kmer}')
-        generator_cache = os.path.join(cache_dir, f'kmer_{kmer}')
-    dataset_dir = dataset_dir + f"_{chunk_size}k"
-    cache_dir = cache_dir  + f"_{chunk_size}k"
-    os.makedirs(dataset_dir, exist_ok=True)
-    os.makedirs(cache_dir, exist_ok=True)
-
-    features = Features({
-        "sequence": Value("string"),
-        f"{metadata_group_id_column}": Value("string"),
-    })
-
-    new_dataset = Dataset.from_generator(
-        lambda: fasta_walker.create_random_walk_sequences(
-            kmer,
-            chunk_size,
-            reverse_complement,
-            fasta_files_path,
-            metadata_path,
-            metadata_acc_column,
-            metadata_group_id_column,
-            max_workers,
-            use_scratch
-        ),
-        cache_dir=cache_dir,
-        features=features
-    )
-
-    split_dataset = new_dataset.train_test_split(test_size=0.2, seed=112)
-    train_dataset = split_dataset['train']
-    test_dataset = split_dataset['test']
-    dataset = DatasetDict({
-        "train": train_dataset,
-        "test": test_dataset
-    })
+        args = parse_args()
+        max_workers = args.max_workers
+        kmer = args.kmer
+        chunk_size = args.chunk_size
+        reverse_complement = args.reverse_complement
+        fasta_files_path = args.fasta_files_path
+        metadata_path = args.metadata_file_path
+        metadata_acc_column = args.acc_column
+        metadata_group_id_column = args.group_id_column
+        use_scratch = args.use_scratch
+        use_json = args.use_json
 
 
+        if use_json:
+            fasta_walker.create_random_walk_sequences_json(
+                kmer,
+                chunk_size,
+                reverse_complement,
+                fasta_files_path,
+                metadata_path,
+                metadata_acc_column,
+                metadata_group_id_column,
+                max_workers,
+                use_scratch
+            )
+        else:
+            TMP_DIR = os.environ["TMPDIR"]
+            print("TMPDIR:", TMP_DIR)
+            if use_scratch:
+                dataset_dir = os.path.join(TMP_DIR, 'datasets', f'logan')
+                cache_dir = os.path.join(TMP_DIR, 'cache', 'logan')
+            else:
+                dataset_dir = os.path.join(generated_datasets_dir, f'logan')
+                cache_dir = os.path.join(generator_cache_dir, 'logan')
 
-    dataset.save_to_disk(dataset_dir, num_proc=max_workers)
-    dataset_dir = dataset_dir + f"_filtered"
-    cache_dir = cache_dir + f"_filtered"
+            os.makedirs(cache_dir, exist_ok=True)
+            if reverse_complement:
+                dataset_dir = os.path.join(dataset_dir, f'kmer_{kmer}_reverse')
+                generator_cache = os.path.join(cache_dir, f'kmer_{kmer}_reverse')
+            else:
+                dataset_dir = os.path.join(dataset_dir, f'kmer_{kmer}')
+                generator_cache = os.path.join(cache_dir, f'kmer_{kmer}')
+            dataset_dir = dataset_dir + f"_{chunk_size}k"
+            cache_dir = cache_dir  + f"_{chunk_size}k"
+            os.makedirs(dataset_dir, exist_ok=True)
+            os.makedirs(cache_dir, exist_ok=True)
 
-    def filtered_generator(split):
-        for example in split:
-            if len(example["sequence"]) == chunk_size:
-                yield example
+            features = Features({
+                "sequence": Value("string"),
+                f"{metadata_group_id_column}": Value("string"),
+            })
 
-    filtered_train = Dataset.from_generator(lambda: filtered_generator(dataset["train"]), cache_dir=cache_dir + "_train")
-    filtered_test = Dataset.from_generator(lambda: filtered_generator(dataset["test"]), cache_dir=cache_dir + "_test")
+            new_dataset = Dataset.from_generator(
+                lambda: fasta_walker.create_random_walk_sequences(
+                    kmer,
+                    chunk_size,
+                    reverse_complement,
+                    fasta_files_path,
+                    metadata_path,
+                    metadata_acc_column,
+                    metadata_group_id_column,
+                    max_workers,
+                    use_scratch
+                ),
+                cache_dir=cache_dir,
+                features=features
+            )
 
-    filtered_dataset = DatasetDict({
-        "train": filtered_train,
-        "test": filtered_test
-    })
+            split_dataset = new_dataset.train_test_split(test_size=0.2, seed=112)
+            train_dataset = split_dataset['train']
+            test_dataset = split_dataset['test']
+            dataset = DatasetDict({
+                "train": train_dataset,
+                "test": test_dataset
+            })
 
-    filtered_dataset.save_to_disk(dataset_dir, num_proc=max_workers)
+
+
+            dataset.save_to_disk(dataset_dir, num_proc=max_workers)
+            dataset_dir = dataset_dir + f"_filtered"
+            cache_dir = cache_dir + f"_filtered"
+
+            def filtered_generator(split):
+                for example in split:
+                    if len(example["sequence"]) == chunk_size:
+                        yield example
+
+            filtered_train = Dataset.from_generator(lambda: filtered_generator(dataset["train"]), cache_dir=cache_dir + "_train")
+            filtered_test = Dataset.from_generator(lambda: filtered_generator(dataset["test"]), cache_dir=cache_dir + "_test")
+
+            filtered_dataset = DatasetDict({
+                "train": filtered_train,
+                "test": filtered_test
+            })
+
+            filtered_dataset.save_to_disk(dataset_dir, num_proc=max_workers)
