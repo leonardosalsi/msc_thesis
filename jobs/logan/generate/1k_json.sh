@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --time=100:00:00
 #SBATCH --mem-per-cpu=128G
-#SBATCH --tmp=800g
+#SBATCH --tmp=1000g
 
 source ~/.bashrc
 conda activate gpu_env
