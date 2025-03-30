@@ -19,6 +19,6 @@ python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-ms
 --chunk_size 1200 \
 --reverse_complement --max_workers 8 --acc_column acc --group_id_column kmeans --use_scratch --use_json
 
-export JSONDIR = "$(date +'%Y%m%d_%H%M%S')"
+export JSONDIR="$(date +'%Y%m%d_%H%M%S')"
 mkdir "/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/generated_datasets/$JSONDIR"
-cp -r "$TMPDIR/*.json" "/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/generated_datasets/$JSONDIR/"
+cp -r "$TMPDIR"/*.json "/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/generated_datasets/$JSONDIR/"
