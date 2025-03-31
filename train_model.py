@@ -62,26 +62,6 @@ def parse_args():
         help="Use dataset generated with reverse complement (only when using logan)."
     )
     parser.add_argument(
-        "--unfiltered",
-        action="store_true",
-        dest="unfiltered",
-        help="Use dataset that also includes shorter sequences (only when using logan)."
-    )
-    parser.add_argument(
-        "--shannon",
-        type=float,
-        nargs=2,
-        metavar=("LOW", "HIGH"),
-        help="Lower and upper margin of allowed Shannon entropy (e.g., --shannon 1.4 1.8)"
-    )
-    parser.add_argument(
-        "--gc",
-        type=float,
-        nargs=2,
-        metavar=("LOW", "HIGH"),
-        help="Lower and upper margin of allowed GC content (e.g., --gc 0.4 0.6)"
-    )
-    parser.add_argument(
         "--from_scratch",
         action="store_true",
         dest="from_scratch",
@@ -117,13 +97,10 @@ if __name__ == "__main__":
     selected_tokenizer = args.tokenizer
     selected_dataset = args.dataset
 
-    shannon = args.shannon
-    gc = args.gc
     checkpoint = args.checkpoint
     train_from_scratch = args.from_scratch
     kmer = args.kmer
     reverse_complement = args.reverse_complement
-    unfiltered = args.unfiltered
     freeze = args.freeze
     logger = init_logger()
 
@@ -154,15 +131,9 @@ if __name__ == "__main__":
     """
     Define setup name
     """
-    shannon_txt = ""
-    gc_txt = ""
     from_scratch_txt = ""
     freeze_txt = ""
-    unfiltered_txt = ""
-    if shannon is not None:
-        shannon_txt = f"_sh"
-    if gc is not None:
-        gc_txt = f"_gc"
+
     if train_from_scratch:
         from_scratch_txt = "_from_scratch"
 
@@ -174,10 +145,7 @@ if __name__ == "__main__":
     if freeze is not None:
         freeze_txt = "_freeze"
 
-    if unfiltered is not None:
-        unfiltered_txt = "_unfiltered"
-
-    created_model_name = f"{named_tokenizer}_{selected_dataset.lower()}{kb}{shannon_txt}{gc_txt}{from_scratch_txt}{freeze_txt}{unfiltered_txt}"
+    created_model_name = f"{named_tokenizer}_{selected_dataset.lower()}{kb}{from_scratch_txt}{freeze_txt}"
 
     """
     Get device
@@ -268,8 +236,6 @@ if __name__ == "__main__":
         if reverse_complement:
             dataset_name += "_reverse"
         dataset_name += f"_{num}k"
-        if unfiltered:
-            dataset_name += "_unfiltered"
         dataset_path = os.path.join(generated_datasets_dir, selected_dataset, dataset_name)
         dataset_train = load_from_disk(dataset_path)['train']
         validation_path = os.path.join(generated_datasets_dir, "multi_genome_dataset", f"{num}_2kbp", "validation")
