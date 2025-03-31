@@ -1,290 +1,178 @@
-#!/usr/bin/env python
+
 import argparse
-import gc
-import math
+import datetime
 import os
-
 import json
-import random
-import time
-
 import torch
-from datasets import load_from_disk, Dataset, load_dataset
-
-from overrides.tokenizer.OverlappingTokenizer import OverlappingTokenizer
-from pre_train.model import get_model
 
 torch.backends.cudnn.benchmark = True
 torch.backends.cuda.matmul.allow_tf32 = False
+
+from config import pretrained_models_cache_dir, logs_dir
+from pre_train.dataset import get_dataset
+from pre_train.model import get_model
+from pre_train.tokenizer import get_tokenizer
+from pre_train.util import get_device, print_args
 from transformers import (
-    AutoModelForMaskedLM,
     Trainer,
     TrainingArguments,
-    DataCollatorForLanguageModeling, AutoTokenizer, EsmConfig, TrainerCallback,
+    DataCollatorForLanguageModeling,
+    EsmForMaskedLM,
 )
 
-from config import models_cache_dir, pretrained_models_cache_dir, tokenizer_cache_dir, \
-    datasets_cache_dir, logs_dir, generated_datasets_dir
-from downstream_tasks import PRETRAINED_MODELS
-from util import init_logger, LOGLEVEL, get_chunk_size_file_name, get_filtered_dataset_name, get_pretrained_model_by_id, \
-    get_device
-import torch
-import torch.profiler
-
 def parse_args():
+    """
+    Parse command line arguments for model training.
+    """
     parser = argparse.ArgumentParser(
-        description="Script to train model either from scratch or from pretrained weights with specified tokenization."
+        description="Train a model from scratch or from pretrained weights with specified tokenization."
     )
     parser.add_argument(
         "dataset",
         type=str,
-        help="Name of the dataset",
-        choices=["multi_genome_species", "logan"]
+        help="Path to the dataset containing training and validation data."
     )
     parser.add_argument(
         "tokenizer",
         type=str,
-        help="Tokenizer",
-        choices=["Default", "Overlapping"],
+        help="Tokenizer type to use. Options: 'default' or 'overlapping'."
     )
     parser.add_argument(
         "--chunk_size",
+        default=1200,
         type=int,
-        help="Chunk size (defined when further splitting data)",
-    )
-    parser.add_argument(
-        "--kmer",
-        type=int,
-        help="Kmer size (only when using logan)",
+        help="Chunk size for splitting data (in base pairs). Default is 1200."
     )
     parser.add_argument(
         "--reverse_complement",
         action="store_true",
         dest="reverse_complement",
-        help="Use dataset generated with reverse complement (only when using logan)."
+        help="Use dataset generated with reverse complement sequences (if applicable)."
+    )
+    parser.add_argument(
+        "--compile_model",
+        action="store_true",
+        dest="compile_model",
+        help="Compile the model with torch.compile for potential performance improvements."
     )
     parser.add_argument(
         "--from_scratch",
         action="store_true",
         dest="from_scratch",
-        help="Train model from scratch. Default is false."
+        help="Train the model from scratch instead of using pretrained weights."
+    )
+    parser.add_argument(
+        "--pca_embeddings",
+        action="store_true",
+        dest="pca_embeddings",
+        help="Apply PCA-based post-embedding processing to reduce embedding dimensionality."
     )
     parser.add_argument(
         "--checkpoint",
         type=int,
         nargs=1,
         metavar=("modelId in PRETRAINED_MODELS"),
-        help="Use checkpoint instead of pretrained weights."
+        help="Use a checkpoint from PRETRAINED_MODELS instead of pretrained weights."
     )
     parser.add_argument(
         "--freeze",
         type=float,
-        help="Freeze a percentual number of layers (between 0.1 and 0.9)",
+        help="Fraction of encoder layers to freeze (between 0.1 and 0.9)."
+    )
+    parser.add_argument(
+        "--train_size",
+        type=int,
+        default=10,
+        help="Training batch size per device. Default is 10."
+    )
+    parser.add_argument(
+        "--eval_size",
+        type=int,
+        default=64,
+        help="Evaluation batch size per device. Default is 64."
+    )
+    parser.add_argument(
+        "--gradient_accumulation",
+        type=int,
+        default=50,
+        help="Number of gradient accumulation steps. Default is 50."
+    )
+    parser.add_argument(
+        "--save_steps",
+        type=int,
+        default=6000,
+        help="Frequency of saving model checkpoints (in steps). Default is 6000."
+    )
+    parser.add_argument(
+        "--logging_steps",
+        type=int,
+        default=500,
+        help="Frequency of logging training metrics (in steps). Default is 500."
+    )
+    parser.add_argument(
+        "--max_steps",
+        type=int,
+        default=12000,
+        help="Maximum number of training steps. Default is 12000."
+    )
+    parser.add_argument(
+        "--use_scratch",
+        action="store_true",
+        dest="use_scratch",
+            help="Pre-load everything into local scratch and load from there."
+    )
+    parser.add_argument(
+        "--keep_in_memory",
+        action="store_true",
+        dest="keep_in_memory",
+        help="Keep dataset in memory."
     )
     return parser.parse_args()
 
-def print_gpu_memory_usage(device):
-    """Print the currently allocated and reserved GPU memory (in MB)."""
-    if device.type == "cuda":
-        allocated = torch.cuda.memory_allocated(device) / (1024 ** 2)
-        reserved = torch.cuda.memory_reserved(device) / (1024 ** 2)
-        print(f"GPU Memory allocated: {allocated:.2f} MB")
-        print(f"GPU Memory reserved: {reserved:.2f} MB")
-    else:
-        print("Running on CPU; GPU memory usage is not applicable.")
-
-
 if __name__ == "__main__":
+    
     args = parse_args()
-    selected_tokenizer = args.tokenizer
-    selected_dataset = args.dataset
-
-    checkpoint = args.checkpoint
-    train_from_scratch = args.from_scratch
-    kmer = args.kmer
-    reverse_complement = args.reverse_complement
-    freeze = args.freeze
-    logger = init_logger()
-
-    chunk_size = args.chunk_size
-    if not chunk_size:
-        chunk_size = 2200
-    chunk_size_folder_name = get_filtered_dataset_name(chunk_size, args.shannon, args.gc)
-
-    num = math.floor(chunk_size / 1000)
-    num_tokens = num * 1000
-
-    kb = ""
-    if num != 1:
-        # 2kbp -> 2000 tokens per sequence
-        kb = f"_{num}kb"
-        train_batch_size = 2
-        if selected_tokenizer == "Default":
-            eval_batch_size = 32
-        else:
-            eval_batch_size = 16
-        gradient_accumulation_steps = 125
-    else:
-        # 1kbp -> 1000 tokens per sequence
-        train_batch_size = 10
-        gradient_accumulation_steps = 50
-        eval_batch_size = 64
-
-    """
-    Define setup name
-    """
-    from_scratch_txt = ""
-    freeze_txt = ""
-
-    if train_from_scratch:
-        from_scratch_txt = "_from_scratch"
-
-    if selected_tokenizer == "Default":
-        named_tokenizer = 'default'
-    elif selected_tokenizer == "Overlapping":
-        named_tokenizer = 'overlap'
-
-    if freeze is not None:
-        freeze_txt = "_freeze"
-
-    created_model_name = f"{named_tokenizer}_{selected_dataset.lower()}{kb}{from_scratch_txt}{freeze_txt}"
-
+    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    print_args(args, timestamp)
 
     device = get_device()
     model = get_model(args, device)
-
-
-    """
-    Load tokenizer
-    """
-    if selected_tokenizer == "Default":
-        tokenizer = AutoTokenizer.from_pretrained(
-            "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
-            model_max_length=2048,
-            cache_dir=models_cache_dir,
-            remove_columns=['sequence'],
-            trust_remote_code=True,
-            local_files_only=True
-        )
-    elif selected_tokenizer == "OverlappingEsmTokenizer":
-        tokenizer = OverlappingTokenizer(
-            vocab_file="model_configs/vocab.txt",
-            model_max_length=2048,
-            num_tokens=num_tokens
-        )
-    else:
-        raise ValueError("The specified tokenizer does not exist.")
+    dataset_train, dataset_validation = get_dataset(args)
+    tokenizer, num_tokens = get_tokenizer(args)
 
     def tokenize_function(examples):
+        """
+        Tokenizes the 'sequence' field in the examples.
+        """
         outputs = tokenizer(examples['sequence'], max_length=num_tokens, truncation=True)
         return outputs
 
-    tf = lambda examples: tokenize_function(examples)
-
-    logger.log(LOGLEVEL, "Tokenizer loaded")
-
-    """
-    Load dataset
-    """
-    if selected_tokenizer == "Default":
-        dataset_train = load_dataset(
-            "InstaDeepAI/multi_species_genomes",
-            cache_dir=datasets_cache_dir,
-            split='train',
-            trust_remote_code=True
-        )
-        dataset_validation = load_dataset(
-            "InstaDeepAI/multi_species_genomes",
-            cache_dir=datasets_cache_dir,
-            split='validation',
-            trust_remote_code=True
-        )
-    elif selected_dataset == "logan":
-        if not kmer:
-            print("Kmer size must be specified when using logan.")
-            exit(1)
-        dataset_name = f"kmer_{kmer}"
-        if reverse_complement:
-            dataset_name += "_reverse"
-        dataset_name += f"_{num}k"
-        dataset_path = os.path.join(generated_datasets_dir, selected_dataset, dataset_name)
-        dataset_train = load_from_disk(dataset_path)['train']
-        validation_path = os.path.join(generated_datasets_dir, "multi_genome_dataset", f"{num}_2kbp", "validation")
-        dataset_validation = load_from_disk(validation_path)
-    elif selected_dataset == "logan_full":
-        if not kmer:
-            print("Kmer size must be specified when using logan.")
-            exit(1)
-        dataset_name = f"kmer_{kmer}"
-        if reverse_complement:
-            dataset_name += "_reverse"
-        dataset_path = os.path.join(generated_datasets_dir, 'logan', dataset_name)
-        dataset_train = load_from_disk(dataset_path)['train']
-        validation_path = os.path.join(generated_datasets_dir, "multi_genome_dataset", f"2_2kbp", "validation")
-        dataset_validation = load_from_disk(validation_path)
-    else:
-        train_folder = "train" if selected_dataset == "multi_genome_dataset" else ""
-        validation_folder = "validation" if selected_dataset == "multi_genome_dataset" else ""
-        dataset_path = os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, train_folder)
-        validation_path = os.path.join(generated_datasets_dir, selected_dataset, chunk_size_folder_name, "validation")
-        logger.log(LOGLEVEL, f"Train data: {dataset_path}")
-        logger.log(LOGLEVEL, f"Validation data: {validation_path}")
-        dataset_train = load_from_disk(dataset_path)
-        dataset_validation = load_from_disk(validation_path)
-
-    columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
-    dataset_train = dataset_train.remove_columns(columns_to_remove)
-    columns_to_remove = [col for col in dataset_validation.column_names if col != "sequence"]
-    dataset_validation = dataset_validation.remove_columns(columns_to_remove)
-
-    logger.log(LOGLEVEL, "Dataset loaded")
-    logger.log(LOGLEVEL, f"Total training tokens: {len(dataset_train) * 1000}")
-    logger.log(LOGLEVEL, f"Total validation tokens: {len(dataset_validation) * 1000}")
-
-    """
-    Enable retokenization per epoch
-    """
-
     tokenized_train_sequences = dataset_train.shuffle()
     tokenized_train_sequences.set_transform(tokenize_function)
-
     tokenized_validation_sequences = dataset_validation.shuffle()
     tokenized_validation_sequences = tokenized_validation_sequences.select(range(5000))
     tokenized_validation_sequences.set_transform(tokenize_function)
 
-    """
-    Instantiate collator
-    """
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
         mlm=True,
         mlm_probability=0.15
     )
 
-    """
-    Check if resume possible
-    """
-    model_path = os.path.join(pretrained_models_cache_dir, created_model_name)
-    dir_exists = os.path.isdir(model_path)
-    if dir_exists:
-        if len(os.listdir(model_path)) == 0:
-            resume_from_checkpoint = False
-        else:
-            resume_from_checkpoint = True
+    model_path = os.path.join(pretrained_models_cache_dir, timestamp)
+    if os.path.isdir(model_path) and os.listdir(model_path):
+        resume_from_checkpoint = True
     else:
-        resume_from_checkpoint  = False
-
-    """
-    Train model
-    """
+        resume_from_checkpoint = False
+    
     training_args = TrainingArguments(
         output_dir=model_path,
         overwrite_output_dir=True,
-        per_device_train_batch_size=train_batch_size,
-        gradient_accumulation_steps=gradient_accumulation_steps,
-        per_device_eval_batch_size=eval_batch_size,
-        save_steps=6000,
-        logging_steps=500,
+        per_device_train_batch_size=args.train_size,
+        gradient_accumulation_steps=args.gradient_accumulation,
+        per_device_eval_batch_size=args.eval_size,
+        save_steps=args.save_steps,
+        logging_steps=args.logging_steps,
         eval_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="loss",
@@ -293,7 +181,7 @@ if __name__ == "__main__":
         logging_dir='/dev/null',
         remove_unused_columns=False,
         bf16=True,
-        max_steps=12000,
+        max_steps=args.max_steps,
         include_num_input_tokens_seen=True,
     )
 
@@ -307,7 +195,6 @@ if __name__ == "__main__":
 
     _ = trainer.train()
 
-    logger.log(LOGLEVEL, "Training complete!")
-    log_history_path = os.path.join(logs_dir, f"log_history_{created_model_name}.json")
+    log_history_path = os.path.join(logs_dir, f"log_history_{timestamp}.json")
     with open(log_history_path, "w") as log_file:
         json.dump(trainer.state.log_history, log_file, indent=4)

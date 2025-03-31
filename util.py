@@ -4,10 +4,7 @@ from downstream_tasks import MODELS, TASKS, PRETRAINED_MODELS
 
 LOGLEVEL = 22
 
-def get_device():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    torch.cuda.empty_cache()
-    return device
+
 
 def get_chunk_size_file_name(chunk_size) -> str:
     if chunk_size is not None:
