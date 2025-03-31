@@ -12,6 +12,7 @@ import torch
 from datasets import load_from_disk, Dataset, load_dataset
 
 from overrides.tokenizer.OverlappingTokenizer import OverlappingTokenizer
+from pre_train.model import get_model
 
 torch.backends.cudnn.benchmark = True
 torch.backends.cuda.matmul.allow_tf32 = False
@@ -25,7 +26,8 @@ from transformers import (
 from config import models_cache_dir, pretrained_models_cache_dir, tokenizer_cache_dir, \
     datasets_cache_dir, logs_dir, generated_datasets_dir
 from downstream_tasks import PRETRAINED_MODELS
-from util import init_logger, LOGLEVEL, get_chunk_size_file_name, get_filtered_dataset_name, get_pretrained_model_by_id
+from util import init_logger, LOGLEVEL, get_chunk_size_file_name, get_filtered_dataset_name, get_pretrained_model_by_id, \
+    get_device
 import torch
 import torch.profiler
 
@@ -147,41 +149,10 @@ if __name__ == "__main__":
 
     created_model_name = f"{named_tokenizer}_{selected_dataset.lower()}{kb}{from_scratch_txt}{freeze_txt}"
 
-    """
-    Get device
-    """
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device.type == "cuda":
-        logger.log(LOGLEVEL, f"Using GPU: {torch.cuda.get_device_name(0)}")
-    else:
-        logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
-    torch.cuda.empty_cache()
-    """
-    Load model
-    """
-    if train_from_scratch:
-        config = EsmConfig.from_pretrained(f"model_configs/config-nucleotide-transformer-v2-50m-multi-species.json",
-                                           local_files_only=True, trust_remote_code=True)
-        model = AutoModelForMaskedLM.from_config(config)
-    else:
-        model = AutoModelForMaskedLM.from_pretrained(
-            "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
-            cache_dir=models_cache_dir,
-            trust_remote_code=True,
-            local_files_only=True,
-        )
 
-    if freeze is not None:
-        n_layers_to_freeze = int(len(model.esm.encoder.layer) * freeze)
-        for idx, layer in enumerate(model.esm.encoder.layer):
-            if idx < n_layers_to_freeze:
-                for param in layer.parameters():
-                    param.requires_grad = False
+    device = get_device()
+    model = get_model(args, device)
 
-    model.to(device)
-    torch.compiler.cudagraph_mark_step_begin()
-    model = torch.compile(model)
-    logger.log(LOGLEVEL, "Model loaded")
 
     """
     Load tokenizer
