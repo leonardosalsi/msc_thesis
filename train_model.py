@@ -173,6 +173,7 @@ if __name__ == "__main__":
     
     training_args = TrainingArguments(
         run_name=timestamp,
+        report_to="none",
         output_dir=model_path,
         overwrite_output_dir=True,
         per_device_train_batch_size=args.train_size,
