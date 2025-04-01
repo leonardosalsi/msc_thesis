@@ -172,6 +172,7 @@ if __name__ == "__main__":
         resume_from_checkpoint = False
     
     training_args = TrainingArguments(
+        run_name=timestamp,
         output_dir=model_path,
         overwrite_output_dir=True,
         per_device_train_batch_size=args.train_size,
