@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --time=96:00:00
 #SBATCH --mem-per-cpu=64G
-#SBATCH --gpus=rtx_4090:4
+#SBATCH --gpus=rtx_4090:1
 
 source ~/.bashrc
 source $HOME/gpu_env/bin/activate
@@ -16,5 +16,5 @@ export WANDB_DISABLED=true
 
 python /cluster/home/salsil/msc_thesis_root/msc_thesis/train_model.py    \
 /cluster/scratch/salsil/multi_genome_species/1k  overlapping \
---compile_model --pca_embeddings  --train_size 20 --eval_size 128 \
---gradient_accumulation 25 --max_workers 4 --use_scratch --keep_in_memory
+--compile_model --pca_embeddings  --train_size 10 --eval_size 64 \
+--gradient_accumulation 50 --max_workers 4 --use_scratch --keep_in_memory
