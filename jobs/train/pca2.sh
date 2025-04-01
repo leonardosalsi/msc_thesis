@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --time=96:00:00
 #SBATCH --mem-per-cpu=64G
-#SBATCH --gpus=rtx4090:4
+#SBATCH --gpus=rtx_4090:4
 
 source ~/.bashrc
 source $HOME/gpu_env/bin/activate
