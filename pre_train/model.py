@@ -92,13 +92,4 @@ def get_model(args, device):
 
     model.to(device)
 
-    if compile_model:
-        torch.compiler.cudagraph_mark_step_begin()
-        model = torch.compile(model)
-        original_forward = model.forward
-        def new_forward(*args, **kwargs):
-            kwargs.pop("num_items_in_batch", None)
-            return original_forward(*args, **kwargs)
-        model.forward = new_forward
-
     return model

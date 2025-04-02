@@ -13,8 +13,9 @@ source $HOME/gpu_env/bin/activate
 export HF_DATASETS_OFFLINE=1
 export HF_HUB_OFFLINE=1
 export WANDB_DISABLED=true
+export TF_CPP_MIN_LOG_LEVEL=2
 
 python /cluster/home/salsil/msc_thesis_root/msc_thesis/train_model.py    \
 /cluster/scratch/salsil/multi_genome_species/1k  overlapping \
---compile_model --pca_embeddings  --train_size 10 --eval_size 32 \
---gradient_accumulation 50 --max_workers 4 --use_scratch --keep_in_memory --logging_steps 1
+--compile_model --pca_embeddings  --train_size 13 --eval_size 32 \
+--gradient_accumulation 39 --max_workers 4 --use_scratch --keep_in_memory
