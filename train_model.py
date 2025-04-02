@@ -156,7 +156,7 @@ if __name__ == "__main__":
     tokenized_train_sequences = dataset_train.shuffle()
     tokenized_train_sequences.set_transform(tokenize_function)
     tokenized_validation_sequences = dataset_validation.shuffle()
-    tokenized_validation_sequences = tokenized_validation_sequences.select(range(5000))
+    tokenized_validation_sequences = tokenized_validation_sequences.select(range(20000))
     tokenized_validation_sequences.set_transform(tokenize_function)
 
     data_collator = DataCollatorForLanguageModeling(
@@ -191,6 +191,8 @@ if __name__ == "__main__":
         bf16=True,
         max_steps=args.max_steps,
         include_num_input_tokens_seen=True,
+        prediction_loss_only=True,
+        torch_compile=args.compile_model
     )
 
     trainer = Trainer(
@@ -199,7 +201,6 @@ if __name__ == "__main__":
         train_dataset=tokenized_train_sequences,
         eval_dataset=tokenized_validation_sequences,
         data_collator=data_collator,
-        compute_metrics=compute_metrics
     )
 
     _ = trainer.train()
