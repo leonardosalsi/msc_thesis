@@ -191,6 +191,7 @@ if __name__ == "__main__":
         bf16=True,
         max_steps=args.max_steps,
         include_num_input_tokens_seen=True,
+        prediction_loss_only=True,
     )
 
     trainer = Trainer(
