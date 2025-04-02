@@ -200,7 +200,6 @@ if __name__ == "__main__":
         train_dataset=tokenized_train_sequences,
         eval_dataset=tokenized_validation_sequences,
         data_collator=data_collator,
-        compute_metrics=compute_metrics
     )
 
     _ = trainer.train()
