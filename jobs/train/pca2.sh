@@ -13,6 +13,7 @@ source $HOME/gpu_env/bin/activate
 export HF_DATASETS_OFFLINE=1
 export HF_HUB_OFFLINE=1
 export WANDB_DISABLED=true
+export TF_CPP_MIN_LOG_LEVEL=2
 
 python /cluster/home/salsil/msc_thesis_root/msc_thesis/train_model.py    \
 /cluster/scratch/salsil/multi_genome_species/1k  overlapping \
