@@ -183,7 +183,7 @@ if __name__ == "__main__":
         logging_steps=args.logging_steps,
         eval_strategy="steps",
         load_best_model_at_end=True,
-        metric_for_best_model="eval_loss",
+        metric_for_best_model="loss",
         dataloader_num_workers=args.max_workers,
         gradient_checkpointing=False,
         logging_dir=None,
