@@ -16,6 +16,9 @@ def get_device():
     torch.cuda.empty_cache()
     return device
 
+def compute_metrics(eval_preds):
+    return {"eval_loss": eval_preds.loss}
+
 def check_folders(base_path):
     train_path = os.path.join(base_path, "train")
     validation_path = os.path.join(base_path, "validation")
