@@ -192,6 +192,7 @@ if __name__ == "__main__":
         max_steps=args.max_steps,
         include_num_input_tokens_seen=True,
         prediction_loss_only=True,
+        torch_compile=args.compile_model
     )
 
     trainer = Trainer(
