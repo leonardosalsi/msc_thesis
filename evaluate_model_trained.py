@@ -10,6 +10,8 @@ from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
 from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir, results_dir, temp_dir
 from datasets.utils.logging import disable_progress_bar, set_verbosity
+
+from pre_train.model import apply_post_embedding_pca
 from util import LOGLEVEL, init_logger, get_model_by_id, get_task_by_id, get_pretrained_model_by_id
 import numpy as np
 from peft import LoraConfig, TaskType, get_peft_model
@@ -29,7 +31,7 @@ def compute_metrics_mcc(eval_pred):
     r={'mcc_score': matthews_corrcoef(references, predictions)}
     return r
 
-def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task):
+def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task, pca_embeddings):
     disable_progress_bar()
     set_verbosity(logging.ERROR)
     logging.set_verbosity_error()
@@ -63,6 +65,8 @@ def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task)
         trust_remote_code=True,
         local_files_only=True
     )
+    if pca_embeddings:
+        model = apply_post_embedding_pca(model, reduction_factor=0.5, freeze_pca=False)
     model = model.to(device)
 
 
@@ -211,6 +215,12 @@ def parse_args():
         default=1,
         help="Number of times training and prediction process is repeated. Default is 1."
     )
+    parser.add_argument(
+        "--pca_embeddings",
+        action="store_true",
+        dest="pca_embeddings",
+        help="Apply PCA-based post-embedding processing to reduce embedding dimensionality."
+    )
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -240,7 +250,7 @@ if __name__ == "__main__":
 
     all_results = []
     for i in tqdm(range(3)):
-        results = finetune_model_by_task_mcc(logger, device, model, args.modelId, mode, task)
+        results = finetune_model_by_task_mcc(logger, device, model, args.modelId, mode, task, args.pca_embeddings)
         all_results.append(results)
 
     with open(output_file, 'w') as f:

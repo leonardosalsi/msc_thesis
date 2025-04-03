@@ -12,4 +12,4 @@ source ~/.bashrc
 conda activate gpu_env
 
 HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \
-python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/evaluate_model_trained.py 17 27 --samples 3
+python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/evaluate_model_trained.py 17 27 --samples 3 --pca_embeddings
