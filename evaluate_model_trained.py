@@ -184,6 +184,8 @@ def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task)
 
 import sys
 import torch
+print(torch.cuda.is_available())
+print(torch.version.cuda)
 from downstream_tasks import TASKS, MODELS
 import json
 from util import LOGLEVEL
