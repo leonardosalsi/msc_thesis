@@ -93,6 +93,12 @@ def parse_args():
         dest="run_statistics",
     )
 
+    parser.add_argument(
+        "--file_level",
+        action="store_true",
+        dest="file_level",
+    )
+
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -108,6 +114,7 @@ if __name__ == "__main__":
         use_scratch = args.use_scratch
         use_json = args.use_json
         run_statistics = args.run_statistics
+        file_level = args.file_level
 
         if run_statistics:
             gen = fasta_walker.run_statistics(
@@ -118,6 +125,7 @@ if __name__ == "__main__":
                 metadata_acc_column,
                 metadata_group_id_column,
                 max_workers,
+                file_level
             )
 
             graph_length = 0
@@ -134,7 +142,7 @@ if __name__ == "__main__":
                     else:
                         size_distribution[key] = value
 
-            i = 0
+
             for g in gen:
                 statistics = g['statistics']
                 graph_length += statistics[0]
@@ -143,9 +151,7 @@ if __name__ == "__main__":
                 num_singletons += statistics[3]
                 biggest_sub_graph += statistics[4]
                 accumulate_json(json.loads(statistics[5]))
-                i += 1
-                if (i == 3):
-                    break
+
             final_stats = {
                 "graph_length": graph_length,
                 "num_nodes": num_nodes,
