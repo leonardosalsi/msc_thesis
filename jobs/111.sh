@@ -1,4 +1,4 @@
 #!/bin/bash
 cd ..
 
-sbatch jobs/logan/filter/a.sh
+sbatch jobs/logan/examine/1k.sh
