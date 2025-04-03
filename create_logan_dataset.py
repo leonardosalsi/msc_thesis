@@ -2,10 +2,20 @@ import argparse
 import csv
 import os
 from pprint import pprint
-
+import json
 from datasets import Dataset, DatasetDict, Features, Value
-from config import logan_datasets_dir, generated_datasets_dir, generator_cache_dir
+from config import logan_datasets_dir, generated_datasets_dir, generator_cache_dir, logs_dir
 import fasta_walker
+
+def format_statistics(statistics):
+    graph_length = statistics[0]
+    num_nodes = statistics[1]
+    num_sub_graphs = statistics[2]
+    num_singletons = statistics[3]
+    biggest_sub_graph = statistics[4]
+    size_distribution = json.loads(statistics[5])
+
+    return graph_length
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -77,6 +87,12 @@ def parse_args():
         dest="use_json",
     )
 
+    parser.add_argument(
+        "--run_statistics",
+        action="store_true",
+        dest="run_statistics",
+    )
+
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -91,8 +107,59 @@ if __name__ == "__main__":
         metadata_group_id_column = args.group_id_column
         use_scratch = args.use_scratch
         use_json = args.use_json
+        run_statistics = args.run_statistics
 
+        if run_statistics:
+            gen = fasta_walker.run_statistics(
+                kmer,
+                reverse_complement,
+                fasta_files_path,
+                metadata_path,
+                metadata_acc_column,
+                metadata_group_id_column,
+                max_workers,
+            )
 
+            graph_length = 0
+            num_nodes = 0
+            num_sub_graphs = 0
+            num_singletons = 0
+            biggest_sub_graph = 0
+            size_distribution = {}
+
+            def accumulate_json(new_data):
+                for key, value in new_data.items():
+                    if key in size_distribution:
+                        size_distribution[key] += value
+                    else:
+                        size_distribution[key] = value
+
+            i = 0
+            for g in gen:
+                statistics = g['statistics']
+                graph_length += statistics[0]
+                num_nodes += statistics[1]
+                num_sub_graphs += statistics[2]
+                num_singletons += statistics[3]
+                biggest_sub_graph += statistics[4]
+                accumulate_json(json.loads(statistics[5]))
+                i += 1
+                if (i == 3):
+                    break
+            final_stats = {
+                "graph_length": graph_length,
+                "num_nodes": num_nodes,
+                "num_sub_graphs": num_sub_graphs,
+                "num_singletons": num_singletons,
+                "biggest_sub_graph": biggest_sub_graph,
+                "size_distribution": size_distribution
+            }
+            output_file = os.path.join(logs_dir, "logan_stats.json")
+
+            # Write the accumulated dictionary to the file
+            with open(output_file, "w") as f:
+                json.dump(final_stats, f, indent=4)
+            exit(0)
         if use_json:
             fasta_walker.create_random_walk_sequences_json(
                 kmer,
