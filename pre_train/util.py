@@ -1,15 +1,17 @@
+import datetime
 import os
 import sys
-
 import torch
 
-def print_args(args, timestamp):
+def print_args(args, title):
+    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     print("\n" + "=" * 80)
-    print(f"TRAINING ARGUMENTS - {timestamp}".center(80))
+    print(f"{title} - {timestamp}".center(80))
     print("=" * 80)
     for arg, value in sorted(vars(args).items()):
         print("{:<25}: {}".format(arg, value))
     print("=" * 80 + "\n")
+    return timestamp
 
 def get_device():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

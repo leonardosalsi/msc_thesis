@@ -138,8 +138,8 @@ def parse_args():
 if __name__ == "__main__":
     
     args = parse_args()
-    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    print_args(args, timestamp)
+
+    timestamp = print_args(args, "TRAINING ARGUMENTS")
 
     device = get_device()
     model = get_model(args, device)
