@@ -1,42 +1,72 @@
 import argparse
-import csv
-import os
+import shutil
 import subprocess
 import tempfile
-from pprint import pprint
+from os.path import isfile, join, exists
 import json
-
+import os
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from datasets import Dataset, DatasetDict, Features, Value
-from config import logan_datasets_dir, generated_datasets_dir, generator_cache_dir, logs_dir
-import fasta_walker
-
-def json_to_fasta_inmemory(json_path):
-    with open(json_path) as f:
-        sequences = json.load(f)
-    return [SeqRecord(Seq(seq), id=f"seq_{i}", description="") for i, seq in enumerate(sequences)]
+from tqdm import tqdm
 
 
-def run_mmseqs(records, fasta_out_dir):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        fasta_input = os.path.join(fasta_out_dir, 'input.fasta')
+def json_to_fasta(json_folder_path, parent_folder, n_smallest_files=0, use_scratch=False):
 
-        SeqIO.write(records, fasta_input, 'fasta')
+    fasta_raw_folder = os.path.join(parent_folder, 'fasta_raw')
 
-        # Create and execute mmseqs commands
-        cmd_create = ['mmseqs', 'easy-cluster', fasta_input, os.path.join(fasta_out_dir, 'mmseqs_out'), fasta_out_dir, '--min-seq-id',
-                      '0.95']
+    if not exists(fasta_raw_folder):
+        os.makedirs(fasta_raw_folder)
+    json_files = [f for f in os.listdir(json_folder_path) if f.endswith('.json') and isfile(join(json_folder_path, f))]
+
+    if n_smallest_files > 0:
+        json_files.sort(key=lambda f: os.path.getsize(join(json_folder_path, f)))
+        json_files = json_files[:n_smallest_files]
+
+    fasta_paths = []
+    for json_file in tqdm(json_files, desc="Converting JSON to FASTA"):
+        fasta_path = os.path.join(fasta_raw_folder, f'{os.path.splitext(json_file)[0]}.fasta')
+        if not exists(fasta_path):
+            with open(os.path.join(json_folder_path, json_file), 'r') as f:
+                sequences = json.load(f)
+                records = [SeqRecord(Seq(seq), id=f"seq_{i}", description="") for i, seq in enumerate(sequences)]
+                SeqIO.write(records, fasta_path, 'fasta')
+        fasta_paths.append(fasta_path)
+        if use_scratch:
+            os.remove(os.path.join(json_folder_path, json_file))
+
+    return fasta_paths
+
+
+def run_mmseqs(fasta_paths, parent_folder, use_scratch, min_seq_id, split_memory_limit):
+    fasta_filtered_folder = os.path.join(parent_folder, 'fasta_filtered')
+    if not exists(fasta_filtered_folder):
+        os.makedirs(fasta_filtered_folder)
+
+    filtered_paths = []
+
+    for fasta_file in tqdm(fasta_paths, desc="Running MMSEQS"):
+        fasta_base_name = os.path.splitext(os.path.basename(fasta_file))[0]
+        output_prefix = os.path.join(fasta_filtered_folder, f'{fasta_base_name}_mmseqs_out')
+
+        cmd_create = [
+            'mmseqs', 'easy-cluster',
+            fasta_file,
+            output_prefix,
+            fasta_filtered_folder,
+            '--min-seq-id', f'{min_seq_id}',
+            '--split-memory-limit', f"{split_memory_limit}G"
+        ]
         subprocess.run(cmd_create, check=True)
 
-        # MMseqs outputs a representative set at: <prefix>_rep_seq.fasta
-        rep_seq_fasta = os.path.join(fasta_out_dir, 'mmseqs_out_rep_seq.fasta')
+        rep_seq_path = f'{output_prefix}_rep_seq.fasta'
+        filtered_paths.append(rep_seq_path)
 
-        # Read the reduced set back into memory
-        filtered_records = list(SeqIO.parse(rep_seq_fasta, 'fasta'))
+    if use_scratch:
+        print(f"Make sure to move the folder {fasta_filtered_folder} before the job ends")
 
-    return filtered_records
+    return filtered_paths
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -44,9 +74,9 @@ def parse_args():
     )
 
     parser.add_argument(
-        "fasta_file_path",
+        "json_folder_path",
         type=str,
-        help="Folder of FASTA files to be processed",
+        help="Folder of JSON files to be processed",
     )
 
     parser.add_argument(
@@ -56,20 +86,54 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--metadata_file_path",
-        type=str,
+        "--split_memory_limit",
+        type=int,
+        default=8,
         help="Path to metadata file",
+    )
+
+    parser.add_argument(
+        "--n_smallest_files",
+        type=int,
+        default=8,
+        help="Path to metadata file",
+    )
+
+    parser.add_argument(
+        "--min_seq_id",
+        type=float,
+        default=0.95,
+        help="Path to metadata file",
+    )
+
+    parser.add_argument(
+        "--use_scratch",
+        action="store_true",
+        dest="use_scratch",
+        help="Pre-load everything into local scratch and load from there."
     )
 
     return parser.parse_args()
 
 if __name__ == "__main__":
         args = parse_args()
-        fasta_file_path = args.fasta_file_path
+        json_folder_path = args.json_folder_path
         fasta_out_dir = args.fasta_out_dir
-        metadata_path = args.metadata_file_path
+        split_memory_limit = args.split_memory_limit
+        use_scratch = args.use_scratch
+        min_seq_id = args.min_seq_id
+        n_smallest_files = args.n_smallest_files
+        parent_folder = os.path.abspath(os.path.join(json_folder_path, os.pardir))
 
-        fasta_records = json_to_fasta_inmemory(fasta_file_path)
-        filtered_records = run_mmseqs(fasta_records, fasta_out_dir)
+        if use_scratch:
+            tmpdir = os.environ.get("TMPDIR")
+            if tmpdir is None:
+                raise ValueError("TMPDIR environment variable is not set, but use_scratch is True.")
+            scratch_json_path = os.path.join(tmpdir, 'json')
+            if not os.path.exists(scratch_json_path):
+                shutil.copytree(json_folder_path, scratch_json_path)
+            json_folder_path = scratch_json_path
 
-        print(f"Filtered from {len(fasta_records)} → {len(filtered_records)} sequences.")
+        fasta_paths = json_to_fasta(json_folder_path, parent_folder, n_smallest_files, use_scratch)
+        run_mmseqs(fasta_paths, parent_folder, use_scratch, min_seq_id, split_memory_limit)
+
