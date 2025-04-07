@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --time=100:00:00
 #SBATCH --mem-per-cpu=80G
-#SBATCH --tmp=2500g
+#SBATCH --tmp=100g
 
 source ~/.bashrc
 conda activate fasta_env
