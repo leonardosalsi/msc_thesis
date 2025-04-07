@@ -2,10 +2,10 @@
 
 #SBATCH --job-name=mmseqs_87
 #SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/mmseqs_87.txt
-#SBATCH --cpus-per-task=2
+#SBATCH --cpus-per-task=4
 #SBATCH --time=100:00:00
-#SBATCH --mem-per-cpu=256G
-#SBATCH --tmp=200g
+#SBATCH --mem-per-cpu=128G
+#SBATCH --tmp=150G
 
 source ~/.bashrc
 conda activate fasta_env
