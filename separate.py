@@ -1,5 +1,7 @@
 import argparse
 from os.path import isfile, join, exists
+from pprint import pprint
+
 from tqdm import tqdm
 from pre_train.util import print_args
 import os
@@ -64,9 +66,10 @@ if __name__ == "__main__":
         json_out_dir = args.json_out_dir
         max_len = args.max_len
 
-        fasta_files = [f for f in os.listdir(fasta_folder_path) if f.endswith('.json') and isfile(join(fasta_folder_path, f))]
+        fasta_files = [f for f in os.listdir(fasta_folder_path) if f.endswith('.fasta') and isfile(join(fasta_folder_path, f))]
+        pprint(fasta_files)
         if not exists(json_out_dir):
             os.makedirs(json_out_dir)
 
         for fasta_file in tqdm(fasta_files):
-            split_fasta_by_length(fasta_file, max_len=max_len, output_dir=json_out_dir)
+            split_fasta_by_length(os.path.join(fasta_folder_path, fasta_file), max_len=max_len, output_dir=json_out_dir)
