@@ -60,13 +60,14 @@ def remove(path):
 
 def run_mmseqs(fasta_path, fasta_out_dir, parent_folder, use_scratch, min_seq_id, split_memory_limit):
     fasta_filtered_folder = os.path.join(parent_folder, 'fasta_filtered')
-    mmseqs_out_dir = os.path.join(parent_folder, f'mmseqs_out_{min_seq_id}')
+    fasta_base_name = os.path.splitext(os.path.basename(fasta_path))[0]
+    mmseqs_out_dir = os.path.join(fasta_filtered_folder, f'mmseqs_out_{fasta_base_name}_{min_seq_id}')
     if not exists(fasta_filtered_folder):
         os.makedirs(fasta_filtered_folder)
     if not exists(mmseqs_out_dir):
         os.makedirs(mmseqs_out_dir)
 
-    fasta_base_name = os.path.splitext(os.path.basename(fasta_path))[0]
+
     output_prefix = os.path.join(mmseqs_out_dir, f'{fasta_base_name}')
     cmd_create = [
         'mmseqs', 'easy-cluster',
