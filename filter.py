@@ -49,19 +49,30 @@ def json_to_fasta(json_file_path, use_scratch=False, min_seq_id=0.95):
 
     return parent_folder, fasta_path
 
+def remove(path):
+    """ param <path> could either be relative or absolute. """
+    if os.path.isfile(path) or os.path.islink(path):
+        os.remove(path)  # remove the file
+    elif os.path.isdir(path):
+        shutil.rmtree(path)  # remove dir and all contains
+    else:
+        raise ValueError("file {} is not a file or dir.".format(path))
 
 def run_mmseqs(fasta_path, fasta_out_dir, parent_folder, use_scratch, min_seq_id, split_memory_limit):
     fasta_filtered_folder = os.path.join(parent_folder, 'fasta_filtered')
+    mmseqs_out_dir = os.path.join(parent_folder, f'mmseqs_out_{min_seq_id}')
     if not exists(fasta_filtered_folder):
         os.makedirs(fasta_filtered_folder)
+    if not exists(mmseqs_out_dir):
+        os.makedirs(mmseqs_out_dir)
 
     fasta_base_name = os.path.splitext(os.path.basename(fasta_path))[0]
-    output_prefix = os.path.join(fasta_filtered_folder, f'{fasta_base_name}')
+    output_prefix = os.path.join(mmseqs_out_dir, f'{fasta_base_name}')
     cmd_create = [
         'mmseqs', 'easy-cluster',
         fasta_path,
         output_prefix,
-        fasta_filtered_folder,
+        mmseqs_out_dir,
         '--cluster-mode', '3',
         '--min-seq-id', f'{min_seq_id}',
         '--split-memory-limit', f"{split_memory_limit}G",
@@ -71,8 +82,8 @@ def run_mmseqs(fasta_path, fasta_out_dir, parent_folder, use_scratch, min_seq_id
     subprocess.run(cmd_create, check=True)
     rep_seq_path = f'{output_prefix}_rep_seq.fasta'
 
-    shutil.copy(os.path.join(fasta_filtered_folder, rep_seq_path), os.path.join(fasta_out_dir, f'{fasta_base_name}.fasta'))
-
+    shutil.copy(os.path.join(mmseqs_out_dir, rep_seq_path), os.path.join(fasta_out_dir, f'{fasta_base_name}.fasta'))
+    remove(mmseqs_out_dir)
 
 
 def parse_args():
