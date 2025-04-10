@@ -71,9 +71,8 @@ def run_mmseqs(fasta_path, fasta_out_dir, parent_folder, use_scratch, min_seq_id
     subprocess.run(cmd_create, check=True)
     rep_seq_path = f'{output_prefix}_rep_seq.fasta'
 
-    if use_scratch:
-        print("{} -> {}", os.path.join(fasta_filtered_folder, rep_seq_path), os.path.join(fasta_out_dir, f'{fasta_base_name}.fasta'))
-        shutil.copy(os.path.join(fasta_filtered_folder, rep_seq_path), os.path.join(fasta_out_dir, f'{fasta_base_name}.fasta'))
+    shutil.copy(os.path.join(fasta_filtered_folder, rep_seq_path), os.path.join(fasta_out_dir, f'{fasta_base_name}.fasta'))
+
 
 
 def parse_args():
