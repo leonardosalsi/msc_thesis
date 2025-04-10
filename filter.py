@@ -76,7 +76,7 @@ def run_mmseqs(fasta_path, fasta_out_dir, parent_folder, use_scratch, min_seq_id
         mmseqs_out_dir,
         '--cluster-mode', '3',
         '--min-seq-id', f'{min_seq_id}',
-        '--split-memory-limit', f"{split_memory_limit}G",
+        #'--split-memory-limit', f"{split_memory_limit}G",
         '--threads', '16',
         '--cov-mode', '1'
     ]
