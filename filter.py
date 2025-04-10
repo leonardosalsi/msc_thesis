@@ -13,7 +13,7 @@ from tqdm import tqdm
 from pre_train.util import print_args
 
 
-def json_to_fasta(json_file_path, use_scratch=False):
+def json_to_fasta(json_file_path, use_scratch=False, min_seq_id=0.95):
     json_file = json_file_path.split('/')[-1]
 
     if use_scratch:
@@ -26,9 +26,11 @@ def json_to_fasta(json_file_path, use_scratch=False):
             os.makedirs(scratch_json_path)
             shutil.copy(json_file_path, os.path.join(scratch_json_path, json_file))
         json_folder_path = scratch_json_path
+    else:
+        json_folder_path = os.path.dirname(json_file_path)
 
     parent_folder = os.path.abspath(os.path.join(json_folder_path, os.pardir))
-    fasta_raw_folder = os.path.join(parent_folder, 'fasta_raw')
+    fasta_raw_folder = os.path.join(parent_folder, f'fasta_raw_{min_seq_id}')
     if not exists(fasta_raw_folder):
         os.makedirs(fasta_raw_folder)
 
@@ -131,6 +133,6 @@ if __name__ == "__main__":
         if not exists(fasta_out_dir):
             os.makedirs(fasta_out_dir)
 
-        parent_folder, fasta_path = json_to_fasta(json_folder_path, use_scratch)
+        parent_folder, fasta_path = json_to_fasta(json_folder_path, use_scratch, min_seq_id)
         run_mmseqs(fasta_path, fasta_out_dir, parent_folder, use_scratch, min_seq_id, split_memory_limit)
 
