@@ -30,11 +30,14 @@ def json_to_fasta(json_file_path, use_scratch=False, min_seq_id=0.95):
         json_folder_path = os.path.dirname(json_file_path)
 
     parent_folder = os.path.abspath(os.path.join(json_folder_path, os.pardir))
-    fasta_raw_folder = os.path.join(parent_folder, f'fasta_raw_{min_seq_id}')
+    fasta_raw_folder = os.path.join(parent_folder, f'fasta_raw')
+    fasta_path = os.path.join(fasta_raw_folder, f'{os.path.splitext(json_file)[0]}.fasta')
     if not exists(fasta_raw_folder):
         os.makedirs(fasta_raw_folder)
+    else:
+        if exists(fasta_path):
+            return parent_folder, fasta_path
 
-    fasta_path = os.path.join(fasta_raw_folder, f'{os.path.splitext(json_file)[0]}.fasta')
     if not exists(fasta_path):
         with open(os.path.join(json_folder_path, json_file), 'r') as f:
             sequences = json.load(f)
