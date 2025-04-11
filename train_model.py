@@ -5,6 +5,8 @@ import os
 import json
 import torch
 
+from pre_train.trainer import get_trainer
+
 torch.backends.cudnn.benchmark = True
 torch.backends.cuda.matmul.allow_tf32 = False
 
@@ -133,6 +135,12 @@ def parse_args():
         dest="keep_in_memory",
         help="Keep dataset in memory."
     )
+    parser.add_argument(
+        "--ewc_lambda",
+        type=int,
+        default=0,
+        help="Maximum number of training steps. Default is 12000."
+    )
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -195,12 +203,15 @@ if __name__ == "__main__":
         torch_compile=args.compile_model
     )
 
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=tokenized_train_sequences,
-        eval_dataset=tokenized_validation_sequences,
-        data_collator=data_collator,
+    trainer = get_trainer(
+        args,
+        training_args,
+        model,
+        device,
+        tokenizer,
+        tokenized_train_sequences,
+        tokenized_validation_sequences,
+        data_collator
     )
 
     _ = trainer.train()

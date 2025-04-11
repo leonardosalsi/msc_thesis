@@ -1,5 +1,5 @@
 #!/bin/bash
 cd ..
 
-sbatch jobs/train/pca.sh
+sbatch jobs/train/pca2.sh
 
