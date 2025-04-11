@@ -4,7 +4,7 @@
 #SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/mmseqs_447.txt
 #SBATCH --cpus-per-task=4
 #SBATCH --time=100:00:00
-#SBATCH --mem-per-cpu=16G
+#SBATCH --mem-per-cpu=64G
 
 source ~/.bashrc
 conda activate fasta_env
@@ -12,4 +12,4 @@ conda activate fasta_env
 python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/filter.py \
 /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/generated_datasets/logan_raw/random_walk_447.json \
 /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/generated_datasets/logan_filtered_95 \
---split_memory_limit 50 --min_seq_id 0.95
+--split_memory_limit 200 --min_seq_id 0.95
