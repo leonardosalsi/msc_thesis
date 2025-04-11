@@ -12,4 +12,4 @@ conda activate fasta_env
 python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/filter.py \
 /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/generated_datasets/logan_raw/random_walk_1.json \
 /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/generated_datasets/logan_filtered_95 \
---split_memory_limit 500 --min_seq_id 0.95
+--split_memory_limit 750 --min_seq_id 0.95
