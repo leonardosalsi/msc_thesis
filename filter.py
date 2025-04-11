@@ -69,17 +69,29 @@ def run_mmseqs(fasta_path, fasta_out_dir, parent_folder, use_scratch, min_seq_id
 
 
     output_prefix = os.path.join(mmseqs_out_dir, f'{fasta_base_name}')
-    cmd_create = [
-        'mmseqs', 'easy-cluster',
-        fasta_path,
-        output_prefix,
-        mmseqs_out_dir,
-        '--cluster-mode', '3',
-        '--min-seq-id', f'{min_seq_id}',
-        #'--split-memory-limit', f"{split_memory_limit}G",
-        '--threads', '16',
-        '--cov-mode', '1'
-    ]
+    if split_memory_limit != 0:
+        cmd_create = [
+            'mmseqs', 'easy-cluster',
+            fasta_path,
+            output_prefix,
+            mmseqs_out_dir,
+            '--cluster-mode', '3',
+            '--min-seq-id', f'{min_seq_id}',
+            '--split-memory-limit', f"{split_memory_limit}G",
+            '--threads', '16',
+            '--cov-mode', '1'
+        ]
+    else:
+        cmd_create = [
+            'mmseqs', 'easy-cluster',
+            fasta_path,
+            output_prefix,
+            mmseqs_out_dir,
+            '--cluster-mode', '3',
+            '--min-seq-id', f'{min_seq_id}',
+            '--threads', '16',
+            '--cov-mode', '1'
+        ]
     subprocess.run(cmd_create, check=True)
     rep_seq_path = f'{output_prefix}_rep_seq.fasta'
 
@@ -107,7 +119,7 @@ def parse_args():
     parser.add_argument(
         "--split_memory_limit",
         type=int,
-        default=8,
+        default=0,
         help="Path to metadata file",
     )
 
