@@ -3,7 +3,7 @@ import shutil
 
 import datasets
 from datasets import load_dataset, load_from_disk
-from config import datasets_cache_dir
+from config import datasets_cache_dir, generated_datasets_dir
 from pre_train.util import check_folders
 
 
@@ -65,3 +65,11 @@ def get_dataset(args):
     dataset_validation = dataset_validation.remove_columns(columns_to_remove)
 
     return dataset_train, dataset_validation
+
+
+def get_original_training_dataset():
+    train_path, validation_path = check_folders(os.path.join(generated_datasets_dir, '1k', 'train'))
+    dataset_train = load_from_disk(train_path, keep_in_memory=False)
+    columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
+    dataset_train = dataset_train.remove_columns(columns_to_remove)
+    return dataset_train
