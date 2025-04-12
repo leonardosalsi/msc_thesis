@@ -141,6 +141,12 @@ def parse_args():
         default=0,
         help="Maximum number of training steps. Default is 12000."
     )
+    parser.add_argument(
+        "--original_dataset",
+        type=str,
+        default=None,
+        help="Maximum number of training steps. Default is 12000."
+    )
     return parser.parse_args()
 
 if __name__ == "__main__":
