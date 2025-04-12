@@ -56,6 +56,7 @@ def get_dataset(args):
         )
     else:
         train_path, validation_path = check_folders(selected_dataset_path)
+
         dataset_train = load_from_disk(train_path, keep_in_memory=keep_in_memory)
         dataset_validation = load_from_disk(validation_path, keep_in_memory=keep_in_memory)
 

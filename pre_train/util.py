@@ -22,12 +22,14 @@ def compute_metrics(eval_preds):
     return {"eval_loss": eval_preds.loss}
 
 def check_folders(base_path):
-
+    print(base_path)
     train_path = os.path.join(base_path, "train")
     validation_path = os.path.join(base_path, "validation")
 
     # Check if both directories exist
     if not (os.path.isdir(train_path) and os.path.isdir(validation_path)):
+        print("Train path:", train_path)
+        print("Validation path:", validation_path)
         print("Error: Required folders 'train' and 'validation' not found in the provided path.")
         sys.exit(1)
 
