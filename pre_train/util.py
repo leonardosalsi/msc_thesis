@@ -3,6 +3,9 @@ import os
 import sys
 import torch
 
+from util import init_logger, LOGLEVEL
+
+
 def print_args(args, title):
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     print("\n" + "=" * 80)
@@ -15,6 +18,11 @@ def print_args(args, title):
 
 def get_device():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    logger = init_logger()
+    if device.type == "cuda":
+        logger.log(LOGLEVEL, f"Using GPU: {torch.cuda.get_device_name(0)}")
+    else:
+        logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
     torch.cuda.empty_cache()
     return device
 
