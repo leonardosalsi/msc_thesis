@@ -16,4 +16,4 @@ export HF_HUB_OFFLINE=1
 
 python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/train_model.py \
     /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/generated_datasets/multi_genome_dataset/1k \
-    overlapping --compile_model --keep_in_memory --use_scratch --ewc_lambda 450
+    overlapping --compile_model --keep_in_memory --ewc_lambda 450
