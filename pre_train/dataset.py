@@ -68,8 +68,8 @@ def get_dataset(args):
     return dataset_train, dataset_validation
 
 
-def get_original_training_dataset():
-    train_path, validation_path = check_folders(os.path.join(generated_datasets_dir, '1k'))
+def get_original_training_dataset(args):
+    train_path, _ = check_folders(args.original_dataset)
     dataset_train = load_from_disk(train_path, keep_in_memory=False)
     columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
     dataset_train = dataset_train.remove_columns(columns_to_remove)

@@ -69,7 +69,7 @@ def compute_fisher(model, device, orig_data_loader):
 def get_trainer(args, training_args, model, device, tokenizer, training_dataset, eval_dataset, data_collator):
     ewc_lambda = args.ewc_lambda
     if ewc_lambda and ewc_lambda > 0:
-        original_dataset = get_original_training_dataset()
+        original_dataset = get_original_training_dataset(args)
         orig_data_loader = DataLoader(
             original_dataset.with_format("torch"),
             batch_size=args.train_size,
