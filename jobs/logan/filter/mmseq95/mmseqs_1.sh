@@ -1,4 +1,4 @@
-#!/bin/bash
+cd log#!/bin/bash
 
 #SBATCH --job-name=mmseqs_1
 #SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/mmseqs_1.txt
