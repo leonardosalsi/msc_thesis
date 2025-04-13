@@ -17,5 +17,5 @@ export TF_CPP_MIN_LOG_LEVEL=2
 
 accelerate launch --num_processes 8 /cluster/home/salsil/msc_thesis_root/msc_thesis/train_model.py    \
 /cluster/scratch/salsil/multi_genome_species/1k  overlapping \
---compile_model  --train_size 15 --eval_size 32 \
---gradient_accumulation 25 --max_workers 4 --keep_in_memory
+--compile_model  --train_size 10 --eval_size 32 \
+--gradient_accumulation 10 --max_workers 4 --keep_in_memory
