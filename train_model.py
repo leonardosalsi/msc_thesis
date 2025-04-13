@@ -153,7 +153,11 @@ if __name__ == "__main__":
     
     args = parse_args()
 
-    timestamp = print_args(args, "TRAINING ARGUMENTS")
+    if "LOCAL_RANK" in os.environ:
+        if os.environ["LOCAL_RANK"] == "0":
+            timestamp = print_args(args, "TRAINING ARGUMENTS")
+    else:
+        timestamp = print_args(args, "TRAINING ARGUMENTS")
 
     device = get_device()
     model = get_model(args, device)

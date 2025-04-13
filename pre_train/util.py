@@ -23,7 +23,6 @@ def get_device():
         local_rank = int(os.environ["LOCAL_RANK"])
         device = torch.device("cuda", local_rank)
         logger.log(LOGLEVEL, f"Using GPU (local rank {local_rank}): {torch.cuda.get_device_name(local_rank)}")
-        logger.log(LOGLEVEL, f"CUDA_VISIBLE_DEVICES: {os.environ.get('CUDA_VISIBLE_DEVICES')}")
     else:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if device.type == "cuda":
