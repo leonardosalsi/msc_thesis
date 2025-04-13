@@ -4,8 +4,8 @@
 #SBATCH --output=/cluster/home/salsil/msc_thesis_root/out/train_overlap.txt
 #SBATCH --cpus-per-task=4
 #SBATCH --time=96:00:00
-#SBATCH --mem-per-cpu=64G
-#SBATCH --gpus=rtx_4090:1
+#SBATCH --mem-per-cpu=256G
+#SBATCH --gpus=rtx_4090:5
 
 source ~/.bashrc
 source $HOME/gpu_env/bin/activate
