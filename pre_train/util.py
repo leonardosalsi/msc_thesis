@@ -16,15 +16,23 @@ def print_args(args, title):
     print("=" * 80 + "\n")
     return timestamp
 
+
 def get_device():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger = init_logger()
-    if device.type == "cuda":
-        logger.log(LOGLEVEL, f"Using GPU: {torch.cuda.get_device_name(0)}")
-        logger.log(LOGLEVEL, f"Number of GPUs available: {torch.cuda.device_count()}")
+    if "LOCAL_RANK" in os.environ:
+        local_rank = int(os.environ["LOCAL_RANK"])
+        device = torch.device("cuda", local_rank)
+        logger.log(LOGLEVEL, f"Using GPU (local rank {local_rank}): {torch.cuda.get_device_name(local_rank)}")
         logger.log(LOGLEVEL, f"CUDA_VISIBLE_DEVICES: {os.environ.get('CUDA_VISIBLE_DEVICES')}")
     else:
-        logger.log(LOGLEVEL, f"GPU not available. Using CPU instead.")
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if device.type == "cuda":
+            logger.log(LOGLEVEL, f"Using GPU: {torch.cuda.get_device_name(0)}")
+            logger.log(LOGLEVEL, f"Number of GPUs available: {torch.cuda.device_count()}")
+            logger.log(LOGLEVEL, f"CUDA_VISIBLE_DEVICES: {os.environ.get('CUDA_VISIBLE_DEVICES')}")
+        else:
+            logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
+
     torch.cuda.empty_cache()
     return device
 
