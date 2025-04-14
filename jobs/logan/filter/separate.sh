@@ -4,7 +4,7 @@
 #SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/separate.txt
 #SBATCH --cpus-per-task=2
 #SBATCH --time=100:00:00
-#SBATCH --mem-per-cpu=16G
+#SBATCH --mem-per-cpu=64G
 
 source ~/.bashrc
 conda activate fasta_env
