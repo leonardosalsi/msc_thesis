@@ -9,16 +9,19 @@ if __name__ == '__main__':
     for file in files:
         input_file = os.path.join(SRC_DIR, f'random_walk_{file}.json')
         output_file = os.path.join(DST_DIR, f'random_walk_{file}.json')
+        print(input_file)
+        print(output_file)
         with open(input_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
+        print('Data loaded')
         # Ensure the data is a list
         if not isinstance(data, list):
             raise ValueError("The JSON data must be an array of strings.")
 
         # Filter out strings that do not have exactly 1200 characters
         filtered_data = [s for s in data if isinstance(s, str) and len(s) == 1200]
-
+        print('Data filtered')
         # Create the output directory if it does not exist
         output_dir = os.path.dirname(output_file)
         if not os.path.exists(output_dir):
