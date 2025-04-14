@@ -1,15 +1,20 @@
 cd log#!/bin/bash
 
 #SBATCH --job-name=mmseqs_1
-#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/mmseqs_1.txt
+#SBATCH --output=/cluster/home/salsil/msc_thesis_root/out/mmseqs_1.txt
 #SBATCH --cpus-per-task=4
 #SBATCH --time=100:00:00
 #SBATCH --mem-per-cpu=256G
 
 source ~/.bashrc
-conda activate fasta_env
+source $HOME/gpu_env/bin/activate
 
-python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/filter.py \
-/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/generated_datasets/logan_raw/random_walk_1.json \
-/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/generated_datasets/logan_filtered_95 \
---split_memory_limit 750 --min_seq_id 0.95
+export HF_DATASETS_OFFLINE=1
+export HF_HUB_OFFLINE=1
+export WANDB_DISABLED=true
+export TF_CPP_MIN_LOG_LEVEL=2
+
+python /cluster/home/salsil/msc_thesis_root/msc_thesis/filter.py \
+/cluster/scratch/salsil/logan_raw/random_walk_1.json \
+/cluster/scratch/salsil/logan_filtered_95 \
+--split_memory_limit 800 --min_seq_id 0.95
