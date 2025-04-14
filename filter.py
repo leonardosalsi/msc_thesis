@@ -79,7 +79,8 @@ def run_mmseqs(fasta_path, fasta_out_dir, parent_folder, use_scratch, min_seq_id
             '--min-seq-id', f'{min_seq_id}',
             '--split-memory-limit', f"{split_memory_limit}G",
             '--threads', '16',
-            '--cov-mode', '1'
+            '--cov-mode', '1',
+            '--db-load-mode', '3'
         ]
     else:
         cmd_create = [
@@ -90,7 +91,8 @@ def run_mmseqs(fasta_path, fasta_out_dir, parent_folder, use_scratch, min_seq_id
             '--cluster-mode', '3',
             '--min-seq-id', f'{min_seq_id}',
             '--threads', '16',
-            '--cov-mode', '1'
+            '--cov-mode', '1',
+            '--db-load-mode', '3'
         ]
     subprocess.run(cmd_create, check=True)
     rep_seq_path = f'{output_prefix}_rep_seq.fasta'
