@@ -54,8 +54,6 @@ if __name__ == "__main__":
         json_files_dir = args.json_files_dir
 
         gen = json_files_generator(json_files_dir)
-        for g in gen:
-            print(g)
 
         full_dataset = Dataset.from_generator(generator=lambda: json_files_generator(json_files_dir))
         split_dataset = full_dataset.train_test_split(test_size=0.2, seed=112)
