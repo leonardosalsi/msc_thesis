@@ -217,7 +217,8 @@ if __name__ == "__main__":
         tokenizer,
         tokenized_train_sequences,
         tokenized_validation_sequences,
-        data_collator
+        data_collator,
+        num_tokens
     )
 
     _ = trainer.train()
