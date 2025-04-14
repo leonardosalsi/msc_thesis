@@ -8,12 +8,13 @@ from util import init_logger, LOGLEVEL
 def print_args(args, title):
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     if "LOCAL_RANK" in os.environ and os.environ["LOCAL_RANK"] == "0":
-        print("\n" + "=" * 80)
-        print(f"{title} - {timestamp}".center(80))
-        print("=" * 80)
+        logger = init_logger()
+        logger.log(LOGLEVEL, "\n" + "=" * 80)
+        logger.log(LOGLEVEL, f"{title} - {timestamp}".center(80))
+        logger.log(LOGLEVEL, "=" * 80)
         for arg, value in sorted(vars(args).items()):
-            print("{:<25}: {}".format(arg, value))
-        print("=" * 80 + "\n")
+            logger.log(LOGLEVEL, "{:<25}: {}".format(arg, value))
+        logger.log(LOGLEVEL, "=" * 80 + "\n")
     return timestamp
 
 
