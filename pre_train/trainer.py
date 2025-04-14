@@ -1,8 +1,25 @@
 import torch
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 from transformers import Trainer
 
 from pre_train.dataset import get_original_training_dataset
+
+import os
+import torch
+
+from pre_train.util import LOGGER
+from util import LOGLEVEL
+
+
+def save_fisher_matrix(fisher_matrix, save_path):
+    torch.save(fisher_matrix, save_path)
+
+def load_fisher_matrix(save_path):
+    return torch.load(save_path)
+
+def fisher_matrix_exists(save_path):
+    return os.path.exists(save_path)
 
 
 class EWCTrainer(Trainer):
@@ -24,7 +41,7 @@ class EWCTrainer(Trainer):
             if name in self.original_params:
                 self.original_params[name] = self.original_params[name].to(param.device).to(param.dtype)
 
-    def compute_loss(self, model, inputs, return_outputs=False):
+    def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
         """
         Compute the loss with an added EWC penalty term.
         """
@@ -44,32 +61,41 @@ class EWCTrainer(Trainer):
         total_loss = base_loss + ewc_loss
         return (total_loss, outputs) if return_outputs else total_loss
 
-def compute_fisher(model, device, orig_data_loader):
+def compute_fisher(args, model, device, orig_data_loader):
     """
     Compute diagonal Fisher Information for all model parameters on the original domain data.
     Returns a dict mapping parameter names to their Fisher values (tensor of same shape).
     """
+    fisher_matrix_file = os.path.join(args.original_dataset, 'fisher_matrix.pt')
 
-    model.eval()
-    fisher = {name: torch.zeros_like(param, device=device) for name, param in model.named_parameters()}
-    for batch in orig_data_loader:
-        for key, value in batch.items():
-            batch[key] = value.to(device)
-        outputs = model(**batch)
-        loss = outputs.loss if hasattr(outputs, "loss") else outputs[0]
-        model.zero_grad()
-        loss.backward()
-        for name, param in model.named_parameters():
-            if param.grad is not None:
-                fisher[name] += (param.grad ** 2)
-    for name in fisher:
-        fisher[name] /= len(orig_data_loader)
+    if not fisher_matrix_exists(fisher_matrix_file):
+        LOGGER.log(LOGLEVEL, f"Creating fisher matrix {fisher_matrix_file}")
+        model.eval()
+        fisher = {name: torch.zeros_like(param, device=device) for name, param in model.named_parameters()}
+        for batch in tqdm(orig_data_loader):
+            for key, value in batch.items():
+                batch[key] = value.to(device)
+            outputs = model(**batch)
+            loss = outputs.loss if hasattr(outputs, "loss") else outputs[0]
+            model.zero_grad()
+            loss.backward()
+            for name, param in model.named_parameters():
+                if param.grad is not None:
+                    fisher[name] += (param.grad ** 2)
+        for name in fisher:
+            fisher[name] /= len(orig_data_loader)
+        save_fisher_matrix(fisher, fisher_matrix_file)
+    else:
+        LOGGER.log(LOGLEVEL, f"Loaded fisher matrix {fisher_matrix_file}")
+        fisher = torch.load(fisher_matrix_file)
     return fisher
+
 
 def get_trainer(args, training_args, model, device, tokenizer, training_dataset, eval_dataset, data_collator, num_tokens):
     ewc_lambda = args.ewc_lambda
     if ewc_lambda and ewc_lambda > 0:
         original_dataset = get_original_training_dataset(args)
+        original_dataset = original_dataset.select(range(2000))
 
         def tokenize_function(examples):
             return tokenizer(examples['sequence'], max_length=num_tokens, truncation=True, padding=True)
@@ -83,7 +109,7 @@ def get_trainer(args, training_args, model, device, tokenizer, training_dataset,
             shuffle=False,
         )
 
-        fisher_matrix = compute_fisher(model, device, orig_data_loader)
+        fisher_matrix = compute_fisher(args, model, device, orig_data_loader)
         original_params = {name: param.detach().clone() for name, param in model.named_parameters()}
         trainer = EWCTrainer(
             model=model,
