@@ -172,6 +172,7 @@ if __name__ == "__main__":
     print(tokenized_train_sequences)
 
     tokenized_validation_sequences = dataset_validation.shuffle()
+    tokenized_validation_sequences = tokenized_validation_sequences.select(range(2000000))
     tokenized_validation_sequences.set_transform(tokenize_function)
     print(tokenized_validation_sequences)
 
