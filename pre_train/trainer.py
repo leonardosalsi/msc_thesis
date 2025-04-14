@@ -66,15 +66,21 @@ def compute_fisher(model, device, orig_data_loader):
         fisher[name] /= len(orig_data_loader)
     return fisher
 
-def get_trainer(args, training_args, model, device, tokenizer, training_dataset, eval_dataset, data_collator):
+def get_trainer(args, training_args, model, device, tokenizer, training_dataset, eval_dataset, data_collator, num_tokens):
     ewc_lambda = args.ewc_lambda
     if ewc_lambda and ewc_lambda > 0:
         original_dataset = get_original_training_dataset(args)
+
+        def tokenize_function(examples):
+            return tokenizer(examples['sequence'], max_length=num_tokens, truncation=True, padding=True)
+
+        tokenized_dataset = original_dataset.map(tokenize_function, batched=True, num_proc=4, remove_columns=original_dataset.column_names)
+
         orig_data_loader = DataLoader(
-            original_dataset.with_format("torch"),
+            tokenized_dataset.with_format("torch"),
             batch_size=args.train_size,
             collate_fn=data_collator,
-            shuffle=False
+            shuffle=False,
         )
 
         fisher_matrix = compute_fisher(model, device, orig_data_loader)

@@ -10,3 +10,4 @@ tokenize_quick.py
 jobs/tokenize*
 getting_started_with_logan.ipynb
 .archive
+slurm_jobs_generator

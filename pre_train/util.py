@@ -7,8 +7,8 @@ from util import init_logger, LOGLEVEL
 
 def print_args(args, title):
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    if "LOCAL_RANK" in os.environ and os.environ["LOCAL_RANK"] == "0":
-        logger = init_logger()
+    logger = init_logger()
+    if ("LOCAL_RANK" in os.environ and os.environ["LOCAL_RANK"] == "0") or ("LOCAL_RANK" not in os.environ):
         logger.log(LOGLEVEL, "\n" + "=" * 80)
         logger.log(LOGLEVEL, f"{title} - {timestamp}".center(80))
         logger.log(LOGLEVEL, "=" * 80)
@@ -40,7 +40,6 @@ def compute_metrics(eval_preds):
     return {"eval_loss": eval_preds.loss}
 
 def check_folders(base_path):
-    print(base_path)
     train_path = os.path.join(base_path, "train")
     validation_path = os.path.join(base_path, "validation")
 
