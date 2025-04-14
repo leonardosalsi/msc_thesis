@@ -57,5 +57,14 @@ if __name__ == "__main__":
         for g in gen:
             print(g)
 
-        dataset = Dataset.from_generator(generator=lambda: json_files_generator(json_files_dir))
+        full_dataset = Dataset.from_generator(generator=lambda: json_files_generator(json_files_dir))
+        split_dataset = full_dataset.train_test_split(test_size=0.2, seed=112)
+        train_dataset = split_dataset['train']
+        test_dataset = split_dataset['test']
+        dataset = DatasetDict({
+            "train": train_dataset,
+            "validation": test_dataset
+        })
+
+        dataset.save_to_disk(os.path.join(generated_datasets_dir, "logan"), num_proc=8)
 
