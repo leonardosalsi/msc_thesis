@@ -22,6 +22,9 @@ def split_fasta_by_length(fasta_path, output_dir):
             print(f"Error reading {fasta_path}: {e}")
             return
 
+    if len(strings_array) == 0:
+        return
+
     for s in strings_array:
         data.append({"sequence": s})
 
