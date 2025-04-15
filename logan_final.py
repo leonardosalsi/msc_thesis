@@ -83,7 +83,7 @@ if __name__ == "__main__":
         else:
             save_path = final_save_path
 
-        dataset.save_to_disk(save_path, num_proc=64)
+        dataset.save_to_disk(save_path, num_proc=1)
 
         if use_scratch:
             if os.path.exists(final_save_path):

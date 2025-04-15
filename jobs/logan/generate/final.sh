@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=final
-#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/final.txt
+#SBATCH --job-name=final2
+#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/final2.txt
 #SBATCH --cpus-per-task=8
 #SBATCH --time=100:00:00
 #SBATCH --mem-per-cpu=32G
