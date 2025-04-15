@@ -19,19 +19,15 @@ def json_files_generator(folder_path):
         if not match:
             print(f"Skipping file {file_path}: filename does not match expected pattern.")
             continue
-        organism = int(match.group(1))
 
         with open(file_path, 'r', encoding='utf-8') as f:
             try:
-                strings_array = json.load(f)
-                if isinstance(strings_array, list):
-                    for string_item in strings_array:
-                        if isinstance(string_item, str):
-                            yield {'sequence': string_item}
-                        else:
-                            print(f"Skipping non-string item in {file_path}: {string_item}")
+                array = json.load(f)
+                if isinstance(array, list):
+                    for it in array:
+                        yield it
                 else:
-                    print(f"Skipping file {file_path}: Expected a JSON array but got {type(strings_array)}")
+                    print(f"Skipping file {file_path}: Expected a JSON array but got {type(array)}")
             except Exception as e:
                 print(f"Error reading {file_path}: {e}")
 
@@ -61,13 +57,13 @@ if __name__ == "__main__":
         json_files_dir = args.json_files_dir
         use_scratch = args.use_scratch
 
-        """full_dataset = Dataset.from_generator(
+        full_dataset = Dataset.from_generator(
             generator=lambda: json_files_generator(json_files_dir),
             cache_dir=os.path.join(generator_cache_dir, 'logan'),
             num_proc=4
-        )"""
+        )
 
-        full_dataset = load_dataset("json", data_dir=json_files_dir, num_proc=8)
+        #full_dataset = load_dataset("json", data_dir=json_files_dir, num_proc=8)
 
         split_dataset = full_dataset.train_test_split(test_size=0.2, seed=112)
         train_dataset = split_dataset['train']
