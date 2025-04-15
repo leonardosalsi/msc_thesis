@@ -67,7 +67,7 @@ if __name__ == "__main__":
             num_proc=4
         )"""
 
-        full_dataset = load_dataset("json", data_dir=json_files_dir)
+        full_dataset = load_dataset("json", data_dir=json_files_dir, num_proc=8)
 
         split_dataset = full_dataset.train_test_split(test_size=0.2, seed=112)
         train_dataset = split_dataset['train']
