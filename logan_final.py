@@ -77,6 +77,8 @@ if __name__ == "__main__":
             "validation": test_dataset
         })
 
+        print(dataset)
+
         save_path = None
         final_save_path = os.path.join(generated_datasets_dir, "logan")
         if use_scratch:
