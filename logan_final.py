@@ -8,7 +8,6 @@ from pprint import pprint
 import json
 from datasets import Dataset, DatasetDict, Features, Value
 
-
 from config import logan_datasets_dir, generated_datasets_dir, generator_cache_dir, logs_dir
 
 
@@ -83,7 +82,7 @@ if __name__ == "__main__":
         else:
             save_path = final_save_path
 
-        dataset.save_to_disk(save_path, num_proc=1)
+        dataset.save_to_disk(save_path, num_proc=8, max_shard_size="30GB")
 
         if use_scratch:
             if os.path.exists(final_save_path):
