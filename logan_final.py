@@ -3,6 +3,7 @@ import csv
 import glob
 import os
 import re
+import shutil
 from pprint import pprint
 import json
 from datasets import Dataset, DatasetDict, Features, Value
@@ -47,11 +48,21 @@ def parse_args():
         help="Folder of FASTA files to be processed",
     )
 
+    parser.add_argument(
+        "--use_scratch",
+        action="store_true",
+        dest="use_scratch",
+        help="Pre-load everything into local scratch and load from there."
+    )
+
     return parser.parse_args()
 
 if __name__ == "__main__":
         args = parse_args()
         json_files_dir = args.json_files_dir
+        use_scratch = args.use_scratch
+
+
 
         gen = json_files_generator(json_files_dir)
 
@@ -64,5 +75,24 @@ if __name__ == "__main__":
             "validation": test_dataset
         })
 
-        dataset.save_to_disk(os.path.join(generated_datasets_dir, "logan"), num_proc=8)
+        save_path = None
+        final_save_path = os.path.join(generated_datasets_dir, "logan")
+        if use_scratch:
+            tmpdir = os.environ.get("TMPDIR")
+            if tmpdir is None:
+                raise ValueError("TMPDIR environment variable is not set, but use_scratch is True.")
+            save_path = os.path.join(tmpdir, "logan")
+        else:
+            save_path = final_save_path
+
+        dataset.save_to_disk(save_path, num_proc=8)
+
+        if use_scratch:
+            if os.path.exists(final_save_path):
+                print(f"Removing existing directory at {final_save_path}")
+                shutil.rmtree(final_save_path)
+            print(f"Moving dataset from {save_path} to {final_save_path}")
+            shutil.move(save_path, final_save_path)
+            print(f"Dataset moved to {final_save_path}")
+
 
