@@ -1,3 +1,5 @@
+import joblib
+import numpy as np
 import torch
 from sklearn.decomposition import PCA
 from transformers import AutoModelForMaskedLM, EsmConfig
@@ -88,6 +90,11 @@ def get_model(args, device):
                     param.requires_grad = False
 
     if pca_embeddings:
+        embeddings = np.array([...])  # collected from NT model
+        pca = PCA(n_components=300)  # or use n_components=0.95 for variance-based cutoff
+        pca.fit(embeddings)
+        joblib.dump(pca, "nt_pca.pkl")
+
         model = apply_post_embedding_pca(model, reduction_factor=0.5, freeze_pca=True)
 
     model.to(device)
