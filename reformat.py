@@ -15,9 +15,15 @@ def split_fasta_by_length(fasta_path, output_dir):
     base_name = os.path.splitext(os.path.basename(fasta_path))[0]
 
     data = []
-    for record in SeqIO.parse(fasta_path, "fasta"):
-        seq_str = str(record.seq)
-        data.append({"sequence": seq_str})
+    with open(fasta_path, 'r', encoding='utf-8') as f:
+        try:
+            strings_array = json.load(f)
+        except Exception as e:
+            print(f"Error reading {fasta_path}: {e}")
+            return
+
+    for s in strings_array:
+        data.append({"sequence": s})
 
     out_file = os.path.join(output_dir, f"{base_name}.json")
 
