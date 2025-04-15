@@ -66,7 +66,7 @@ if __name__ == "__main__":
         full_dataset = Dataset.from_generator(
             generator=lambda: json_files_generator(json_files_dir),
             cache_dir=os.path.join(generator_cache_dir, 'logan'),
-            num_proc=8
+            num_proc=4
         )
         split_dataset = full_dataset.train_test_split(test_size=0.2, seed=112)
         train_dataset = split_dataset['train']
@@ -86,7 +86,7 @@ if __name__ == "__main__":
         else:
             save_path = final_save_path
 
-        dataset.save_to_disk(save_path, num_proc=8, max_shard_size="10GB")
+        dataset.save_to_disk(save_path, num_proc=4, max_shard_size="10GB")
 
         if use_scratch:
             if os.path.exists(final_save_path):
