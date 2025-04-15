@@ -27,7 +27,7 @@ def json_files_generator(folder_path):
                 if isinstance(strings_array, list):
                     for string_item in strings_array:
                         if isinstance(string_item, str):
-                            yield {'sequence': string_item, 'organism': organism}
+                            yield {'sequence': string_item}
                         else:
                             print(f"Skipping non-string item in {file_path}: {string_item}")
                 else:
