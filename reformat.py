@@ -63,7 +63,7 @@ if __name__ == "__main__":
         fasta_folder_path = args.fasta_folder_path
         json_out_dir = args.json_out_dir
 
-        fasta_files = [f for f in os.listdir(fasta_folder_path) if f.endswith('.fasta') and isfile(join(fasta_folder_path, f))]
+        fasta_files = [f for f in os.listdir(fasta_folder_path) if f.endswith('.json') and isfile(join(fasta_folder_path, f))]
         fasta_files = get_remaining_files(json_out_dir, fasta_files)
         if not exists(json_out_dir):
             os.makedirs(json_out_dir)
