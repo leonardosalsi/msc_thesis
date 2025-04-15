@@ -63,7 +63,10 @@ if __name__ == "__main__":
 
         gen = json_files_generator(json_files_dir)
 
-        full_dataset = Dataset.from_generator(generator=lambda: json_files_generator(json_files_dir))
+        full_dataset = Dataset.from_generator(
+            generator=lambda: json_files_generator(json_files_dir),
+            cache_dir=os.path.join(generator_cache_dir, 'logan')
+        )
         split_dataset = full_dataset.train_test_split(test_size=0.2, seed=112)
         train_dataset = split_dataset['train']
         test_dataset = split_dataset['test']
