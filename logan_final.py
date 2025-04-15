@@ -62,8 +62,6 @@ if __name__ == "__main__":
         json_files_dir = args.json_files_dir
         use_scratch = args.use_scratch
 
-
-
         gen = json_files_generator(json_files_dir)
 
         full_dataset = Dataset.from_generator(generator=lambda: json_files_generator(json_files_dir))
@@ -85,7 +83,7 @@ if __name__ == "__main__":
         else:
             save_path = final_save_path
 
-        dataset.save_to_disk(save_path, num_proc=8)
+        dataset.save_to_disk(save_path, num_proc=64)
 
         if use_scratch:
             if os.path.exists(final_save_path):
