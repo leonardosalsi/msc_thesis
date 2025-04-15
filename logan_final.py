@@ -78,6 +78,7 @@ if __name__ == "__main__":
         })
 
         print(dataset)
+        print(dataset['train'][0])
 
         save_path = None
         final_save_path = os.path.join(generated_datasets_dir, "logan")
