@@ -3,7 +3,7 @@ import shutil
 import json
 import datasets
 from datasets import load_dataset, load_from_disk, Dataset
-from config import datasets_cache_dir, generated_datasets_dir
+from config import datasets_cache_dir, generated_datasets_dir, generator_cache_dir
 from pre_train.util import check_folders
 import re
 
