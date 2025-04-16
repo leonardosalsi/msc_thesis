@@ -136,6 +136,12 @@ def parse_args():
         help="Keep dataset in memory."
     )
     parser.add_argument(
+        "--load_from_json",
+        action="store_true",
+        dest="load_from_json",
+        help="Keep dataset in memory."
+    )
+    parser.add_argument(
         "--ewc_lambda",
         type=float,
         default=0.0,
