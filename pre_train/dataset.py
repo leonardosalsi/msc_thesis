@@ -1,10 +1,11 @@
 import os
 import shutil
-
+import json
 import datasets
 from datasets import load_dataset, load_from_disk, Dataset
 from config import datasets_cache_dir, generated_datasets_dir
 from pre_train.util import check_folders
+import re
 
 def json_files_generator(folder_path):
     pattern = os.path.join(folder_path, '*.json')
