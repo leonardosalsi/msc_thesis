@@ -6,6 +6,25 @@ from datasets import load_dataset, load_from_disk
 from config import datasets_cache_dir, generated_datasets_dir
 from pre_train.util import check_folders
 
+def json_files_generator(folder_path):
+    pattern = os.path.join(folder_path, '*.json')
+    for file_path in glob.glob(pattern):
+        file_basename = os.path.basename(file_path)
+        match = re.search(r'random_walk_(\d+)\.json$', file_basename)
+        if not match:
+            print(f"Skipping file {file_path}: filename does not match expected pattern.")
+            continue
+
+        with open(file_path, 'r', encoding='utf-8') as f:
+            try:
+                array = json.load(f)
+                if isinstance(array, list):
+                    for it in array:
+                        yield it
+                else:
+                    print(f"Skipping file {file_path}: Expected a JSON array but got {type(array)}")
+            except Exception as e:
+                print(f"Error reading {file_path}: {e}")
 
 def get_dataset(args):
     """
@@ -29,6 +48,7 @@ def get_dataset(args):
     selected_dataset_path = args.dataset
     use_scratch = args.use_scratch
     keep_in_memory = args.keep_in_memory
+    load_from_json = args.load_from_json
 
     if use_scratch:
         tmpdir = os.environ.get("TMPDIR")
@@ -55,10 +75,21 @@ def get_dataset(args):
             keep_in_memory=keep_in_memory,
         )
     else:
-        train_path, validation_path = check_folders(selected_dataset_path)
+        if load_from_json:
+            full_dataset = Dataset.from_generator(
+                generator=lambda: json_files_generator(selected_dataset_path),
+                cache_dir=os.path.join(generator_cache_dir, 'logan')
+            )
 
-        dataset_train = load_from_disk(train_path, keep_in_memory=keep_in_memory)
-        dataset_validation = load_from_disk(validation_path, keep_in_memory=keep_in_memory)
+            split_dataset = full_dataset.train_test_split(test_size=0.2, seed=112, keep_in_memory=keep_in_memory)
+            dataset_train = split_dataset['train']
+            dataset_validation = split_dataset['test']
+        else:
+
+            train_path, validation_path = check_folders(selected_dataset_path)
+
+            dataset_train = load_from_disk(train_path, keep_in_memory=keep_in_memory)
+            dataset_validation = load_from_disk(validation_path, keep_in_memory=keep_in_memory)
 
     columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
     dataset_train = dataset_train.remove_columns(columns_to_remove)
