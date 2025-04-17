@@ -18,5 +18,5 @@ export TF_CPP_MIN_LOG_LEVEL=2
 accelerate launch --num_processes 5 --num_machines 1 --mixed_precision no --dynamo_backend inductor /cluster/home/salsil/msc_thesis_root/msc_thesis/train_model.py \
 /cluster/scratch/salsil/logan_json/logan_json  overlapping \
 --compile_model --logging_steps 500 --train_size 10 --eval_size 32 \
---gradient_accumulation 10 --max_workers 4 --ewc_lambda 1 --load_from_json \
+--gradient_accumulation 10 --max_workers 4 --ewc_lambda 5 --load_from_json \
 --original_dataset /cluster/scratch/salsil/multi_genome_species/1k
