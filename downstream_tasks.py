@@ -56,4 +56,9 @@ PRETRAINED_MODELS = [
     {'modelId': 15,'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'name': 'nucleotide-transformer-v2-50m-multi-species-6B', 'data_alias': 'NT-MS V2 (50M) (2kb, 6B)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'checkpoint': 'default_multi_genome_dataset/checkpoint-6000/'},
     {'modelId': 16,'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'name': 'nucleotide-transformer-v2-50m-multi-species-12B', 'data_alias': 'NT-MS V2 (50M) (2kb, 12B)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'checkpoint': 'default_multi_genome_dataset/checkpoint-12000/'},
     {'modelId': 17,'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'name': 'ntv2-pca-multi-species-12B', 'data_alias': 'NT-MS V2 (50M) (1kb, PCA-Embed, 12B)' ,'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species", 'checkpoint': 'pca_embed_multi_species/checkpoint-12000/'},
+    {'modelId': 18, 'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+     'name': 'ntv2-logan-ewc-0_5', 'data_alias': 'NT-MS V2 (50M) (1kb, Logan, EWC-Lambda 0.5, 12B)',
+     'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+     'checkpoint': 'overlap_logan_ewc_0_5 /checkpoint-12000/'},
+
 ]

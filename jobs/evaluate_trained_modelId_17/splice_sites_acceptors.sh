@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=16_splice_sites_acceptors
-#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/16_splice_sites_acceptors.txt
+#SBATCH --job-name=18_splice_sites_acceptors
+#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/18_splice_sites_acceptors.txt
 #SBATCH --cpus-per-task=2
 #SBATCH --time=100:00:00
 #SBATCH --mem-per-cpu=4G
@@ -12,4 +12,4 @@ source ~/.bashrc
 conda activate gpu_env
 
 HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \
-python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/evaluate_model_trained.py 17 7 --samples 3 --pca_embeddings
+python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/evaluate_model_trained.py 18 7 --samples 3 --pca_embeddings
