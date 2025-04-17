@@ -6,7 +6,7 @@ import re
 import shutil
 from pprint import pprint
 import json
-from datasets import Dataset, DatasetDict, Features, Value
+from datasets import Dataset, DatasetDict, Features, Value, load_dataset
 
 from config import logan_datasets_dir, generated_datasets_dir, generator_cache_dir, logs_dir
 
@@ -19,19 +19,15 @@ def json_files_generator(folder_path):
         if not match:
             print(f"Skipping file {file_path}: filename does not match expected pattern.")
             continue
-        organism = int(match.group(1))
 
         with open(file_path, 'r', encoding='utf-8') as f:
             try:
-                strings_array = json.load(f)
-                if isinstance(strings_array, list):
-                    for string_item in strings_array:
-                        if isinstance(string_item, str):
-                            yield {'sequence': string_item, 'organism': organism}
-                        else:
-                            print(f"Skipping non-string item in {file_path}: {string_item}")
+                array = json.load(f)
+                if isinstance(array, list):
+                    for it in array:
+                        yield it
                 else:
-                    print(f"Skipping file {file_path}: Expected a JSON array but got {type(strings_array)}")
+                    print(f"Skipping file {file_path}: Expected a JSON array but got {type(array)}")
             except Exception as e:
                 print(f"Error reading {file_path}: {e}")
 
@@ -61,12 +57,14 @@ if __name__ == "__main__":
         json_files_dir = args.json_files_dir
         use_scratch = args.use_scratch
 
-        gen = json_files_generator(json_files_dir)
-
         full_dataset = Dataset.from_generator(
             generator=lambda: json_files_generator(json_files_dir),
-            cache_dir=os.path.join(generator_cache_dir, 'logan')
+            cache_dir=os.path.join(generator_cache_dir, 'logan'),
+            num_proc=4
         )
+
+        #full_dataset = load_dataset("json", data_dir=json_files_dir, num_proc=8)
+
         split_dataset = full_dataset.train_test_split(test_size=0.2, seed=112)
         train_dataset = split_dataset['train']
         test_dataset = split_dataset['test']
@@ -74,6 +72,9 @@ if __name__ == "__main__":
             "train": train_dataset,
             "validation": test_dataset
         })
+
+        print(dataset)
+        print(dataset['train'][0])
 
         save_path = None
         final_save_path = os.path.join(generated_datasets_dir, "logan")
@@ -85,7 +86,7 @@ if __name__ == "__main__":
         else:
             save_path = final_save_path
 
-        dataset.save_to_disk(save_path, num_proc=8, max_shard_size="30GB")
+        dataset.save_to_disk(save_path, max_shard_size="50GB")
 
         if use_scratch:
             if os.path.exists(final_save_path):

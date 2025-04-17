@@ -10,5 +10,5 @@ source ~/.bashrc
 conda activate gpu_env
 
 HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \
-python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/logan_final.py \
-/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/generated_datasets/logan_json
+python /cluster/home/salsil/msc_thesis_root/msc_thesis/logan_final.py \
+/cluster/scratch/salsil/logan_json/logan_json
