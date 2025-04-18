@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=train_overlap_ewc_5
-#SBATCH --output=/cluster/home/salsil/msc_thesis_root/out/train_overlap_ewc_5.txt
+#SBATCH --job-name=train_overlap_ewc_10
+#SBATCH --output=/cluster/home/salsil/msc_thesis_root/out/train_overlap_ewc_10.txt
 #SBATCH --cpus-per-task=4
 #SBATCH --time=96:00:00
 #SBATCH --mem-per-cpu=64G
@@ -18,5 +18,5 @@ export TF_CPP_MIN_LOG_LEVEL=2
 accelerate launch --num_processes 5 --num_machines 1 --mixed_precision no --dynamo_backend inductor /cluster/home/salsil/msc_thesis_root/msc_thesis/train_model.py \
 /cluster/scratch/salsil/logan_json/logan_json  overlapping \
 --compile_model --logging_steps 500 --train_size 10 --eval_size 32 \
---gradient_accumulation 10 --max_workers 4 --ewc_lambda 5 --load_from_json \
+--gradient_accumulation 10 --max_workers 4 --ewc_lambda 10 --load_from_json \
 --original_dataset /cluster/scratch/salsil/multi_genome_species/1k
