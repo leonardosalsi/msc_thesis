@@ -1,58 +1,51 @@
+import os
+
 import joblib
 import numpy as np
 import torch
 from sklearn.decomposition import PCA
+from tqdm import tqdm
 from transformers import AutoModelForMaskedLM, EsmConfig
 import torch.nn as nn
 from config import models_cache_dir
 from pre_train.PCAModel import NucleotideModelWithPCA
 
+def save_pca(pca, path):
+    joblib.dump(pca, path)
 
-def compute_pca_projection(embedding_layer, target_dim):
-    """
-    Computes a PCA projection matrix on the embedding layer's weights.
+def load_pca(path):
+    return joblib.load(path)
 
-    :param embedding_layer: The original embedding layer (nn.Embedding).
-    :param target_dim: The desired reduced dimension.
-    :return: A torch.Tensor of shape (original_dim, target_dim) representing the projection matrix.
-    """
+def pca_exists(path):
+    return os.path.exists(path)
 
-    weights = embedding_layer.weight.detach().cpu().numpy()
-    pca = PCA(n_components=target_dim)
-    pca.fit(weights)
-    projection_matrix = torch.tensor(pca.components_.T, dtype=torch.float32)
-    return projection_matrix
+def get_pca_weights(model, args, dataloader, device):
+    save_path = os.path.join(args.dataset, f"pca_{args.pca_dim}.joblib")
 
-def apply_post_embedding_pca(model, reduction_factor=0.5, freeze_pca=True):
-    """
-    Wraps the model's input embedding with a PCA projection layer.
-    The pipeline:
-      1. Projects the original embedding down to a lower-dimensional space using PCA.
-      2. Reconstructs back to the original dimension via a trainable linear layer.
+    if not pca_exists(save_path):
+        model.eval()
+        model.to(device)
+        cls_embeddings = []
 
-    This introduces a PCA bottleneck to denoise or compress the input embeddings.
+        with torch.no_grad():
+            for batch in tqdm(dataloader, desc="Collecting CLS embeddings"):
+                batch = {
+                    k: v.to(device) if isinstance(v, torch.Tensor) else v
+                    for k, v in batch.items()
+                }
+                outputs = model(**batch, output_hidden_states=True, return_dict=True)
+                cls = outputs.hidden_states[-1][:, 0]  # CLS token
+                cls_embeddings.append(cls.cpu().numpy())
 
-    :param model: The transformer model.
-    :param reduction_factor: Fraction by which to reduce the embedding dimension (e.g. 0.5 for half).
-    :param freeze_pca: If True, the PCA projection weights are frozen.
-    :return: The model with updated input embeddings.
-    """
+        cls_embeddings = np.concatenate(cls_embeddings, axis=0)
+        pca = PCA(n_components=args.pca_dim)
+        pca.fit(cls_embeddings)
+        save_pca(pca, save_path)
+        return pca
+    else:
+        return load_pca(save_path)
 
-    orig_embedding = model.get_input_embeddings()
-    orig_dim = orig_embedding.embedding_dim
-    target_dim = int(orig_dim * reduction_factor)
-    projection_matrix = compute_pca_projection(orig_embedding, target_dim)
-    pca_layer = nn.Linear(orig_dim, target_dim, bias=False)
-    pca_layer.weight.data.copy_(projection_matrix.T)
-    if freeze_pca:
-        pca_layer.weight.requires_grad = False
-    reconstruction_layer = nn.Linear(target_dim, orig_dim, bias=False)
-    new_embedding = nn.Sequential(orig_embedding, pca_layer, reconstruction_layer)
-    model.set_input_embeddings(new_embedding)
-    return model
-
-
-def get_model(args, device):
+def get_model(args, dataloader, device):
     """
     Loads the model (either from scratch or pretrained) and applies optional modifications:
       - Freezes a portion of layers if specified.
@@ -62,13 +55,15 @@ def get_model(args, device):
         handle an unexpected keyword argument ('num_items_in_batch').
 
     :param args: Arguments containing configuration flags (e.g. freeze, from_scratch, pca_embeddings, compile_model).
+    :param dataloader: Dataloader containing the training data in case embeddings need to be extracted.
     :param device: The target device.
     :return: The modified model.
     """
     freeze = args.freeze
     train_from_scratch = args.from_scratch
     pca_embeddings = args.pca_embeddings
-    pca_dims = args.pca_dims
+    pca_dim = args.pca_dim
+    not_freeze_pca = not args.freeze_pca
     compile_model = args.compile_model
 
     if train_from_scratch:
@@ -93,7 +88,10 @@ def get_model(args, device):
                     param.requires_grad = False
 
     if pca_embeddings:
-        model = NucleotideModelWithPCA(model.config, model, pca_dim=pca_dims)
+        pca = get_pca_weights(model, args, dataloader, device)
+        model = NucleotideModelWithPCA(model.config, model, pca_dim=pca_dim)
+        model.pca_proj.weight.data.copy_(torch.tensor(pca.components_, dtype=torch.float32))
+        model.pca_proj.requires_grad_(not_freeze_pca)
 
     model.to(device)
 
