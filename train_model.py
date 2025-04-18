@@ -76,6 +76,12 @@ def parse_args():
         help="Apply PCA-based post-embedding processing to reduce embedding dimensionality."
     )
     parser.add_argument(
+        "--pca_dims",
+        type=int,
+        default=128,
+        help="Number of gradient accumulation steps. Default is 50."
+    )
+    parser.add_argument(
         "--checkpoint",
         type=int,
         nargs=1,
@@ -176,7 +182,7 @@ if __name__ == "__main__":
     tokenized_train_sequences = dataset_train.shuffle()
     tokenized_train_sequences.set_transform(tokenize_function)
     tokenized_validation_sequences = dataset_validation.shuffle()
-    tokenized_validation_sequences = tokenized_validation_sequences.select(range(500000))
+    tokenized_validation_sequences = tokenized_validation_sequences.select(range(100)) #500000
     tokenized_validation_sequences.set_transform(tokenize_function)
 
     data_collator = DataCollatorForLanguageModeling(
