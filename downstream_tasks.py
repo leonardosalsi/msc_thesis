@@ -59,6 +59,6 @@ PRETRAINED_MODELS = [
     {'modelId': 18, 'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
      'name': 'ntv2-logan-ewc-0_5', 'data_alias': 'NT-MS V2 (50M) (1kb, Logan, EWC-Lambda 0.5, 12B)',
      'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
-     'checkpoint': 'overlap_logan_ewc_0_5 /checkpoint-12000/'},
+     'checkpoint': 'overlap_logan_ewc_0_5/checkpoint-12000/'},
 
 ]

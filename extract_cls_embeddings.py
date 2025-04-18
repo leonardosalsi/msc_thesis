@@ -3,8 +3,11 @@ import argparse
 import datetime
 import os
 import json
+
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from pre_train.trainer import get_trainer
 
@@ -77,16 +80,10 @@ def parse_args():
         help="Apply PCA-based post-embedding processing to reduce embedding dimensionality."
     )
     parser.add_argument(
-        "--pca_dim",
+        "--pca_dims",
         type=int,
         default=128,
         help="Number of gradient accumulation steps. Default is 50."
-    )
-    parser.add_argument(
-        "--freeze_pca",
-        action="store_true",
-        dest="freeze_pca",
-        help="Pre-load everything into local scratch and load from there."
     )
     parser.add_argument(
         "--checkpoint",
@@ -175,7 +172,8 @@ if __name__ == "__main__":
     timestamp = print_args(args, "TRAINING ARGUMENTS")
 
     device = get_device()
-    dataset_train, dataset_validation = get_dataset(args)
+    model = get_model(args, device)
+    dataset_train, _ = get_dataset(args)
     tokenizer, num_tokens = get_tokenizer(args)
 
     def tokenize_function(examples):
@@ -187,9 +185,6 @@ if __name__ == "__main__":
 
     tokenized_train_sequences = dataset_train.shuffle()
     tokenized_train_sequences.set_transform(tokenize_function)
-    tokenized_validation_sequences = dataset_validation.shuffle()
-    tokenized_validation_sequences = tokenized_validation_sequences.select(range(100)) #500000
-    tokenized_validation_sequences.set_transform(tokenize_function)
 
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
@@ -199,57 +194,21 @@ if __name__ == "__main__":
 
     dataloader = DataLoader(
         tokenized_train_sequences,
-        batch_size=args.eval_size,
+        batch_size=10,
         shuffle=False,
         collate_fn=data_collator
     )
 
-    model = get_model(args, dataloader, device)
-    model_path = os.path.join(pretrained_models_cache_dir, timestamp)
-    if os.path.isdir(model_path) and os.listdir(model_path):
-        resume_from_checkpoint = True
-    else:
-        resume_from_checkpoint = False
-    
-    training_args = TrainingArguments(
-        run_name=timestamp,
-        report_to="none",
-        output_dir=model_path,
-        overwrite_output_dir=True,
-        per_device_train_batch_size=args.train_size,
-        gradient_accumulation_steps=args.gradient_accumulation,
-        per_device_eval_batch_size=args.eval_size,
-        save_steps=args.save_steps,
-        logging_steps=args.logging_steps,
-        eval_strategy="steps",
-        load_best_model_at_end=True,
-        metric_for_best_model="loss",
-        dataloader_num_workers=args.max_workers,
-        gradient_checkpointing=False,
-        logging_dir=None,
-        remove_unused_columns=False,
-        bf16=True,
-        max_steps=args.max_steps,
-        include_num_input_tokens_seen=True,
-        prediction_loss_only=True,
-        torch_compile=args.compile_model,
-        label_names=['labels']
-    )
+    model.eval()
+    cls_embeddings = []
 
-    trainer = get_trainer(
-        args,
-        training_args,
-        model,
-        device,
-        tokenizer,
-        tokenized_train_sequences,
-        tokenized_validation_sequences,
-        data_collator,
-        num_tokens
-    )
+    with torch.no_grad():
+        for batch in tqdm(dataloader, desc="Collecting CLS embeddings"):
+            batch = {k: v.to(device) for k, v in batch.items()}
+            outputs = model(**batch, output_hidden_states=True, return_dict=True)
+            cls = outputs.hidden_states[-1][:, 0]  # CLS token
+            cls_embeddings.append(cls.cpu().numpy())
 
-    _ = trainer.train()
+    cls_embeddings = np.concatenate(cls_embeddings, axis=0)
+    np.save(f"cls_embeddings_{timestamp}.npy", cls_embeddings)
 
-    log_history_path = os.path.join(logs_dir, f"log_history_{timestamp}.json")
-    with open(log_history_path, "w") as log_file:
-        json.dump(trainer.state.log_history, log_file, indent=4)
