@@ -1,34 +1,40 @@
-import torch.nn.functional as F
-import joblib
-import torch
+from pprint import pprint
+
 from torch import nn
+from transformers.modeling_outputs import MaskedLMOutput
+from transformers import PreTrainedModel
 
 
-class NucleotideModelWithPCA(nn.Module):
-    def __init__(self, base_model, pca_path):
-        super().__init__()
-        self.base_model = base_model
-        self.pca = joblib.load(pca_path)
+class NucleotideModelWithPCA(PreTrainedModel):
+    def __init__(self, config, base_model, pca_dim):
+        super().__init__(config)
+        self.model = base_model
+        hidden_size = self.model.config.hidden_size
+        self.pca_proj = nn.Linear(hidden_size, pca_dim, bias=False)
+        self.layernorm = nn.LayerNorm(pca_dim)
 
-        self.pca_mean = torch.tensor(self.pca.mean_, dtype=torch.float32)
-        self.pca_components = torch.tensor(self.pca.components_, dtype=torch.float32)
 
-        self.pca_proj = nn.Linear(
-            self.pca_components.shape[1],
-            self.pca_components.shape[0],
-            bias=False
-        )
-        self.pca_proj.weight.data = self.pca_components
-        self.pca_proj.weight.requires_grad = False
 
     def forward(self, *args, **kwargs):
-        output = self.base_model(*args, **kwargs)
+        kwargs.pop("num_items_in_batch", None)
 
-        last_hidden = output.last_hidden_state
+        output = self.model(
+            *args,
+            output_hidden_states=True,
+            return_dict=True,
+            **kwargs
+        )
 
-        pooled = last_hidden.mean(dim=1)
+        if not self.training:
+            pprint(output.loss)
 
-        centered = pooled - self.pca_mean.to(pooled.device)
-        reduced = self.pca_proj(centered)
+        last_hidden = output.hidden_states[-1]
+        pooled = last_hidden[:, 0]
+        pca_emb = self.layernorm(self.pca_proj(pooled))
 
-        return {"reduced_embedding": reduced, "transformer_output": output}
+        return MaskedLMOutput(
+            loss=output.loss,
+            logits=output.logits,
+            hidden_states=output.hidden_states,
+            attentions=output.attentions,
+        )
