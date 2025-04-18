@@ -11,7 +11,6 @@ from sklearn.model_selection import train_test_split
 from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir, results_dir, temp_dir
 from datasets.utils.logging import disable_progress_bar, set_verbosity
 
-from pre_train.model import apply_post_embedding_pca
 from util import LOGLEVEL, init_logger, get_model_by_id, get_task_by_id, get_pretrained_model_by_id
 import numpy as np
 from peft import LoraConfig, TaskType, get_peft_model
@@ -65,8 +64,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task,
         trust_remote_code=True,
         local_files_only=True
     )
-    if pca_embeddings:
-        model = apply_post_embedding_pca(model, reduction_factor=0.5, freeze_pca=False)
+
     model = model.to(device)
 
 
