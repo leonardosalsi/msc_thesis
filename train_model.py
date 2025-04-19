@@ -198,10 +198,10 @@ if __name__ == "__main__":
     )
 
     dataloader = DataLoader(
-        tokenized_train_sequences,
+        tokenized_train_sequences.select(range(int(len(tokenized_train_sequences) / 4)),),
         batch_size=args.eval_size,
         shuffle=False,
-        collate_fn=data_collator
+        collate_fn=data_collator,
     )
 
     model = get_model(args, dataloader, device)
