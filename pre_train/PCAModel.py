@@ -1,17 +1,19 @@
-from pprint import pprint
 import torch
-from torch import nn
+import torch.nn as nn
+import torch.nn.functional as F
 from transformers.modeling_outputs import MaskedLMOutput
 from transformers import PreTrainedModel
 
 
 class NucleotideModelWithPCA(PreTrainedModel):
-    def __init__(self, config, base_model, pca_dim):
+    def __init__(self, config, base_model, pca_dim, aux_loss_weight=0.1):
         super().__init__(config)
         self.model = base_model
         hidden_size = self.model.config.hidden_size
         self.pca_proj = nn.Linear(hidden_size, pca_dim, bias=False)
+        self.reconstructor = nn.Linear(pca_dim, hidden_size, bias=False)
         self.layernorm = nn.LayerNorm(pca_dim)
+        self.aux_loss_weight = aux_loss_weight
 
     def forward(self, *args, **kwargs):
         kwargs.pop("num_items_in_batch", None)
@@ -26,9 +28,15 @@ class NucleotideModelWithPCA(PreTrainedModel):
         last_hidden = output.hidden_states[-1]
         pooled = last_hidden[:, 0]
         pca_emb = self.layernorm(self.pca_proj(pooled))
+        reconstructed_cls = self.reconstructor(pca_emb)
+        aux_loss = F.mse_loss(reconstructed_cls, pooled.detach())
+
+        total_loss = None
+        if output.loss is not None:
+            total_loss = output.loss + self.aux_loss_weight * aux_loss
 
         return MaskedLMOutput(
-            loss=output.loss,
+            loss=total_loss,
             logits=output.logits,
             hidden_states=output.hidden_states,
             attentions=output.attentions,
