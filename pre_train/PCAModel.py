@@ -14,6 +14,7 @@ class NucleotideModelWithPCA(PreTrainedModel):
         self.reconstructor = nn.Linear(pca_dim, hidden_size, bias=False)
         self.layernorm = nn.LayerNorm(pca_dim)
         self.aux_loss_weight = aux_loss_weight
+        self.temperature = temperature
 
     def forward(self, *args, **kwargs):
         kwargs.pop("num_items_in_batch", None)
