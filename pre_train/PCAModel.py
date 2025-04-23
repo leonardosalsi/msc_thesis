@@ -28,12 +28,19 @@ class NucleotideModelWithPCA(PreTrainedModel):
         last_hidden = output.hidden_states[-1]
         pooled = last_hidden[:, 0]
         pca_emb = self.layernorm(self.pca_proj(pooled))
-        reconstructed_cls = self.reconstructor(pca_emb)
-        aux_loss = F.mse_loss(reconstructed_cls, pooled.detach())
+        pca_emb = F.normalize(pca_emb, dim=-1)
+
+        # Expect 2xB inputs (each pair is an augmented view)
+        bsz = pca_emb.shape[0] // 2
+        z1, z2 = pca_emb[:bsz], pca_emb[bsz:]
+
+        logits = z1 @ z2.T / 0.1
+        labels = torch.arange(bsz, device=z1.device)
+        contrastive_loss = F.cross_entropy(logits, labels)
 
         total_loss = None
         if output.loss is not None:
-            total_loss = output.loss + self.aux_loss_weight * aux_loss
+            total_loss = output.loss + self.aux_loss_weight * contrastive_loss
 
         return MaskedLMOutput(
             loss=total_loss,
@@ -41,3 +48,4 @@ class NucleotideModelWithPCA(PreTrainedModel):
             hidden_states=output.hidden_states,
             attentions=output.attentions,
         )
+
