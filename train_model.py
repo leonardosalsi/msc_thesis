@@ -6,6 +6,7 @@ import json
 import torch
 from torch.utils.data import DataLoader
 
+from pre_train.PCACollator import PCACollator
 from pre_train.trainer import get_trainer
 
 torch.backends.cudnn.benchmark = True
@@ -191,20 +192,19 @@ if __name__ == "__main__":
     tokenized_validation_sequences = tokenized_validation_sequences.select(range(100)) #500000
     tokenized_validation_sequences.set_transform(tokenize_function)
 
-    data_collator = DataCollatorForLanguageModeling(
-        tokenizer=tokenizer,
-        mlm=True,
-        mlm_probability=0.15
-    )
+    if args.pca_embeddings:
+        data_collator = PCACollator(
+            tokenizer=tokenizer,
+            mlm_probability=0.15
+        )
+    else:
+        data_collator = DataCollatorForLanguageModeling(
+            tokenizer=tokenizer,
+            mlm=True,
+            mlm_probability=0.15
+        )
 
-    dataloader = DataLoader(
-        tokenized_train_sequences.select(range(int(len(tokenized_train_sequences) / 4)),),
-        batch_size=args.eval_size,
-        shuffle=False,
-        collate_fn=data_collator,
-    )
-
-    model = get_model(args, dataloader, device)
+    model = get_model(args, device)
     model_path = os.path.join(pretrained_models_cache_dir, timestamp)
     if os.path.isdir(model_path) and os.listdir(model_path):
         resume_from_checkpoint = True
