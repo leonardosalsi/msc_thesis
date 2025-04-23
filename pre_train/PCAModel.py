@@ -6,7 +6,7 @@ from transformers import PreTrainedModel
 
 
 class NucleotideModelWithPCA(PreTrainedModel):
-    def __init__(self, config, base_model, pca_dim, aux_loss_weight=0.1):
+    def __init__(self, config, base_model, pca_dim, aux_loss_weight=0.1, temperature=0.1):
         super().__init__(config)
         self.model = base_model
         hidden_size = self.model.config.hidden_size
@@ -34,7 +34,7 @@ class NucleotideModelWithPCA(PreTrainedModel):
         bsz = pca_emb.shape[0] // 2
         z1, z2 = pca_emb[:bsz], pca_emb[bsz:]
 
-        logits = z1 @ z2.T / 0.1
+        logits = z1 @ z2.T / self.temperature
         labels = torch.arange(bsz, device=z1.device)
         contrastive_loss = F.cross_entropy(logits, labels)
 
