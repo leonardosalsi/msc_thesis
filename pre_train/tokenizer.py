@@ -56,6 +56,7 @@ def get_tokenizer(args):
     :param args: Arguments containing the tokenizer type and chunk_size.
     :return: A tuple (tokenizer, num_tokens)
     """
+    print(args)
     selected_tokenizer = args.tokenizer
     chunk_size = args.chunk_size
     num = math.floor(chunk_size / 1000)

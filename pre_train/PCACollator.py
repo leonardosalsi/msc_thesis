@@ -15,15 +15,30 @@ class PCACollator:
         input_ids = batch["input_ids"]
 
         # Generate two masked versions per sequence
-        def mask_inputs(ids):
-            labels = ids.clone()
-            probability_matrix = torch.full(labels.shape, self.mlm_probability)
-            special_tokens_mask = self.tokenizer.get_special_tokens_mask(ids, already_has_special_tokens=True)
-            probability_matrix.masked_fill_(torch.tensor(special_tokens_mask, dtype=torch.bool), value=0.0)
-            masked_indices = torch.bernoulli(probability_matrix).bool()
-            labels[~masked_indices] = -100  # Only compute loss on masked tokens
-            ids[masked_indices] = self.tokenizer.mask_token_id
-            return ids, labels
+        def mask_inputs(input_ids_batch):
+            masked_ids = []
+            masked_labels = []
+
+            for ids in input_ids_batch:
+                labels = ids.clone()
+                probability_matrix = torch.full(labels.shape, self.mlm_probability)
+
+                # Convert to list for tokenizer
+                special_tokens_mask = self.tokenizer.get_special_tokens_mask(
+                    ids.tolist(), already_has_special_tokens=True
+                )
+                probability_matrix.masked_fill_(
+                    torch.tensor(special_tokens_mask, dtype=torch.bool), value=0.0
+                )
+
+                masked_indices = torch.bernoulli(probability_matrix).bool()
+                labels[~masked_indices] = -100
+                ids[masked_indices] = self.tokenizer.mask_token_id
+
+                masked_ids.append(ids)
+                masked_labels.append(labels)
+
+            return torch.stack(masked_ids), torch.stack(masked_labels)
 
         input_ids1, labels1 = mask_inputs(input_ids.clone())
         input_ids2, labels2 = mask_inputs(input_ids.clone())

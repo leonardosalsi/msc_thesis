@@ -3,7 +3,6 @@ import subprocess
 import tempfile
 import random
 import requests
-from pprint import pprint
 import pandas as pd
 from tqdm import tqdm
 
@@ -77,22 +76,16 @@ def fetch_sequence_sampled(chrom, pos, ref, alt, seq_length=2200, flank_min=200)
         return None, None
 
     var_seq = wt_seq[:variant_rel_pos] + alt + wt_seq[variant_rel_pos+len(ref):]
-    return wt_seq, var_seq
+    return wt_seq, var_seq, start, end
 
 
 if __name__ == "__main__":
-    sequence_length = 1200
+    sequence_length = 2200
     tempdir = os.path.join(tempfile.gettempdir(), "utr_dataset_gen")
     os.makedirs(tempdir, exist_ok=True)
 
     # Uncomment this to fetch and filter ClinVar data
-    # files = download_from_clinvar(tempdir)
-    files = [
-        os.path.join(tempdir, "5utr_pathogenic.vcf"),
-        os.path.join(tempdir, "5utr_likely_pathogenic.vcf"),
-        os.path.join(tempdir, "5utr_likely_benign.vcf"),
-        os.path.join(tempdir, "5utr_benign.vcf")
-    ]
+    files = download_from_clinvar(tempdir)
 
     dataframes = []
     for file in files:
@@ -104,7 +97,7 @@ if __name__ == "__main__":
 
     sequences = []
     for _, row in tqdm(df_all.iterrows(), total=len(df_all)):
-        wt_seq, var_seq = fetch_sequence_sampled(row['chrom'].replace("chr", ""), row['pos'], row['ref'], row['alt'], sequence_length)
+        wt_seq, var_seq, start, end = fetch_sequence_sampled(row['chrom'].replace("chr", ""), row['pos'], row['ref'], row['alt'], sequence_length)
         if wt_seq and var_seq:
             sequences.append({
                 "chrom": row['chrom'],
@@ -113,10 +106,12 @@ if __name__ == "__main__":
                 "alt": row['alt'],
                 "label": row['label'],
                 "wt_sequence": wt_seq,
-                "variant_sequence": var_seq
+                "variant_sequence": var_seq,
+                "interval_start": start,
+                "interval_end": end,
             })
 
     df_seqs = pd.DataFrame(sequences)
-    out_seq_csv = os.path.join(tempdir, f"utr_variant_sequences_{sequence_length}.csv")
+    out_seq_csv = os.path.join("/home/leonardo/Documents/", f"utr_variant_sequences_{sequence_length}.csv")
     df_seqs.to_csv(out_seq_csv, index=False)
-    print(f"✅ Saved sequence dataset: {out_seq_csv}")
+    print(f"Saved sequence dataset: {out_seq_csv}")
