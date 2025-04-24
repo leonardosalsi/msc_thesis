@@ -1,12 +1,4 @@
-import os
-
-import joblib
-import numpy as np
-import torch
-from sklearn.decomposition import PCA
-from tqdm import tqdm
 from transformers import AutoModelForMaskedLM, EsmConfig
-import torch.nn as nn
 from config import models_cache_dir
 from pre_train.PCAModel import NucleotideModelWithPCA
 
