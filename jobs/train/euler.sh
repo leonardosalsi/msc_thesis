@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=256_ewc_pca
-#SBATCH --output=/cluster/home/salsil/msc_thesis_root/out/logan_ewc_pca_256.txt
+#SBATCH --job-name=512_ewc_pca
+#SBATCH --output=/cluster/home/salsil/msc_thesis_root/out/logan_ewc_pca_512.txt
 #SBATCH --cpus-per-task=4
 #SBATCH --time=96:00:00
 #SBATCH --mem-per-cpu=64G
@@ -19,4 +19,4 @@ accelerate launch --num_processes 5 --num_machines 1 --mixed_precision no --dyna
 /cluster/scratch/salsil/logan_json/logan_json  overlapping \
 --compile_model --logging_steps 500 --train_size 10 --eval_size 32 \
 --gradient_accumulation 10 --max_workers 4 --ewc_lambda 2 --load_from_json \
---original_dataset /cluster/scratch/salsil/multi_genome_species/1k --pca_embeddings --pca_dim 256
+--original_dataset /cluster/scratch/salsil/multi_genome_species/1k --pca_embeddings --pca_dim 512
