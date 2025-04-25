@@ -1,8 +1,20 @@
+from typing import Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from transformers.modeling_outputs import MaskedLMOutput
 from transformers import PreTrainedModel
+from dataclasses import dataclass
+
+@dataclass
+class MaskedPCALMOutput(MaskedLMOutput):
+    loss: Optional[torch.FloatTensor] = None
+    logits: torch.FloatTensor = None
+    hidden_states: Optional[Tuple[torch.FloatTensor, ...]] = None
+    attentions: Optional[Tuple[torch.FloatTensor, ...]] = None
+    auxiliary_loss: Optional[torch.FloatTensor] = None
+    model_loss: Optional[torch.FloatTensor] = None
 
 class NucleotideModelWithPCA(PreTrainedModel):
     def __init__(
@@ -13,15 +25,17 @@ class NucleotideModelWithPCA(PreTrainedModel):
         aux_loss_weight=0.1,
         temperature=0.1,
         pooling_method="mean",
+        gradient_accumulation_steps=1
     ):
         super().__init__(config)
         self.model = base_model
         hidden_size = self.model.config.hidden_size
         self.pca_proj = nn.Linear(hidden_size, pca_dim, bias=False)
-        self.layernorm = nn.LayerNorm(pca_dim)
+        self.layernorm = nn.LayerNorm(pca_dim )
         self.aux_loss_weight = aux_loss_weight
         self.temperature = temperature
         self.pooling_method = pooling_method
+        self.gradient_accumulation_steps = gradient_accumulation_steps
 
     def forward(self, *args, **kwargs):
         kwargs.pop("num_items_in_batch", None)
@@ -60,10 +74,15 @@ class NucleotideModelWithPCA(PreTrainedModel):
         total_loss = None
         if output.loss is not None:
             total_loss = output.loss + self.aux_loss_weight * contrastive_loss
+        print(total_loss)
+        if self.training and self.gradient_accumulation_steps > 1:
+            total_loss = total_loss / self.gradient_accumulation_steps
 
-        return MaskedLMOutput(
+        return MaskedPCALMOutput(
             loss=total_loss,
             logits=output.logits,
             hidden_states=output.hidden_states,
             attentions=output.attentions,
+            auxiliary_loss=(self.aux_loss_weight * contrastive_loss.detach()).float(),
+            model_loss=output.loss.detach()
         )
