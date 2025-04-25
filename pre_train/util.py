@@ -28,7 +28,6 @@ def get_device():
         if device.type == "cuda":
             LOGGER.log(LOGLEVEL, f"Using GPU: {torch.cuda.get_device_name(0)}")
             LOGGER.log(LOGLEVEL, f"Number of GPUs available: {torch.cuda.device_count()}")
-            LOGGER.log(LOGLEVEL, f"CUDA_VISIBLE_DEVICES: {os.environ.get('CUDA_VISIBLE_DEVICES')}")
         else:
             LOGGER.log(LOGLEVEL, "GPU not available. Using CPU instead.")
 

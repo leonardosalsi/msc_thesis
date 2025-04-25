@@ -24,7 +24,7 @@ class NucleotideModelWithPCA(PreTrainedModel):
         pca_dim,
         aux_loss_weight=0.1,
         temperature=0.1,
-        pooling_method="mean",
+        pca_embeddings="mean",
         gradient_accumulation_steps=1
     ):
         super().__init__(config)
@@ -34,7 +34,7 @@ class NucleotideModelWithPCA(PreTrainedModel):
         self.layernorm = nn.LayerNorm(pca_dim )
         self.aux_loss_weight = aux_loss_weight
         self.temperature = temperature
-        self.pooling_method = pooling_method
+        self.pca_embeddings = pca_embeddings
         self.gradient_accumulation_steps = gradient_accumulation_steps
 
     def forward(self, *args, **kwargs):
@@ -51,15 +51,15 @@ class NucleotideModelWithPCA(PreTrainedModel):
 
         last_hidden = output.hidden_states[-1]
 
-        if self.pooling_method == "mean":
+        if self.pca_embeddings == "mean":
             if attention_mask is None:
                 raise ValueError("attention_mask is required for mean pooling.")
             mask = attention_mask.unsqueeze(-1).expand(last_hidden.size()).float()
             sum_embeddings = torch.sum(last_hidden * mask, dim=1)
             lengths = torch.clamp(mask.sum(dim=1), min=1e-9)
-            pooled = sum_embeddings / lengths # Mean Pooling of embeddings
-        else:  # default to CLS
-            pooled = last_hidden[:, 0] # Only CLS Embeddings
+            pooled = sum_embeddings / lengths
+        else:
+            pooled = last_hidden[:, 0]
 
         pca_emb = self.layernorm(self.pca_proj(pooled))
         pca_emb = F.normalize(pca_emb, dim=-1)
@@ -74,7 +74,7 @@ class NucleotideModelWithPCA(PreTrainedModel):
         total_loss = None
         if output.loss is not None:
             total_loss = output.loss + self.aux_loss_weight * contrastive_loss
-        print(total_loss)
+
         if self.training and self.gradient_accumulation_steps > 1:
             total_loss = total_loss / self.gradient_accumulation_steps
 

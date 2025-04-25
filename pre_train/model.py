@@ -17,10 +17,8 @@ def get_model(args, device):
     """
     freeze = args.freeze
     train_from_scratch = args.from_scratch
-    pca_embeddings = args.pca_embeddings
     pca_dim = args.pca_dim
-    not_freeze_pca = not args.freeze_pca
-    compile_model = args.compile_model
+    pca_embeddings = args.pca_embeddings
     gradient_accumulation_steps = args.gradient_accumulation
 
     if train_from_scratch:
@@ -44,9 +42,10 @@ def get_model(args, device):
                 for param in layer.parameters():
                     param.requires_grad = False
 
-    if pca_embeddings:
-        model = NucleotideModelWithPCA(model.config, model, pca_dim=pca_dim, gradient_accumulation_steps=gradient_accumulation_steps)
+    if pca_dim > 0:
+        model = NucleotideModelWithPCA(model.config, model, pca_dim=pca_dim, pca_embeddings=pca_embeddings, gradient_accumulation_steps=gradient_accumulation_steps)
 
+    model.compile()
     model.to(device)
 
     return model
