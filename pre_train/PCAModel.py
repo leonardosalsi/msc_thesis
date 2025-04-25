@@ -35,7 +35,7 @@ class NucleotideModelWithPCA(PreTrainedModel):
             **kwargs
         )
 
-        last_hidden = output.hidden_states[-1]  # shape: [B, seq_len, hidden_size]
+        last_hidden = output.hidden_states[-1]
 
         if self.pooling_method == "mean":
             if attention_mask is None:
