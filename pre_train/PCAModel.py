@@ -12,7 +12,7 @@ class NucleotideModelWithPCA(PreTrainedModel):
         pca_dim,
         aux_loss_weight=0.1,
         temperature=0.1,
-        pooling_method="mean",  # NEW: "cls" or "mean"
+        pooling_method="mean",
     ):
         super().__init__(config)
         self.model = base_model
