@@ -21,6 +21,7 @@ def get_model(args, device):
     pca_dim = args.pca_dim
     not_freeze_pca = not args.freeze_pca
     compile_model = args.compile_model
+    gradient_accumulation_steps = args.gradient_accumulation
 
     if train_from_scratch:
         config = EsmConfig.from_pretrained(
@@ -44,7 +45,7 @@ def get_model(args, device):
                     param.requires_grad = False
 
     if pca_embeddings:
-        model = NucleotideModelWithPCA(model.config, model, pca_dim=pca_dim)
+        model = NucleotideModelWithPCA(model.config, model, pca_dim=pca_dim, gradient_accumulation_steps=gradient_accumulation_steps)
 
     model.to(device)
 

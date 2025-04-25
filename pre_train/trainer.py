@@ -1,4 +1,7 @@
+from typing import Dict, Optional
+
 import torch
+from sipbuild.generator import outputs
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import Trainer
@@ -21,6 +24,38 @@ def load_fisher_matrix(save_path):
 def fisher_matrix_exists(save_path):
     return os.path.exists(save_path)
 
+class TrainerWithAuxLoss(Trainer):
+    def __init__(self, *args, **kwargs):
+        """
+        Custom Trainer that adds an EWC loss term during training.
+
+        :param ewc_lambda: Strength of EWC regularization (lambda in formula).
+        :param fisher_matrix: Fisher information (diagonal) for each parameter (keyed by param name).
+        :param original_params: Original parameter values (keyed by param name).
+        """
+        super().__init__(*args, **kwargs)
+        self.auxiliary_loss = None
+        self.model_loss = None
+
+    def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+        outputs = model(**inputs)
+        loss = outputs.loss
+
+        if hasattr(outputs, "auxiliary_loss"):
+            self.auxiliary_loss = outputs.auxiliary_loss.item() if outputs.auxiliary_loss is not None else None
+            self.model_loss = outputs.model_loss.item() if outputs.model_loss is not None else None
+
+        if return_outputs:
+            return loss, outputs
+        else:
+            return loss
+
+    def log(self, logs: Dict[str, float], start_time: Optional[float] = None) -> None:
+        if hasattr(self, "auxiliary_loss") and self.auxiliary_loss is not None:
+            logs["auxiliary_loss"] = self.auxiliary_loss
+        if hasattr(self, "model_loss") and self.model_loss is not None:
+            logs["model_loss"] = self.model_loss
+        super().log(logs)
 
 class EWCTrainer(Trainer):
     def __init__(self, *args, ewc_lambda=0.0, fisher_matrix=None, original_params=None, **kwargs):
@@ -32,6 +67,8 @@ class EWCTrainer(Trainer):
         :param original_params: Original parameter values (keyed by param name).
         """
         super().__init__(*args, **kwargs)
+        self.auxiliary_loss = None
+        self.model_loss = None
         self.ewc_lambda = ewc_lambda
         self.fisher_matrix = fisher_matrix if fisher_matrix is not None else {}
         self.original_params = original_params if original_params is not None else {}
@@ -46,6 +83,8 @@ class EWCTrainer(Trainer):
         Compute the loss with an added EWC penalty term.
         """
         outputs = model(**inputs)
+        self.auxiliary_loss = outputs.auxiliary_loss.item() if outputs.auxiliary_loss is not None else None
+        self.model_loss = outputs.model_loss.item() if outputs.model_loss is not None else None
         if hasattr(outputs, "loss"):
             base_loss = outputs.loss
         elif isinstance(outputs, tuple):
@@ -60,6 +99,13 @@ class EWCTrainer(Trainer):
         ewc_loss = 0.5 * self.ewc_lambda * ewc_loss  # multiply by lambda/2
         total_loss = base_loss + ewc_loss
         return (total_loss, outputs) if return_outputs else total_loss
+
+    def log(self, logs: Dict[str, float], start_time: Optional[float] = None) -> None:
+        if hasattr(self, "auxiliary_loss") and self.auxiliary_loss is not None:
+            logs["auxiliary_loss"] = self.auxiliary_loss
+        if hasattr(self, "model_loss") and self.model_loss is not None:
+            logs["model_loss"] = self.model_loss
+        super().log(logs)
 
 def compute_fisher(args, model, device, orig_data_loader):
     """
@@ -123,7 +169,7 @@ def get_trainer(args, training_args, model, device, tokenizer, training_dataset,
             original_params=original_params
         )
     else:
-        trainer = Trainer(
+        trainer = TrainerWithAuxLoss(
             model=model,
             args=training_args,
             train_dataset=training_dataset,
