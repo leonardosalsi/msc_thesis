@@ -45,7 +45,6 @@ def get_model(args, device):
     if pca_dim > 0:
         model = NucleotideModelWithPCA(model.config, model, pca_dim=pca_dim, pca_embeddings=pca_embeddings, gradient_accumulation_steps=gradient_accumulation_steps)
 
-    model.compile()
     model.to(device)
 
     return model
