@@ -60,7 +60,7 @@ class NucleotideModelWithPCA(PreTrainedModel):
         total_loss = None
         if output.loss is not None:
             total_loss = output.loss + self.aux_loss_weight * contrastive_loss
-        print(contrastive_loss)
+
         return MaskedLMOutput(
             loss=total_loss,
             logits=output.logits,
