@@ -124,14 +124,6 @@ def parse_args():
         default=0,
         help="Path to metadata file",
     )
-
-    parser.add_argument(
-        "--n_smallest_files",
-        type=int,
-        default=8,
-        help="Path to metadata file",
-    )
-
     parser.add_argument(
         "--min_seq_id",
         type=float,
@@ -156,7 +148,6 @@ if __name__ == "__main__":
         split_memory_limit = args.split_memory_limit
         use_scratch = args.use_scratch
         min_seq_id = args.min_seq_id
-        n_smallest_files = args.n_smallest_files
 
         if not exists(fasta_out_dir):
             os.makedirs(fasta_out_dir)
