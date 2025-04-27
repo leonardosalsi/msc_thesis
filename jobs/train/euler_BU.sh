@@ -16,6 +16,6 @@ export WANDB_DISABLED=true
 export TF_CPP_MIN_LOG_LEVEL=2
 
 accelerate launch --num_processes 5 --num_machines 1 --mixed_precision no --dynamo_backend inductor /cluster/home/salsil/msc_thesis_root/msc_thesis/train_model.py \
-/cluster/scratch/salsil/logan_json/logan_json  overlapping \
+--dataset /cluster/scratch/salsil/logan_json/logan_json --tokenizer overlapping \
 --logging-steps 500 --train-size 10 --eval-size 32 \
 --gradient-accumulation 10 --max-workers 4 --load-from-json
