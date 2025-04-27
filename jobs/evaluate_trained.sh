@@ -1,0 +1,30 @@
+#!/bin/bash
+cd ..
+
+sbatch jobs/evaluate_trained/promoter_all.sh
+sbatch jobs/evaluate_trained/promoter_tata.sh
+sbatch jobs/evaluate_trained/promoter_no_tata.sh
+sbatch jobs/evaluate_trained/enhancers.sh
+sbatch jobs/evaluate_trained/enhancers_types.sh
+sbatch jobs/evaluate_trained/splice_sites_all.sh
+sbatch jobs/evaluate_trained/splice_sites_acceptors.sh
+sbatch jobs/evaluate_trained/splice_sites_donors.sh
+sbatch jobs/evaluate_trained/H2AFZ.sh
+sbatch jobs/evaluate_trained/H3K27ac.sh
+sbatch jobs/evaluate_trained/H3K27me3.sh
+sbatch jobs/evaluate_trained/H3K36me3.sh
+sbatch jobs/evaluate_trained/H3K4me1.sh
+sbatch jobs/evaluate_trained/H3K4me2.sh
+sbatch jobs/evaluate_trained/H3K4me3.sh
+sbatch jobs/evaluate_trained/H3K9ac.sh
+sbatch jobs/evaluate_trained/H3K9me3.sh
+sbatch jobs/evaluate_trained/H4K20me1.sh
+sbatch jobs/evaluate_trained/gb_human_ensembl_regulatory.sh
+sbatch jobs/evaluate_trained/gb_demo_human_or_worm.sh
+sbatch jobs/evaluate_trained/gb_human_ocr_ensembl.sh
+sbatch jobs/evaluate_trained/gb_drosophila_enhancers_stark.sh
+sbatch jobs/evaluate_trained/gb_dummy_mouse_enhancers_ensembl.sh
+sbatch jobs/evaluate_trained/gb_demo_coding_vs_intergenomic_seqs.sh
+sbatch jobs/evaluate_trained/gb_human_enhancers_ensembl.sh
+sbatch jobs/evaluate_trained/gb_human_enhancers_cohn.sh
+sbatch jobs/evaluate_trained/gb_human_nontata_promoters.sh

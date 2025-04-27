@@ -2,6 +2,9 @@ import os
 import random
 import datetime
 import time
+from dataclasses import dataclass
+
+from argparse_dataclass import ArgumentParser
 from datasets import load_dataset, Dataset
 from tqdm import tqdm
 from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification, logging, \
@@ -11,6 +14,7 @@ from sklearn.model_selection import train_test_split
 from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir, results_dir, temp_dir
 from datasets.utils.logging import disable_progress_bar, set_verbosity
 
+from pre_train.util import print_args, get_device
 from util import LOGLEVEL, init_logger, get_model_by_id, get_task_by_id, get_pretrained_model_by_id
 import numpy as np
 from peft import LoraConfig, TaskType, get_peft_model
@@ -30,7 +34,7 @@ def compute_metrics_mcc(eval_pred):
     r={'mcc_score': matthews_corrcoef(references, predictions)}
     return r
 
-def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task, pca_embeddings):
+def finetune_model_by_task_mcc(args, device, task, timestamp):
     disable_progress_bar()
     set_verbosity(logging.ERROR)
     logging.set_verbosity_error()
@@ -56,9 +60,9 @@ def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task,
 
     """Load model and move to device"""
     #logger.log(LOGLEVEL, f"Loading model with pretrained weights.")
-    path = os.path.join(pretrained_models_cache_dir, model_dict['checkpoint']) if model_dict['checkpoint'] != '' else model_dict['repo']
+    model_dir = os.path.join(pretrained_models_cache_dir, f"{args.model_name}", f"checkpoint-{args.checkpoint}")
     model = AutoModelForSequenceClassification.from_pretrained(
-        path,
+        model_dir,
         cache_dir=models_cache_dir,
         num_labels=task["num_labels"],
         trust_remote_code=True,
@@ -96,7 +100,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task,
 
     """Load model overrides"""
     tokenizer = AutoTokenizer.from_pretrained(
-        model_dict['tokenizer'],
+        "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
         cache_dir=models_cache_dir,
         trust_remote_code=True,
         local_files_only = True
@@ -129,7 +133,6 @@ def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task,
         remove_columns=["data"],
     )
 
-
     """Configure trainer"""
     batch_size = 8
     if task["taskId"] == 23:
@@ -137,7 +140,7 @@ def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task,
     else:
         eval_batch_size = 64
     training_args = TrainingArguments(
-        os.path.join(temp_dir, f"{model_dict['name']}{mode}-{task['alias']}{str(time.time()).replace('.', '')}"),
+        run_name=timestamp,
         remove_unused_columns=False,
         eval_strategy="steps",
         save_strategy="no",
@@ -174,14 +177,6 @@ def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task,
     predictions = np.argmax(preduction_results.predictions, axis=-1)
     labels = preduction_results.label_ids
 
-    """Apply Bootstrapping
-    scores = []
-    for _ in range(10000):
-        idx = np.random.choice(len(predictions), size=len(predictions), replace=True)
-        score = matthews_corrcoef(labels[idx], predictions[idx])
-        scores.append(score)
-    """
-
     return {'labels': labels.tolist(), 'predictions': predictions.tolist(), 'training': train_history}
 
 import sys
@@ -193,62 +188,44 @@ import json
 from util import LOGLEVEL
 import argparse
 
+@dataclass
+class EvalConfig:
+    model_name: str
+    checkpoint: str
+    task_id: int
+    samples: int = 1
+    pca_embeddings: bool = False
+
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Script to logan model and task by MCC with optional random weights and LoRA configurations."
-    )
-    parser.add_argument(
-        "modelId",
-        type=int,
-        help="The model ID (integer)."
-    )
-    parser.add_argument(
-        "taskId",
-        type=int,
-        help="The task ID (integer)."
-    )
-    parser.add_argument(
-        "--samples",
-        type=int,
-        default=1,
-        help="Number of times training and prediction process is repeated. Default is 1."
-    )
-    parser.add_argument(
-        "--pca_embeddings",
-        action="store_true",
-        dest="pca_embeddings",
-        help="Apply PCA-based post-embedding processing to reduce embedding dimensionality."
-    )
+    parser = ArgumentParser(EvalConfig)
     return parser.parse_args()
+
+def get_output_dir(args):
+    benchmark_dir = os.path.join(results_dir, f"benchmark")
+    os.makedirs(benchmark_dir, exist_ok=True)
+    benchmark_dir = os.path.join(benchmark_dir, args.model_name)
+    os.makedirs(benchmark_dir, exist_ok=True)
+    eval_trained_dir = os.path.join(benchmark_dir, f"checkpoint-{int(int(args.checkpoint) / 2000)}B")
+    os.makedirs(eval_trained_dir, exist_ok=True)
+    return eval_trained_dir
 
 if __name__ == "__main__":
     args = parse_args()
-    model = get_pretrained_model_by_id(args.modelId)
-    task = get_task_by_id(args.taskId)
+    timestamp = print_args(args, "BENCHMARK ARGUMENTS")
 
-    iterations = args.samples
-    mode = f"-{task['alias']}"
-
-    filename = f"{model['name'] + mode}-{task['alias']}"
+    task = get_task_by_id(args.task_id)
     logger = init_logger()
-    logger.log(LOGLEVEL, f"{model['name']}{mode} on {task['alias']}")
+    logger.log(LOGLEVEL, f"{args.model_name} on {task['alias']}")
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device.type == "cuda":
-        logger.log(LOGLEVEL, f"Using GPU: {torch.cuda.get_device_name(0)}")
-    else:
-        logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
-
-    eval_trained_dir = os.path.join(results_dir, f"eval_pretrained_model_{model['modelId']}")
-    os.makedirs(eval_trained_dir, exist_ok=True)
-
+    device = get_device()
+    eval_trained_dir = get_output_dir(args)
     output_file = os.path.join(eval_trained_dir ,f"{task['alias']}.json")
     if os.path.exists(output_file):
         exit(0)
 
     all_results = []
-    for i in tqdm(range(3)):
-        results = finetune_model_by_task_mcc(logger, device, model, args.modelId, mode, task, args.pca_embeddings)
+    for i in tqdm(range(args.samples)):
+        results = finetune_model_by_task_mcc(args, device, task, timestamp)
         all_results.append(results)
 
     with open(output_file, 'w') as f:
