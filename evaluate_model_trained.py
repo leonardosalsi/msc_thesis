@@ -1,21 +1,16 @@
 import os
 import random
-import datetime
-import time
 from dataclasses import dataclass
-
 from argparse_dataclass import ArgumentParser
 from datasets import load_dataset, Dataset
 from tqdm import tqdm
-from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification, logging, \
-    AutoConfig, EsmConfig
+from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification, logging
 from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
-from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir, results_dir, temp_dir
+from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir, results_dir
 from datasets.utils.logging import disable_progress_bar, set_verbosity
-
 from pre_train.util import print_args, get_device
-from util import LOGLEVEL, init_logger, get_model_by_id, get_task_by_id, get_pretrained_model_by_id
+from util import init_logger, get_task_by_id
 import numpy as np
 from peft import LoraConfig, TaskType, get_peft_model
 import psutil
@@ -56,10 +51,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         split='train'
     )
 
-    #logger.log(LOGLEVEL, f"Dataset {task['name']} loaded and splits created")
-
     """Load model and move to device"""
-    #logger.log(LOGLEVEL, f"Loading model with pretrained weights.")
     model_dir = os.path.join(pretrained_models_cache_dir, f"{args.model_name}", f"checkpoint-{args.checkpoint}")
     model = AutoModelForSequenceClassification.from_pretrained(
         model_dir,
@@ -219,7 +211,11 @@ if __name__ == "__main__":
 
     device = get_device()
     eval_trained_dir = get_output_dir(args)
+
+    logger.log(LOGLEVEL, f"Output directory: {eval_trained_dir}")
+
     output_file = os.path.join(eval_trained_dir ,f"{task['alias']}.json")
+    logger.log(LOGLEVEL, f"Output file: {output_file}")
     if os.path.exists(output_file):
         exit(0)
 
