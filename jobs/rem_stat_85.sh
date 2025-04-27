@@ -1,0 +1,30 @@
+#!/bin/bash
+cd ..
+
+sbatch jobs/logan/filter/mmseq85/mmseqs_0.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_3.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_7.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_13.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_20.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_21.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_25.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_28.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_84.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_87.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_145.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_149.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_151.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_218.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_222.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_224.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_236.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_263.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_287.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_300.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_303.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_354.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_362.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_378.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_383.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_447.sh
+sbatch jobs/logan/filter/mmseq85/mmseqs_449.sh
