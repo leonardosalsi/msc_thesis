@@ -84,4 +84,12 @@ PRETRAINED_MODELS = [
              'name': 'ntv2-ms-pca-256', 'data_alias': 'NT-MS V2 (50M) (1kb, PCA, 12B)',
              'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
              'checkpoint': 'pca_256_multi_species_overlap/checkpoint-12000/'},
+    {'modelId': 25, 'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+                 'name': 'ntv2-ms-pca-256', 'data_alias': 'NT-MS V2 (50M) (1kb, PCA, 12B)',
+                 'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+                 'checkpoint': 'pca_mean_256_multi_species_overlap/checkpoint-12000/'},
+    {'modelId': 26, 'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+                 'name': 'ntv2-ms-pca-256', 'data_alias': 'NT-MS V2 (50M) (1kb, PCA, 12B)',
+                 'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+                 'checkpoint': 'pca_cls_256_multi_species_overlap/checkpoint-12000/'},
 ]
