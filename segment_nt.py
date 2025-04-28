@@ -102,6 +102,6 @@ if __name__ == "__main__":
         feat_idx = features.index(f)
         result['results'][f] = int(all_counts[feat_idx])
 
-    result_file = os.path.join(results_dir, f"{selected_dataset}_segment_nt.json")
+    result_file = os.path.join(results_dir, f"{timestamp}_segment_nt.json")
     with open(result_file, "w") as f:
         json.dump(result, f, indent=4)
