@@ -13,7 +13,7 @@ sbatch jobs/evaluate_trained_2/H2AFZ.sh
 sbatch jobs/evaluate_trained_2/H3K27ac.sh
 sbatch jobs/evaluate_trained_2/H3K27me3.sh
 sbatch jobs/evaluate_trained_2/H3K36me3.sh
-sbatch jobs/evaluate_trained_2/H3K4me2.sh
+sbatch jobs/evaluate_trained_2/H3K4me1.sh
 sbatch jobs/evaluate_trained_2/H3K4me2.sh
 sbatch jobs/evaluate_trained_2/H3K4me3.sh
 sbatch jobs/evaluate_trained_2/H3K9ac.sh
