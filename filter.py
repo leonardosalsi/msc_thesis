@@ -10,7 +10,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from tqdm import tqdm
 
-from pre_train.util import print_args
+from utils.util import print_args
 
 
 def json_to_fasta(json_file_path, use_scratch=False, min_seq_id=0.95):

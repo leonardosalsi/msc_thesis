@@ -2,7 +2,7 @@ import os
 import random
 from dataclasses import dataclass
 from typing import Optional
-from pre_train.PCAModel import EsmForMaskedLMPCA, EsmForSequenceClassificationPCA
+from utils.PCAModel import EsmForMaskedLMPCA, EsmForSequenceClassificationPCA
 from argparse_dataclass import ArgumentParser
 from datasets import load_dataset, Dataset
 from tqdm import tqdm
@@ -12,7 +12,7 @@ from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
 from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir, results_dir
 from datasets.utils.logging import disable_progress_bar, set_verbosity
-from pre_train.util import print_args, get_device
+from utils.util import print_args, get_device
 from util import init_logger, get_task_by_id
 import numpy as np
 from peft import LoraConfig, TaskType, get_peft_model
@@ -24,11 +24,18 @@ def check_memory_usage():
     print(f"Memory Usage: {memory_info.rss / (1024 ** 2):.2f} MB")
 
 def compute_metrics_mcc(eval_pred):
-    """Computes Matthews correlation coefficient (MCC score) for binary classification"""
-    predictions = np.argmax(eval_pred.predictions, axis=-1)
+    """Computes Matthews correlation coefficient (MCC score) for binary classification."""
+    preds = eval_pred.predictions
+
+    if isinstance(preds, (tuple, list)):
+        preds = preds[0]
+
+    if isinstance(preds, torch.Tensor):
+        preds = preds.detach().cpu().numpy()
+
+    predictions = np.argmax(preds, axis=-1)
     references = eval_pred.label_ids
-    r={'mcc_score': matthews_corrcoef(references, predictions)}
-    return r
+    return {'mcc_score': matthews_corrcoef(references, predictions)}
 
 def finetune_model_by_task_mcc(args, device, task, timestamp):
     disable_progress_bar()

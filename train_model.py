@@ -3,12 +3,12 @@ import os
 from dataclasses import dataclass
 from typing import Optional
 from config import pretrained_models_cache_dir, logs_dir
-from pre_train.dataset import get_dataset
-from pre_train.model import get_model
-from pre_train.tokenizer import get_tokenizer
-from pre_train.trainer import get_trainer
-from pre_train.PCACollator import PCACollator
-from pre_train.util import get_device, print_args
+from utils.dataset import get_dataset
+from utils.model import get_model
+from utils.tokenizer import get_tokenizer
+from utils.trainer import get_trainer
+from utils.PCACollator import PCACollator
+from utils.util import get_device, print_args
 from argparse_dataclass import ArgumentParser
 from transformers import (
     TrainingArguments,

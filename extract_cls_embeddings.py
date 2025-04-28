@@ -9,16 +9,16 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from pre_train.trainer import get_trainer
+from utils.trainer import get_trainer
 
 torch.backends.cudnn.benchmark = True
 torch.backends.cuda.matmul.allow_tf32 = False
 
 from config import pretrained_models_cache_dir, logs_dir
-from pre_train.dataset import get_dataset
-from pre_train.model import get_model
-from pre_train.tokenizer import get_tokenizer
-from pre_train.util import get_device, print_args, compute_metrics
+from utils.dataset import get_dataset
+from utils.model import get_model
+from utils.tokenizer import get_tokenizer
+from utils.util import get_device, print_args, compute_metrics
 from transformers import (
     Trainer,
     TrainingArguments,
