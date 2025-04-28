@@ -18,7 +18,7 @@ sbatch jobs/evaluate_trained_4/H3K4me2.sh
 sbatch jobs/evaluate_trained_4/H3K4me3.sh
 sbatch jobs/evaluate_trained_4/H3K9ac.sh
 sbatch jobs/evaluate_trained_4/H3K9me3.sh
-sbatch jobs/evaluate_trained_4/H4K20me4.sh
+sbatch jobs/evaluate_trained_4/H4K20me1.sh
 sbatch jobs/evaluate_trained_4/gb_human_ensembl_regulatory.sh
 sbatch jobs/evaluate_trained_4/gb_demo_human_or_worm.sh
 sbatch jobs/evaluate_trained_4/gb_human_ocr_ensembl.sh
