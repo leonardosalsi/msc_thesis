@@ -3,7 +3,7 @@ from os.path import isfile, join, exists
 from pprint import pprint
 
 from tqdm import tqdm
-from pre_train.util import print_args
+from utils.util import print_args
 import os
 import json
 from Bio import SeqIO

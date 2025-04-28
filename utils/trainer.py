@@ -3,12 +3,12 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import Trainer
 
-from pre_train.dataset import get_original_training_dataset
+from utils.dataset import get_original_training_dataset
 
 import os
 import torch
 
-from pre_train.util import LOGGER
+from utils.util import LOGGER
 from util import LOGLEVEL
 
 

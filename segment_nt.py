@@ -14,8 +14,8 @@ from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModel
 
 from config import models_cache_dir, results_dir
-from pre_train.dataset import get_dataset
-from pre_train.util import print_args, get_device
+from utils.dataset import get_dataset
+from utils.util import print_args, get_device
 torch.set_printoptions(threshold=sys.maxsize)
 
 def collate_fn(batch):

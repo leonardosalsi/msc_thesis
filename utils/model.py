@@ -1,6 +1,6 @@
 from transformers import AutoModelForMaskedLM, EsmConfig
 from config import models_cache_dir
-from pre_train.PCAModel import EsmForMaskedLMPCA
+from utils.PCAModel import EsmForMaskedLMPCA
 
 def get_model(args, device):
     """
