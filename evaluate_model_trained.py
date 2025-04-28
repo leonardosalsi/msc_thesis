@@ -1,10 +1,13 @@
 import os
 import random
 from dataclasses import dataclass
+from typing import Optional
+from pre_train.PCAModel import EsmForMaskedLMPCA, EsmForSequenceClassificationPCA
 from argparse_dataclass import ArgumentParser
 from datasets import load_dataset, Dataset
 from tqdm import tqdm
-from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification, logging
+from safetensors.torch import load_file
+from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification, logging, AutoModelForMaskedLM
 from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
 from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir, results_dir
@@ -14,9 +17,7 @@ from util import init_logger, get_task_by_id
 import numpy as np
 from peft import LoraConfig, TaskType, get_peft_model
 import psutil
-
-
-
+  
 def check_memory_usage():
     process = psutil.Process()
     memory_info = process.memory_info()
@@ -53,28 +54,58 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
 
     """Load model and move to device"""
     model_dir = os.path.join(pretrained_models_cache_dir, f"{args.model_name}", f"checkpoint-{args.checkpoint}")
-    model = AutoModelForSequenceClassification.from_pretrained(
-        model_dir,
-        cache_dir=models_cache_dir,
-        num_labels=task["num_labels"],
-        trust_remote_code=True,
-        local_files_only=True
-    )
+
+    if args.pca:
+        base_model = AutoModelForMaskedLM.from_pretrained(
+            model_dir,
+            cache_dir=models_cache_dir,
+            num_labels=2,
+            trust_remote_code=True,
+            local_files_only=True
+        )
+
+        pca_model = EsmForMaskedLMPCA(
+            config=base_model.config,
+            base_model=base_model,
+            pca_dim=args.pca_dims,
+            aux_loss_weight=0.1,
+            temperature=0.1,
+            pca_embeddings=args.pca_embeddings,
+            gradient_accumulation_steps=50
+        )
+
+        state_dict = load_file(f"{model_dir}/model.safetensors")
+        missing_keys, unexpected_keys = pca_model.load_state_dict(state_dict, strict=True)
+
+        print("Missing keys:", missing_keys)
+        print("Unexpected keys:", unexpected_keys)
+
+        model = EsmForSequenceClassificationPCA(pca_model=pca_model, num_labels=task['num_labels'])
+    else:
+
+        model = AutoModelForSequenceClassification.from_pretrained(
+            model_dir,
+            cache_dir=models_cache_dir,
+            num_labels=task["num_labels"],
+            trust_remote_code=True,
+            local_files_only=True
+        )
 
     model = model.to(device)
 
 
-    #logger.log(LOGLEVEL, f"LoRA model loaded")
     """Employ LoRA """
     peft_config = LoraConfig(
-        task_type=TaskType.SEQ_CLS, inference_mode=False, r=1, lora_alpha=32, lora_dropout=0.1,
+        task_type=TaskType.SEQ_CLS,
+        inference_mode=False,
+        r=8,
+        lora_alpha=32,
+        lora_dropout=0.1,
         target_modules=["query", "value"],
-        # modules_to_save=["intermediate"] # modules that are not frozen and updated during the training
+        modules_to_save=["classifier", "pca_proj", "layernorm"]
     )
     lora_classifier = get_peft_model(model, peft_config)
     lora_classifier.to(device)
-
-    #logger.log(LOGLEVEL, f"Model {model_dict['name']} loaded on device {device}")
 
     """Get corresponding feature name and load"""
     sequence_feature = task["sequence_feature"]
@@ -186,7 +217,10 @@ class EvalConfig:
     checkpoint: str
     task_id: int
     samples: int = 1
-    pca_embeddings: bool = False
+    pca: bool = False
+    pca_embeddings: Optional[str] = None
+    pca_dims: Optional[int] = None
+
 
 def parse_args():
     parser = ArgumentParser(EvalConfig)
