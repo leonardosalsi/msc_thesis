@@ -82,7 +82,6 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
 
         model = EsmForSequenceClassificationPCA(pca_model=pca_model, num_labels=task['num_labels'])
     else:
-
         model = AutoModelForSequenceClassification.from_pretrained(
             model_dir,
             cache_dir=models_cache_dir,
