@@ -60,7 +60,8 @@ sbatch jobs/logan/filter/mmseq65/mmseqs_361.sh
 sbatch jobs/logan/filter/mmseq65/mmseqs_362.sh
 sbatch jobs/logan/filter/mmseq65/mmseqs_373.sh
 sbatch jobs/logan/filter/mmseq65/mmseqs_379.sh
-sbatch jobs/logan/filter/mmseq65/mmseqs_408.shsbatch jobs/logan/filter/mmseq65/mmseqs_413.sh
+sbatch jobs/logan/filter/mmseq65/mmseqs_408.sh
+sbatch jobs/logan/filter/mmseq65/mmseqs_413.sh
 sbatch jobs/logan/filter/mmseq65/mmseqs_426.sh
 sbatch jobs/logan/filter/mmseq65/mmseqs_429.sh
 sbatch jobs/logan/filter/mmseq65/mmseqs_441.sh

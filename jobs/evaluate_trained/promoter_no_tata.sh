@@ -13,4 +13,4 @@ conda activate gpu_env
 
 HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \
 python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/evaluate_model_trained.py \
---model-name pca_mean_256_multi_species_overlap --checkpoint 12000 --task-id 3 --samples 3
+--model-name pca_cls_256_multi_species_overlap --checkpoint 12000 --task-id 3 --samples 3
