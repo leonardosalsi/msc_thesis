@@ -1,6 +1,6 @@
 from transformers import AutoModelForMaskedLM, EsmConfig
 from config import models_cache_dir
-from pre_train.PCAModel import NucleotideModelWithPCA
+from pre_train.PCAModel import EsmForMaskedLMPCA
 
 def get_model(args, device):
     """
@@ -43,7 +43,7 @@ def get_model(args, device):
                     param.requires_grad = False
 
     if pca_dim > 0:
-        model = NucleotideModelWithPCA(model.config, model, pca_dim=pca_dim, pca_embeddings=pca_embeddings, gradient_accumulation_steps=gradient_accumulation_steps)
+        model = EsmForMaskedLMPCA(model.config, model, pca_dim=pca_dim, pca_embeddings=pca_embeddings, gradient_accumulation_steps=gradient_accumulation_steps)
 
     model.to(device)
 

@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers.modeling_outputs import MaskedLMOutput
+from transformers.modeling_outputs import MaskedLMOutput, SequenceClassifierOutput
 from transformers import PreTrainedModel
 from dataclasses import dataclass
 
@@ -15,8 +15,9 @@ class MaskedPCALMOutput(MaskedLMOutput):
     attentions: Optional[Tuple[torch.FloatTensor, ...]] = None
     auxiliary_loss: Optional[torch.FloatTensor] = None
     model_loss: Optional[torch.FloatTensor] = None
+    pca_embedding: Optional[torch.Tensor] = None
 
-class NucleotideModelWithPCA(PreTrainedModel):
+class EsmForMaskedLMPCA(PreTrainedModel):
     def __init__(
         self,
         config,
@@ -39,6 +40,8 @@ class NucleotideModelWithPCA(PreTrainedModel):
 
     def forward(self, *args, **kwargs):
         kwargs.pop("num_items_in_batch", None)
+        kwargs.pop("output_hidden_states", None)
+        kwargs.pop("return_dict", None)
 
         attention_mask = kwargs.get("attention_mask", None)
 
@@ -75,7 +78,7 @@ class NucleotideModelWithPCA(PreTrainedModel):
         if output.loss is not None:
             total_loss = output.loss + self.aux_loss_weight * contrastive_loss
 
-        if self.training and self.gradient_accumulation_steps > 1:
+        if self.training and self.gradient_accumulation_steps > 1 and total_loss is not None:
             total_loss = total_loss / self.gradient_accumulation_steps
 
         return MaskedPCALMOutput(
@@ -84,5 +87,40 @@ class NucleotideModelWithPCA(PreTrainedModel):
             hidden_states=output.hidden_states,
             attentions=output.attentions,
             auxiliary_loss=(self.aux_loss_weight * contrastive_loss.detach()).float(),
-            model_loss=output.loss.detach()
+            model_loss=output.loss.detach() if output.loss is not None else None,
+            pca_embedding=pca_emb
+        )
+
+class EsmForSequenceClassificationPCA(PreTrainedModel):
+    def __init__(self, pca_model: EsmForMaskedLMPCA, num_labels: int):
+        super().__init__(pca_model.config)   # <-- important!
+        self.pca_model = pca_model
+        hidden_size = pca_model.pca_proj.out_features
+        self.classifier = nn.Linear(hidden_size, num_labels)
+        self.num_labels = num_labels
+
+    def forward(self, input_ids=None, attention_mask=None, labels=None, **kwargs):
+        outputs = self.pca_model(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            **kwargs
+        )
+
+        pooled_output = outputs.pca_embedding
+        logits = self.classifier(pooled_output)
+
+        loss = None
+        if labels is not None:
+            if self.num_labels == 1:
+                loss_fct = nn.MSELoss()
+                loss = loss_fct(logits.squeeze(), labels.squeeze())
+            else:
+                loss_fct = nn.CrossEntropyLoss()
+                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+
+        return SequenceClassifierOutput(
+            loss=loss,
+            logits=logits,
+            hidden_states=outputs.hidden_states,
+            attentions=outputs.attentions,
         )
