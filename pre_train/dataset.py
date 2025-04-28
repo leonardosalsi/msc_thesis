@@ -82,7 +82,6 @@ def get_dataset(args):
                 generator=lambda: json_files_generator(selected_dataset_path),
                 cache_dir=os.path.join(generator_cache_dir, 'logan')
             )
-
             split_dataset = full_dataset.train_test_split(test_size=0.2, seed=112, keep_in_memory=keep_in_memory)
             dataset_train = split_dataset['train']
             dataset_validation = split_dataset['test']
