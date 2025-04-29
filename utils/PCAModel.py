@@ -26,7 +26,8 @@ class EsmForMaskedLMPCA(PreTrainedModel):
         aux_loss_weight=0.1,
         temperature=0.1,
         pca_embeddings="mean",
-        gradient_accumulation_steps=1
+        gradient_accumulation_steps=1,
+        contrastive=True
     ):
         super().__init__(config)
         self.model = base_model
@@ -37,6 +38,7 @@ class EsmForMaskedLMPCA(PreTrainedModel):
         self.temperature = temperature
         self.pca_embeddings = pca_embeddings
         self.gradient_accumulation_steps = gradient_accumulation_steps
+        self.contrastive = contrastive
 
     def forward(self, *args, **kwargs):
         kwargs.pop("num_items_in_batch", None)
@@ -67,16 +69,20 @@ class EsmForMaskedLMPCA(PreTrainedModel):
         pca_emb = self.layernorm(self.pca_proj(pooled))
         pca_emb = F.normalize(pca_emb, dim=-1)
 
-        bsz = pca_emb.shape[0] // 2
-        z1, z2 = pca_emb[:bsz], pca_emb[bsz:]
-
-        logits = z1 @ z2.T / self.temperature
-        labels = torch.arange(bsz, device=z1.device)
-        contrastive_loss = F.cross_entropy(logits, labels)
+        contrastive_loss = None
+        if self.contrastive and self.training:
+            bsz = pca_emb.shape[0] // 2
+            z1, z2 = pca_emb[:bsz], pca_emb[bsz:]
+            logits = z1 @ z2.T / self.temperature
+            labels = torch.arange(bsz, device=z1.device)
+            contrastive_loss = F.cross_entropy(logits, labels)
 
         total_loss = None
         if output.loss is not None:
-            total_loss = output.loss + self.aux_loss_weight * contrastive_loss
+            if contrastive_loss is not None:
+                total_loss = output.loss + self.aux_loss_weight * contrastive_loss
+            else:
+                total_loss = output.loss
 
         if self.training and self.gradient_accumulation_steps > 1 and total_loss is not None:
             total_loss = total_loss / self.gradient_accumulation_steps
@@ -86,7 +92,7 @@ class EsmForMaskedLMPCA(PreTrainedModel):
             logits=output.logits,
             hidden_states=output.hidden_states,
             attentions=output.attentions,
-            auxiliary_loss=(self.aux_loss_weight * contrastive_loss.detach()).float(),
+            auxiliary_loss=(self.aux_loss_weight * contrastive_loss.detach()).float() if contrastive_loss is not None else None,
             model_loss=output.loss.detach() if output.loss is not None else None,
             pca_embedding=pca_emb
         )
