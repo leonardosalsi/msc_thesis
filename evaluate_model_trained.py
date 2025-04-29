@@ -78,14 +78,17 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
             aux_loss_weight=0.1,
             temperature=0.1,
             pca_embeddings=args.pca_embeddings,
-            gradient_accumulation_steps=50
+            gradient_accumulation_steps=50,
+            contrastive=False
         )
 
         state_dict = load_file(f"{model_dir}/model.safetensors")
         missing_keys, unexpected_keys = pca_model.load_state_dict(state_dict, strict=True)
 
-        print("Missing keys:", missing_keys)
-        print("Unexpected keys:", unexpected_keys)
+        if len(missing_keys) > 0:
+            print("Missing keys:", missing_keys)
+        if len(unexpected_keys) > 0:
+            print("Unexpected keys:", unexpected_keys)
 
         model = EsmForSequenceClassificationPCA(pca_model=pca_model, num_labels=task['num_labels'])
     else:
@@ -98,7 +101,6 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         )
 
     model = model.to(device)
-
 
     """Employ LoRA """
     peft_config = LoraConfig(
@@ -168,6 +170,13 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         eval_batch_size = 32
     else:
         eval_batch_size = 64
+
+    gradient_accumulation_steps = 10
+    if args.pca:
+        batch_size = int(batch_size / 2)
+        eval_batch_size = int(eval_batch_size / 2)
+        gradient_accumulation_steps = int(gradient_accumulation_steps * 2)
+
     training_args = TrainingArguments(
         run_name=timestamp,
         remove_unused_columns=False,
@@ -175,7 +184,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         save_strategy="no",
         learning_rate=5e-4,
         per_device_train_batch_size=batch_size,
-        gradient_accumulation_steps= 1,
+        gradient_accumulation_steps= gradient_accumulation_steps,
         per_device_eval_batch_size= eval_batch_size,
         num_train_epochs= 100,
         logging_steps= 100,
