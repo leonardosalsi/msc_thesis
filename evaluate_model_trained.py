@@ -184,7 +184,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         save_strategy="no",
         learning_rate=5e-4,
         per_device_train_batch_size=batch_size,
-        gradient_accumulation_steps= gradient_accumulation_steps,
+        gradient_accumulation_steps= 1, #gradient_accumulation_steps,
         per_device_eval_batch_size= eval_batch_size,
         num_train_epochs= 100,
         logging_steps= 100,
@@ -192,7 +192,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         metric_for_best_model="mcc_score",
         label_names=["labels"],
         dataloader_drop_last=True,
-        max_steps= 10000,
+        max_steps= 100, #10000,
         logging_dir='./log',
         disable_tqdm=True
     )
@@ -209,7 +209,9 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     """Finetune pre-trained model"""
     _ = trainer.train()
     if args.pca:
-        trainer.args.per_device_eval_batch_size = int(eval_batch_size / 2)
+        print("tweak eval size")
+        trainer.args.per_device_eval_batch_size = 2
+
     train_history = trainer.state.log_history
     """Get MCC score"""
     preduction_results = trainer.predict(tokenized_test_sequences)
