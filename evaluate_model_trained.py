@@ -2,12 +2,16 @@ import os
 import random
 from dataclasses import dataclass
 from typing import Optional
+
+from torch.utils.data import DataLoader
+
 from utils.PCAModel import EsmForMaskedLMPCA, EsmForSequenceClassificationPCA
 from argparse_dataclass import ArgumentParser
 from datasets import load_dataset, Dataset
 from tqdm import tqdm
 from safetensors.torch import load_file
-from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification, logging, AutoModelForMaskedLM
+from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification, logging, \
+    AutoModelForMaskedLM, default_data_collator
 from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
 from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir, results_dir
@@ -66,7 +70,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         base_model = AutoModelForMaskedLM.from_pretrained(
             model_dir,
             cache_dir=models_cache_dir,
-            num_labels=2,
+            num_labels=task['num_labels'],
             trust_remote_code=True,
             local_files_only=True
         )
@@ -106,12 +110,13 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     peft_config = LoraConfig(
         task_type=TaskType.SEQ_CLS,
         inference_mode=False,
-        r=8,
         lora_alpha=32,
         lora_dropout=0.1,
         target_modules=["query", "value"],
         modules_to_save=["classifier", "pca_proj", "layernorm"]
     )
+
+    sys.stdout.flush()
     lora_classifier = get_peft_model(model, peft_config)
     lora_classifier.to(device)
 
@@ -208,17 +213,25 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
 
     """Finetune pre-trained model"""
     _ = trainer.train()
-    if args.pca:
-        print("tweak eval size")
-        trainer.args.per_device_eval_batch_size = 2
 
     train_history = trainer.state.log_history
     """Get MCC score"""
-    preduction_results = trainer.predict(tokenized_test_sequences)
-    predictions = np.argmax(preduction_results.predictions, axis=-1)
-    labels = preduction_results.label_ids
 
-    return {'labels': labels.tolist(), 'predictions': predictions.tolist(), 'training': train_history}
+    ignore_keys = None
+    if args.pca:
+        """Ignore keys for PCA model to avoid memory error"""
+        ignore_keys = ["hidden_states", "attentions", "auxiliary_loss", "model_loss", "pca_embedding"]
+
+    prediction_results = trainer.predict(tokenized_test_sequences, ignore_keys=ignore_keys)
+    predictions = np.argmax(prediction_results.predictions, axis=-1)
+    labels = prediction_results.label_ids
+    labels = labels.tolist()
+    predictions = predictions.tolist()
+
+    print(predictions)
+    print(labels)
+    print(train_history)
+    return {'labels': labels, 'predictions': predictions, 'training': train_history}
 
 import sys
 import torch
