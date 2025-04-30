@@ -208,7 +208,8 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
 
     """Finetune pre-trained model"""
     _ = trainer.train()
-
+    if args.pca:
+        trainer.args.per_device_eval_batch_size = int(eval_batch_size / 2)
     train_history = trainer.state.log_history
     """Get MCC score"""
     preduction_results = trainer.predict(tokenized_test_sequences)
