@@ -2,9 +2,13 @@ import os
 import random
 from dataclasses import dataclass
 from typing import Optional
+import sys
+import torch
+import json
 
 from torch.utils.data import DataLoader
 
+from util import LOGLEVEL
 from utils.PCAModel import EsmForMaskedLMPCA, EsmForSequenceClassificationPCA
 from argparse_dataclass import ArgumentParser
 from datasets import load_dataset, Dataset
@@ -60,7 +64,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         name=task["name"],
         cache_dir=datasets_cache_dir,
         trust_remote_code=True,
-        split='train'
+        split='test'
     )
 
     """Load model and move to device"""
@@ -171,16 +175,15 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
 
     """Configure trainer"""
     batch_size = 8
-    if task["taskId"] == 23:
-        eval_batch_size = 32
-    else:
-        eval_batch_size = 64
-
+    eval_batch_size = 32
     gradient_accumulation_steps = 10
+    ignore_keys = None
+
     if args.pca:
         batch_size = int(batch_size / 2)
-        eval_batch_size = int(eval_batch_size / 2)
+        eval_batch_size = int(eval_batch_size / 4)
         gradient_accumulation_steps = int(gradient_accumulation_steps * 2)
+        ignore_keys = ["hidden_states", "attentions", "auxiliary_loss", "model_loss", "pca_embedding"]
 
     training_args = TrainingArguments(
         run_name=timestamp,
@@ -189,7 +192,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         save_strategy="no",
         learning_rate=5e-4,
         per_device_train_batch_size=batch_size,
-        gradient_accumulation_steps= 1, #gradient_accumulation_steps,
+        gradient_accumulation_steps= gradient_accumulation_steps,
         per_device_eval_batch_size= eval_batch_size,
         num_train_epochs= 100,
         logging_steps= 100,
@@ -197,7 +200,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         metric_for_best_model="mcc_score",
         label_names=["labels"],
         dataloader_drop_last=True,
-        max_steps= 100, #10000,
+        max_steps= 10000,
         logging_dir='./log',
         disable_tqdm=True
     )
@@ -212,15 +215,10 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     )
 
     """Finetune pre-trained model"""
-    _ = trainer.train()
+    _ = trainer.train(ignore_keys_for_eval=ignore_keys)
 
     train_history = trainer.state.log_history
     """Get MCC score"""
-
-    ignore_keys = None
-    if args.pca:
-        """Ignore keys for PCA model to avoid memory error"""
-        ignore_keys = ["hidden_states", "attentions", "auxiliary_loss", "model_loss", "pca_embedding"]
 
     prediction_results = trainer.predict(tokenized_test_sequences, ignore_keys=ignore_keys)
     predictions = np.argmax(prediction_results.predictions, axis=-1)
@@ -228,19 +226,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     labels = labels.tolist()
     predictions = predictions.tolist()
 
-    print(predictions)
-    print(labels)
-    print(train_history)
     return {'labels': labels, 'predictions': predictions, 'training': train_history}
-
-import sys
-import torch
-print(torch.cuda.is_available())
-print(torch.version.cuda)
-from downstream_tasks import TASKS, MODELS
-import json
-from util import LOGLEVEL
-import argparse
 
 @dataclass
 class EvalConfig:

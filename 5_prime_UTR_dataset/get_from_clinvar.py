@@ -62,7 +62,7 @@ def _parse_vcf_to_df(vcf_file):
 
 def _fetch_sequence_sampled(seq, chrom, pos, ref, extend, flank_min=200):
     if extend is None:
-        extend = random.randint(150, 700)
+        extend = random.randint(600, 900)
     variant_rel_pos = random.randint(flank_min, extend - flank_min - len(ref))
     start = pos - variant_rel_pos
     end = start + extend - 1
@@ -76,14 +76,12 @@ def _fetch_sequence_sampled(seq, chrom, pos, ref, extend, flank_min=200):
         print(f"[FASTA error] {chrom}:{start}-{end} – {e}")
         return None
 
-    if seq[variant_rel_pos:variant_rel_pos + len(ref)] != ref:
-        print(
-            f"REF mismatch at {chrom}:{start}-{end} – expected {ref}, got {seq[variant_rel_pos:variant_rel_pos + len(ref)]}")
-        return None
-    print(len(gt_seq))
     return gt_seq
 
-def _process_sequences(chrom, group, fasta_path, extend):
+def _process_sequences(args):
+    chrom, group, fasta_path, extend = args
+    if extend == 0:
+        extend = None
     fasta_ref = pysam.FastaFile(fasta_path)
     results = []
 
@@ -122,6 +120,9 @@ def get(dataset_location, filename, length=None):
     ]
 
     print(f"Processing {len(tasks)} chromosomes across {cpu_count()} cores...")
+
+    if length is None:
+        length = 0
 
     with Pool(num_workers) as pool:
         results = pool.map(_process_sequences, tasks)

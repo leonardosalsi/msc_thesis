@@ -101,7 +101,10 @@ def _get_label(AF):
         return None
 
 
-def _process_sequences(chrom, utr_group, fasta_path, db_path, extend):
+def _process_sequences(args):
+    chrom, utr_group, fasta_path, db_path, extend = args
+    if extend == 0:
+        extend = None
     fasta_ref = pysam.FastaFile(fasta_path)
     db = gnomAD_DB(db_path, gnomad_version="v4")
     results = []
@@ -125,11 +128,14 @@ def _process_sequences(chrom, utr_group, fasta_path, db_path, extend):
             mut = _mutate_sequence(gt_seq, start, pos, ref, alt)
             if mut is None:
                 continue
-            mut = _make_sequence_exact_length(extend, start, pos, end, mut, seq)
+            if extend:
+                mut = _make_sequence_exact_length(extend, start, pos, end, mut, seq)
             if mut is None:
                 continue
             label = _get_label(AF)
             if label is None:
+                continue
+            if extend and len(mut) != extend:
                 continue
             results.append({
                 'sequence': mut,
@@ -148,6 +154,9 @@ def get(dataset_location, filename, length=None):
 
     num_workers = max(1, cpu_count() - 1)
     utr5_df = _get_utr_dataframe(gtf_file, utr_cache_file)
+
+    if length is None:
+        length = 0
 
     tasks = [
         (chrom, group, fasta_path, dataset_location, length)
