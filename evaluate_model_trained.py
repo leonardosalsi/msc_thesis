@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from util import LOGLEVEL
 from utils.PCAModel import EsmForMaskedLMPCA, EsmForSequenceClassificationPCA
 from argparse_dataclass import ArgumentParser
-from datasets import load_dataset, Dataset
+from datasets import load_dataset, Dataset, load_from_disk
 from tqdm import tqdm
 from safetensors.torch import load_file
 from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification, logging, \
@@ -51,21 +51,27 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     logging.set_verbosity_error()
 
     """Load dataset splits"""
-    dataset_train = load_dataset(
-        task["repo"],
-        name=task["name"],
-        cache_dir=datasets_cache_dir,
-        trust_remote_code=True,
-        split='train'
-    )
+    """5'UTR-Tasks are generated locally and must be loaded from disk"""
+    if task['taskId'] in [27, 28]:
+        _dataset = load_from_disk(task["repo"])
+        dataset_train = _dataset['train']
+        dataset_test = _dataset['test']
+    else:
+        dataset_train = load_dataset(
+            task["repo"],
+            name=task["name"],
+            cache_dir=datasets_cache_dir,
+            trust_remote_code=True,
+            split='train'
+        )
 
-    dataset_test = load_dataset(
-        task["repo"],
-        name=task["name"],
-        cache_dir=datasets_cache_dir,
-        trust_remote_code=True,
-        split='test'
-    )
+        dataset_test = load_dataset(
+            task["repo"],
+            name=task["name"],
+            cache_dir=datasets_cache_dir,
+            trust_remote_code=True,
+            split='test'
+        )
 
     """Load model and move to device"""
     model_dir = os.path.join(pretrained_models_cache_dir, f"{args.model_name}", f"checkpoint-{args.checkpoint}")
@@ -146,7 +152,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
         cache_dir=models_cache_dir,
         trust_remote_code=True,
-        local_files_only = True
+        local_files_only = True,
     )
     #logger.log(LOGLEVEL, f"Tokenizer {model_dict['name']} loaded")
     """Repack splits"""
@@ -175,6 +181,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         batched=True,
         remove_columns=["data"],
     )
+
 
     """Configure trainer"""
     batch_size = 8
