@@ -1,3 +1,7 @@
+import os
+
+from config import datasets_cache_dir
+
 TASKS = [
     {'taskId': 1,'repo': "InstaDeepAI/nucleotide_transformer_downstream_tasks_revised", 'name': "promoter_all", 'alias': "promoter_all", 'len': 300, 'sequence_feature': 'sequence', 'label_feature': 'label', 'num_labels': 2, 'data_alias': 'Promoter (all)'},
     {'taskId': 2,'repo': "InstaDeepAI/nucleotide_transformer_downstream_tasks_revised", 'name': "promoter_tata", 'alias': "promoter_tata", 'len': 300, 'sequence_feature': 'sequence', 'label_feature': 'label', 'num_labels': 2, 'data_alias': 'Promoter (TATA)'},
@@ -25,7 +29,8 @@ TASKS = [
     {'taskId': 24,'repo': "katarinagresova/Genomic_Benchmarks_demo_coding_vs_intergenomic_seqs", 'name': "", 'alias': "gb_demo_coding_vs_intergenomic_seqs", 'len': 200, 'sequence_feature': 'seq', 'label_feature': 'label', 'num_labels': 2, 'data_alias': 'Coding vs Intergenomic Seq.'},
     {'taskId': 25,'repo': "katarinagresova/Genomic_Benchmarks_human_enhancers_ensembl", 'name': "", 'alias': "gb_human_enhancers_ensembl", 'len': 600, 'sequence_feature': 'seq', 'label_feature': 'label', 'num_labels': 2, 'data_alias': 'Enhancers (human ensemble)'}, #1-600
     {'taskId': 26,'repo': "katarinagresova/Genomic_Benchmarks_human_enhancers_cohn", 'name': "", 'alias': "gb_human_enhancers_cohn", 'len': 500, 'sequence_feature': 'seq', 'label_feature': 'label', 'num_labels': 2, 'data_alias': 'Enhancers (human cohn)'},
-    {'taskId': 27,'repo': "katarinagresova/Genomic_Benchmarks_human_nontata_promoters", 'name': "", 'alias': "gb_human_nontata_promoters", 'len': 251, 'sequence_feature': 'seq', 'label_feature': 'label', 'num_labels': 2, 'data_alias': 'Promoter Human (no TATA)'}
+    {'taskId': 27,'repo': os.path.join(datasets_cache_dir, '5_utr_classification'), 'name': "", 'alias': "utr5_ben_pat", 'len': 1000, 'sequence_feature': 'sequence', 'label_feature': 'label', 'num_labels': 2, 'data_alias': "UTR'5 Class."},
+    {'taskId': 28,'repo': os.path.join(datasets_cache_dir, '5_utr_classification_fixed_1200'), 'name': "", 'alias': "utr5_ben_pat_fixed", 'len': 1200, 'sequence_feature': 'sequence', 'label_feature': 'label', 'num_labels': 2, 'data_alias': "UTR'5 Class. (fixed length)"}
 ]
 
 MODELS = [
@@ -59,6 +64,37 @@ PRETRAINED_MODELS = [
     {'modelId': 18, 'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
      'name': 'ntv2-logan-ewc-0_5', 'data_alias': 'NT-MS V2 (50M) (1kb, Logan, EWC-Lambda 0.5, 12B)',
      'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
-     'checkpoint': 'overlap_logan_ewc_0_5 /checkpoint-12000/'},
-
+     'checkpoint': 'overlap_logan_ewc_0_5/checkpoint-12000/'},
+    {'modelId': 19, 'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+         'name': 'ntv2-logan-ewc-1', 'data_alias': 'NT-MS V2 (50M) (1kb, Logan, EWC-Lambda 1, 12B)',
+         'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+         'checkpoint': 'overlap_logan_ewc_1/checkpoint-12000/'},
+    {'modelId': 20, 'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+         'name': 'ntv2-logan-ewc-2', 'data_alias': 'NT-MS V2 (50M) (1kb, Logan, EWC-Lambda 2, 12B)',
+         'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+         'checkpoint': 'overlap_logan_ewc_2/checkpoint-12000/'},
+    {'modelId': 21, 'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+         'name': 'ntv2-logan-ewc-5', 'data_alias': 'NT-MS V2 (50M) (1kb, Logan, EWC-Lambda 5, 12B)',
+         'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+         'checkpoint': 'overlap_logan_ewc_5/checkpoint-12000/'},
+    {'modelId': 22, 'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+         'name': 'ntv2-logan-ewc-10', 'data_alias': 'NT-MS V2 (50M) (1kb, Logan, EWC-Lambda 10, 12B)',
+         'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+         'checkpoint': 'overlap_logan_ewc_10/checkpoint-12000/'},
+    {'modelId': 23, 'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+         'name': 'ntv2-logan-ewc-25', 'data_alias': 'NT-MS V2 (50M) (1kb, Logan, EWC-Lambda 25, 12B)',
+         'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+         'checkpoint': 'overlap_logan_ewc_25/checkpoint-12000/'},
+    {'modelId': 24, 'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+             'name': 'ntv2-ms-pca-256', 'data_alias': 'NT-MS V2 (50M) (1kb, PCA, 12B)',
+             'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+             'checkpoint': 'pca_256_multi_species_overlap/checkpoint-12000/'},
+    {'modelId': 25, 'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+                 'name': 'ntv2-ms-pca-256', 'data_alias': 'NT-MS V2 (50M) (1kb, PCA, 12B)',
+                 'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+                 'checkpoint': 'pca_mean_256_multi_species_overlap/checkpoint-12000/'},
+    {'modelId': 26, 'repo': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+                 'name': 'ntv2-ms-pca-256', 'data_alias': 'NT-MS V2 (50M) (1kb, PCA, 12B)',
+                 'tokenizer': "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+                 'checkpoint': 'pca_cls_256_multi_species_overlap/checkpoint-12000/'},
 ]

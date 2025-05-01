@@ -1,86 +1,137 @@
 import os
 import random
-import datetime
-import time
-from datasets import load_dataset, Dataset
+from dataclasses import dataclass
+from typing import Optional
+import sys
+import torch
+import json
+
+from torch.utils.data import DataLoader
+
+from util import LOGLEVEL
+from utils.PCAModel import EsmForMaskedLMPCA, EsmForSequenceClassificationPCA
+from argparse_dataclass import ArgumentParser
+from datasets import load_dataset, Dataset, load_from_disk
 from tqdm import tqdm
+from safetensors.torch import load_file
 from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification, logging, \
-    AutoConfig, EsmConfig
+    AutoModelForMaskedLM, default_data_collator
 from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
-from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir, results_dir, temp_dir
+from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir, results_dir
 from datasets.utils.logging import disable_progress_bar, set_verbosity
-
-from pre_train.model import apply_post_embedding_pca
-from util import LOGLEVEL, init_logger, get_model_by_id, get_task_by_id, get_pretrained_model_by_id
+from utils.util import print_args, get_device
+from util import init_logger, get_task_by_id
 import numpy as np
 from peft import LoraConfig, TaskType, get_peft_model
 import psutil
-
-
-
+  
 def check_memory_usage():
     process = psutil.Process()
     memory_info = process.memory_info()
     print(f"Memory Usage: {memory_info.rss / (1024 ** 2):.2f} MB")
 
 def compute_metrics_mcc(eval_pred):
-    """Computes Matthews correlation coefficient (MCC score) for binary classification"""
-    predictions = np.argmax(eval_pred.predictions, axis=-1)
-    references = eval_pred.label_ids
-    r={'mcc_score': matthews_corrcoef(references, predictions)}
-    return r
+    """Computes Matthews correlation coefficient (MCC score) for binary classification."""
+    preds = eval_pred.predictions
 
-def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task, pca_embeddings):
+    if isinstance(preds, (tuple, list)):
+        preds = preds[0]
+
+    if isinstance(preds, torch.Tensor):
+        preds = preds.detach().cpu().numpy()
+
+    predictions = np.argmax(preds, axis=-1)
+    references = eval_pred.label_ids
+    return {'mcc_score': matthews_corrcoef(references, predictions)}
+
+def finetune_model_by_task_mcc(args, device, task, timestamp):
     disable_progress_bar()
     set_verbosity(logging.ERROR)
     logging.set_verbosity_error()
 
     """Load dataset splits"""
-    dataset_train = load_dataset(
-        task["repo"],
-        name=task["name"],
-        cache_dir=datasets_cache_dir,
-        trust_remote_code=True,
-        split='train'
-    )
+    """5'UTR-Tasks are generated locally and must be loaded from disk"""
+    if task['taskId'] in [27, 28]:
+        _dataset = load_from_disk(task["repo"])
+        dataset_train = _dataset['train']
+        dataset_test = _dataset['test']
+    else:
+        dataset_train = load_dataset(
+            task["repo"],
+            name=task["name"],
+            cache_dir=datasets_cache_dir,
+            trust_remote_code=True,
+            split='train'
+        )
 
-    dataset_test = load_dataset(
-        task["repo"],
-        name=task["name"],
-        cache_dir=datasets_cache_dir,
-        trust_remote_code=True,
-        split='train'
-    )
-
-    #logger.log(LOGLEVEL, f"Dataset {task['name']} loaded and splits created")
+        dataset_test = load_dataset(
+            task["repo"],
+            name=task["name"],
+            cache_dir=datasets_cache_dir,
+            trust_remote_code=True,
+            split='test'
+        )
 
     """Load model and move to device"""
-    #logger.log(LOGLEVEL, f"Loading model with pretrained weights.")
-    path = os.path.join(pretrained_models_cache_dir, model_dict['checkpoint']) if model_dict['checkpoint'] != '' else model_dict['repo']
-    model = AutoModelForSequenceClassification.from_pretrained(
-        path,
-        cache_dir=models_cache_dir,
-        num_labels=task["num_labels"],
-        trust_remote_code=True,
-        local_files_only=True
-    )
-    if pca_embeddings:
-        model = apply_post_embedding_pca(model, reduction_factor=0.5, freeze_pca=False)
+    model_dir = os.path.join(pretrained_models_cache_dir, f"{args.model_name}", f"checkpoint-{args.checkpoint}")
+
+    if args.model_name == 'default_multi_species_untrained':
+        model_dir = "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species"
+
+    if args.pca:
+        base_model = AutoModelForMaskedLM.from_pretrained(
+            model_dir,
+            cache_dir=models_cache_dir,
+            num_labels=task['num_labels'],
+            trust_remote_code=True,
+            local_files_only=True
+        )
+
+        pca_model = EsmForMaskedLMPCA(
+            config=base_model.config,
+            base_model=base_model,
+            pca_dim=args.pca_dims,
+            aux_loss_weight=0.1,
+            temperature=0.1,
+            pca_embeddings=args.pca_embeddings,
+            gradient_accumulation_steps=50,
+            contrastive=False
+        )
+
+        state_dict = load_file(f"{model_dir}/model.safetensors")
+        missing_keys, unexpected_keys = pca_model.load_state_dict(state_dict, strict=True)
+
+        if len(missing_keys) > 0:
+            print("Missing keys:", missing_keys)
+        if len(unexpected_keys) > 0:
+            print("Unexpected keys:", unexpected_keys)
+
+        model = EsmForSequenceClassificationPCA(pca_model=pca_model, num_labels=task['num_labels'])
+    else:
+        model = AutoModelForSequenceClassification.from_pretrained(
+            model_dir,
+            cache_dir=models_cache_dir,
+            num_labels=task["num_labels"],
+            trust_remote_code=True,
+            local_files_only=True
+        )
+
     model = model.to(device)
 
-
-    #logger.log(LOGLEVEL, f"LoRA model loaded")
     """Employ LoRA """
     peft_config = LoraConfig(
-        task_type=TaskType.SEQ_CLS, inference_mode=False, r=1, lora_alpha=32, lora_dropout=0.1,
+        task_type=TaskType.SEQ_CLS,
+        inference_mode=False,
+        lora_alpha=32,
+        lora_dropout=0.1,
         target_modules=["query", "value"],
-        # modules_to_save=["intermediate"] # modules that are not frozen and updated during the training
+        modules_to_save=["classifier", "pca_proj", "layernorm"]
     )
+
+    sys.stdout.flush()
     lora_classifier = get_peft_model(model, peft_config)
     lora_classifier.to(device)
-
-    #logger.log(LOGLEVEL, f"Model {model_dict['name']} loaded on device {device}")
 
     """Get corresponding feature name and load"""
     sequence_feature = task["sequence_feature"]
@@ -98,10 +149,10 @@ def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task,
 
     """Load model overrides"""
     tokenizer = AutoTokenizer.from_pretrained(
-        model_dict['tokenizer'],
+        "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
         cache_dir=models_cache_dir,
         trust_remote_code=True,
-        local_files_only = True
+        local_files_only = True,
     )
     #logger.log(LOGLEVEL, f"Tokenizer {model_dict['name']} loaded")
     """Repack splits"""
@@ -134,18 +185,25 @@ def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task,
 
     """Configure trainer"""
     batch_size = 8
-    if task["taskId"] == 23:
-        eval_batch_size = 32
-    else:
-        eval_batch_size = 64
+    eval_batch_size = 32
+    gradient_accumulation_steps = 10
+    ignore_keys = None
+
+    if args.pca:
+        batch_size = int(batch_size / 2)
+        eval_batch_size = int(eval_batch_size / 4)
+        gradient_accumulation_steps = int(gradient_accumulation_steps * 2)
+        ignore_keys = ["hidden_states", "attentions", "auxiliary_loss", "model_loss", "pca_embedding"]
+
     training_args = TrainingArguments(
-        os.path.join(temp_dir, f"{model_dict['name']}{mode}-{task['alias']}{str(time.time()).replace('.', '')}"),
+        run_name=timestamp,
         remove_unused_columns=False,
+        report_to="none",
         eval_strategy="steps",
         save_strategy="no",
         learning_rate=5e-4,
         per_device_train_batch_size=batch_size,
-        gradient_accumulation_steps= 1,
+        gradient_accumulation_steps= gradient_accumulation_steps,
         per_device_eval_batch_size= eval_batch_size,
         num_train_epochs= 100,
         logging_steps= 100,
@@ -168,89 +226,64 @@ def finetune_model_by_task_mcc(logger, device, model_dict, model_id, mode, task,
     )
 
     """Finetune pre-trained model"""
-    _ = trainer.train()
+    _ = trainer.train(ignore_keys_for_eval=ignore_keys)
 
     train_history = trainer.state.log_history
     """Get MCC score"""
-    preduction_results = trainer.predict(tokenized_test_sequences)
-    predictions = np.argmax(preduction_results.predictions, axis=-1)
-    labels = preduction_results.label_ids
 
-    """Apply Bootstrapping
-    scores = []
-    for _ in range(10000):
-        idx = np.random.choice(len(predictions), size=len(predictions), replace=True)
-        score = matthews_corrcoef(labels[idx], predictions[idx])
-        scores.append(score)
-    """
+    prediction_results = trainer.predict(tokenized_test_sequences, ignore_keys=ignore_keys)
+    predictions = np.argmax(prediction_results.predictions, axis=-1)
+    labels = prediction_results.label_ids
+    labels = labels.tolist()
+    predictions = predictions.tolist()
 
-    return {'labels': labels.tolist(), 'predictions': predictions.tolist(), 'training': train_history}
+    return {'labels': labels, 'predictions': predictions, 'training': train_history}
 
-import sys
-import torch
-print(torch.cuda.is_available())
-print(torch.version.cuda)
-from downstream_tasks import TASKS, MODELS
-import json
-from util import LOGLEVEL
-import argparse
+@dataclass
+class EvalConfig:
+    model_name: str
+    checkpoint: str
+    task_id: int
+    samples: int = 1
+    pca: bool = False
+    pca_embeddings: Optional[str] = None
+    pca_dims: Optional[int] = None
+
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Script to logan model and task by MCC with optional random weights and LoRA configurations."
-    )
-    parser.add_argument(
-        "modelId",
-        type=int,
-        help="The model ID (integer)."
-    )
-    parser.add_argument(
-        "taskId",
-        type=int,
-        help="The task ID (integer)."
-    )
-    parser.add_argument(
-        "--samples",
-        type=int,
-        default=1,
-        help="Number of times training and prediction process is repeated. Default is 1."
-    )
-    parser.add_argument(
-        "--pca_embeddings",
-        action="store_true",
-        dest="pca_embeddings",
-        help="Apply PCA-based post-embedding processing to reduce embedding dimensionality."
-    )
+    parser = ArgumentParser(EvalConfig)
     return parser.parse_args()
+
+def get_output_dir(args):
+    benchmark_dir = os.path.join(results_dir, f"benchmark")
+    os.makedirs(benchmark_dir, exist_ok=True)
+    benchmark_dir = os.path.join(benchmark_dir, args.model_name)
+    os.makedirs(benchmark_dir, exist_ok=True)
+    eval_trained_dir = os.path.join(benchmark_dir, f"checkpoint-{int(int(args.checkpoint) / 2000)}B")
+    os.makedirs(eval_trained_dir, exist_ok=True)
+    return eval_trained_dir
 
 if __name__ == "__main__":
     args = parse_args()
-    model = get_pretrained_model_by_id(args.modelId)
-    task = get_task_by_id(args.taskId)
+    timestamp = print_args(args, "BENCHMARK ARGUMENTS")
 
-    iterations = args.samples
-    mode = f"-{task['alias']}"
-
-    filename = f"{model['name'] + mode}-{task['alias']}"
+    task = get_task_by_id(args.task_id)
     logger = init_logger()
-    logger.log(LOGLEVEL, f"{model['name']}{mode} on {task['alias']}")
+    logger.log(LOGLEVEL, f"{args.model_name} on {task['alias']}")
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device.type == "cuda":
-        logger.log(LOGLEVEL, f"Using GPU: {torch.cuda.get_device_name(0)}")
-    else:
-        logger.log(LOGLEVEL, "GPU not available. Using CPU instead.")
+    device = get_device()
+    eval_trained_dir = get_output_dir(args)
 
-    eval_trained_dir = os.path.join(results_dir, f"eval_pretrained_model_{model['modelId']}")
-    os.makedirs(eval_trained_dir, exist_ok=True)
+    logger.log(LOGLEVEL, f"Output directory: {eval_trained_dir}")
 
     output_file = os.path.join(eval_trained_dir ,f"{task['alias']}.json")
+    logger.log(LOGLEVEL, f"Output file: {output_file}")
     if os.path.exists(output_file):
         exit(0)
 
     all_results = []
-    for i in tqdm(range(3)):
-        results = finetune_model_by_task_mcc(logger, device, model, args.modelId, mode, task, args.pca_embeddings)
+    for i in tqdm(range(args.samples)):
+        results = finetune_model_by_task_mcc(args, device, task, timestamp)
         all_results.append(results)
 
     with open(output_file, 'w') as f:

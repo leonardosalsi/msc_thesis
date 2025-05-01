@@ -3,18 +3,21 @@ import json
 import os
 import sys
 from pprint import pprint
-
+from typing import Optional
+from argparse_dataclass import ArgumentParser
 import numpy as np
+from dataclasses import dataclass
 from datasets import load_from_disk, load_dataset
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModel
 
-from config import generated_datasets_dir, models_cache_dir, datasets_cache_dir, results_dir
-from util import get_filtered_dataset_name
-
+from config import models_cache_dir, results_dir
+from utils.dataset import get_dataset
+from utils.util import print_args, get_device
 torch.set_printoptions(threshold=sys.maxsize)
+
 def collate_fn(batch):
     sequences = [example["sequence"] for example in batch]
 
@@ -28,80 +31,27 @@ def collate_fn(batch):
     return tokens
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Script to examine a dataset with SegmentNT."
-    )
-    parser.add_argument(
-        "dataset",
-        type=str,
-        help="Name of the dataset",
-        choices=["multi_genome_dataset", "logan"]
-    )
-    parser.add_argument(
-        "--chunk_size",
-        type=int,
-        help="Chunk size (defined when further splitting data)",
-    )
-    parser.add_argument(
-        "--shannon",
-        type=float,
-        nargs=2,
-        metavar=("LOW", "HIGH"),
-        help="Lower and upper margin of allowed Shannon entropy (e.g., --shannon 1.4 1.8)"
-    )
-    parser.add_argument(
-        "--gc",
-        type=float,
-        nargs=2,
-        metavar=("LOW", "HIGH"),
-        help="Lower and upper margin of allowed GC content (e.g., --gc 0.4 0.6)"
-    )
-    parser.add_argument(
-        "--kmer",
-        type=int,
-        help="Kmer size (only when using logan)",
-    )
-    parser.add_argument(
-        "--reverse_complement",
-        action="store_true",
-        dest="reverse_complement",
-        help="Use dataset generated with reverse complement (only when using logan)."
-    )
+    parser = ArgumentParser(TrainConfig)
     return parser.parse_args()
+
+@dataclass
+class TrainConfig:
+    dataset: str
+    tokenizer: str = 'SPEC'
+    use_scratch: bool = False
+    keep_in_memory: bool = False
+    load_from_json: bool = False
 
 if __name__ == "__main__":
     args = parse_args()
-    selected_dataset = args.dataset
-    chunk_size_folder_name = get_filtered_dataset_name(args.chunk_size, args.shannon, args.gc)
-    shannon = args.shannon
-    gc = args.gc
-    kmer = args.kmer
-    reverse_complement = args.reverse_complement
+    timestamp = print_args(args, "TRAINING ARGUMENTS")
 
-    if selected_dataset == "multi_genome_dataset":
-        dataset = load_dataset(
-            "InstaDeepAI/multi_species_genomes",
-            cache_dir=datasets_cache_dir,
-            split='train',
-            trust_remote_code=True
-        )
-    elif selected_dataset == "logan":
-        if not kmer:
-            print("Kmer size must be specified when using logan.")
-            exit(1)
-        dataset_name = f"kmer_{kmer}"
-        if reverse_complement:
-            dataset_name += "_reverse"
-        dataset_path = os.path.join(generated_datasets_dir, selected_dataset, dataset_name)
-        dataset = load_from_disk(dataset_path)['train']
-    else:
-        print("Unknown dataset selected")
-        exit(1)
+    device = get_device()
+    dataset_train, _ = get_dataset(args)
 
-    dataset = dataset.shuffle()
+    dataset = dataset_train.shuffle()
     print(dataset)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     max_length = 8 + 1
     print("cache dir: {}".format(models_cache_dir))
     model = AutoModel.from_pretrained(
@@ -119,10 +69,9 @@ if __name__ == "__main__":
         model_max_length=2000
     )
 
-    model.to(device)
     model.eval()
-    dataloader = DataLoader(dataset, batch_size=2000, collate_fn=collate_fn, num_workers=4, pin_memory=True)
 
+    dataloader = DataLoader(dataset, batch_size=2000, collate_fn=collate_fn, num_workers=4, pin_memory=True)
     features = model.config.features
 
     all_counts = torch.zeros(14, dtype=torch.int32).to(device)
@@ -153,6 +102,6 @@ if __name__ == "__main__":
         feat_idx = features.index(f)
         result['results'][f] = int(all_counts[feat_idx])
 
-    result_file = os.path.join(results_dir, f"{selected_dataset}_segment_nt.json")
+    result_file = os.path.join(results_dir, f"{timestamp}_segment_nt.json")
     with open(result_file, "w") as f:
         json.dump(result, f, indent=4)

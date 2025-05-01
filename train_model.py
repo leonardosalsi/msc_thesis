@@ -1,168 +1,57 @@
-
-import argparse
-import datetime
-import os
 import json
-import torch
-
-from pre_train.trainer import get_trainer
-
-torch.backends.cudnn.benchmark = True
-torch.backends.cuda.matmul.allow_tf32 = False
-
+import os
+from dataclasses import dataclass
+from typing import Optional
 from config import pretrained_models_cache_dir, logs_dir
-from pre_train.dataset import get_dataset
-from pre_train.model import get_model
-from pre_train.tokenizer import get_tokenizer
-from pre_train.util import get_device, print_args, compute_metrics
+from utils.dataset import get_dataset
+from utils.model import get_model
+from utils.tokenizer import get_tokenizer
+from utils.trainer import get_trainer
+from utils.PCACollator import PCACollator
+from utils.util import get_device, print_args
+from argparse_dataclass import ArgumentParser
 from transformers import (
-    Trainer,
     TrainingArguments,
-    DataCollatorForLanguageModeling,
-    EsmForMaskedLM,
+    DataCollatorForLanguageModeling
 )
 
+@dataclass
+class TrainConfig:
+    dataset: str
+    tokenizer: str
+    chunk_size: int = 1200
+    max_workers: int = 4
+    reverse_complement: bool = False
+    compile_model: bool = False
+    from_scratch: bool = False
+    pca_dim: int = 0
+    pca_embeddings: str = "cls"
+    freeze_pca: bool = False
+    checkpoint: Optional[int] = None
+    freeze: Optional[float] = None
+    train_size: int = 10
+    eval_size: int = 64
+    gradient_accumulation: int = 50
+    save_steps: int = 6000
+    logging_steps: int = 500
+    max_steps: int = 12000
+    use_scratch: bool = False
+    keep_in_memory: bool = False
+    load_from_json: bool = False
+    ewc_lambda: float = 0.0
+    original_dataset: Optional[str] = None
+
+
 def parse_args():
-    """
-    Parse command line arguments for model training.
-    """
-    parser = argparse.ArgumentParser(
-        description="Train a model from scratch or from pretrained weights with specified tokenization."
-    )
-    parser.add_argument(
-        "dataset",
-        type=str,
-        help="Path to the dataset containing training and validation data."
-    )
-    parser.add_argument(
-        "tokenizer",
-        type=str,
-        help="Tokenizer type to use. Options: 'default' or 'overlapping'."
-    )
-    parser.add_argument(
-        "--chunk_size",
-        default=1200,
-        type=int,
-        help="Chunk size for splitting data (in base pairs). Default is 1200."
-    )
-    parser.add_argument(
-        "--max_workers",
-        default=4,
-        type=int,
-        help="Chunk size for splitting data (in base pairs). Default is 1200."
-    )
-    parser.add_argument(
-        "--reverse_complement",
-        action="store_true",
-        dest="reverse_complement",
-        help="Use dataset generated with reverse complement sequences (if applicable)."
-    )
-    parser.add_argument(
-        "--compile_model",
-        action="store_true",
-        dest="compile_model",
-        help="Compile the model with torch.compile for potential performance improvements."
-    )
-    parser.add_argument(
-        "--from_scratch",
-        action="store_true",
-        dest="from_scratch",
-        help="Train the model from scratch instead of using pretrained weights."
-    )
-    parser.add_argument(
-        "--pca_embeddings",
-        action="store_true",
-        dest="pca_embeddings",
-        help="Apply PCA-based post-embedding processing to reduce embedding dimensionality."
-    )
-    parser.add_argument(
-        "--checkpoint",
-        type=int,
-        nargs=1,
-        metavar=("modelId in PRETRAINED_MODELS"),
-        help="Use a checkpoint from PRETRAINED_MODELS instead of pretrained weights."
-    )
-    parser.add_argument(
-        "--freeze",
-        type=float,
-        help="Fraction of encoder layers to freeze (between 0.1 and 0.9)."
-    )
-    parser.add_argument(
-        "--train_size",
-        type=int,
-        default=10,
-        help="Training batch size per device. Default is 10."
-    )
-    parser.add_argument(
-        "--eval_size",
-        type=int,
-        default=64,
-        help="Evaluation batch size per device. Default is 64."
-    )
-    parser.add_argument(
-        "--gradient_accumulation",
-        type=int,
-        default=50,
-        help="Number of gradient accumulation steps. Default is 50."
-    )
-    parser.add_argument(
-        "--save_steps",
-        type=int,
-        default=6000,
-        help="Frequency of saving model checkpoints (in steps). Default is 6000."
-    )
-    parser.add_argument(
-        "--logging_steps",
-        type=int,
-        default=500,
-        help="Frequency of logging training metrics (in steps). Default is 500."
-    )
-    parser.add_argument(
-        "--max_steps",
-        type=int,
-        default=12000,
-        help="Maximum number of training steps. Default is 12000."
-    )
-    parser.add_argument(
-        "--use_scratch",
-        action="store_true",
-        dest="use_scratch",
-            help="Pre-load everything into local scratch and load from there."
-    )
-    parser.add_argument(
-        "--keep_in_memory",
-        action="store_true",
-        dest="keep_in_memory",
-        help="Keep dataset in memory."
-    )
-    parser.add_argument(
-        "--load_from_json",
-        action="store_true",
-        dest="load_from_json",
-        help="Keep dataset in memory."
-    )
-    parser.add_argument(
-        "--ewc_lambda",
-        type=float,
-        default=0.0,
-        help="Maximum number of training steps. Default is 12000."
-    )
-    parser.add_argument(
-        "--original_dataset",
-        type=str,
-        default=None,
-        help="Maximum number of training steps. Default is 12000."
-    )
+    parser = ArgumentParser(TrainConfig)
     return parser.parse_args()
 
 if __name__ == "__main__":
-    
-    args = parse_args()
 
+    args = parse_args()
     timestamp = print_args(args, "TRAINING ARGUMENTS")
 
     device = get_device()
-    model = get_model(args, device)
     dataset_train, dataset_validation = get_dataset(args)
     tokenizer, num_tokens = get_tokenizer(args)
 
@@ -179,18 +68,25 @@ if __name__ == "__main__":
     tokenized_validation_sequences = tokenized_validation_sequences.select(range(500000))
     tokenized_validation_sequences.set_transform(tokenize_function)
 
-    data_collator = DataCollatorForLanguageModeling(
-        tokenizer=tokenizer,
-        mlm=True,
-        mlm_probability=0.15
-    )
+    if args.pca_dim > 0:
+        data_collator = PCACollator(
+            tokenizer=tokenizer,
+            mlm_probability=0.15
+        )
+    else:
+        data_collator = DataCollatorForLanguageModeling(
+            tokenizer=tokenizer,
+            mlm=True,
+            mlm_probability=0.15
+        )
 
+    model = get_model(args, device)
     model_path = os.path.join(pretrained_models_cache_dir, timestamp)
     if os.path.isdir(model_path) and os.listdir(model_path):
         resume_from_checkpoint = True
     else:
         resume_from_checkpoint = False
-    
+
     training_args = TrainingArguments(
         run_name=timestamp,
         report_to="none",
@@ -212,7 +108,8 @@ if __name__ == "__main__":
         max_steps=args.max_steps,
         include_num_input_tokens_seen=True,
         prediction_loss_only=True,
-        torch_compile=args.compile_model
+        torch_compile=args.compile_model,
+        label_names=['labels']
     )
 
     trainer = get_trainer(
