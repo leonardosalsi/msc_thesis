@@ -70,6 +70,9 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     """Load model and move to device"""
     model_dir = os.path.join(pretrained_models_cache_dir, f"{args.model_name}", f"checkpoint-{args.checkpoint}")
 
+    if args.model_name == 'default_multi_species_untrained':
+        model_dir = os.path.join(pretrained_models_cache_dir, f"{args.model_name}", f"checkpoint-{args.checkpoint}")
+
     if args.pca:
         base_model = AutoModelForMaskedLM.from_pretrained(
             model_dir,
