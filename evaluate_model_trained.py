@@ -71,7 +71,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     model_dir = os.path.join(pretrained_models_cache_dir, f"{args.model_name}", f"checkpoint-{args.checkpoint}")
 
     if args.model_name == 'default_multi_species_untrained':
-        model_dir = os.path.join(pretrained_models_cache_dir, f"{args.model_name}", f"checkpoint-{args.checkpoint}")
+        model_dir = "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species"
 
     if args.pca:
         base_model = AutoModelForMaskedLM.from_pretrained(
@@ -191,6 +191,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     training_args = TrainingArguments(
         run_name=timestamp,
         remove_unused_columns=False,
+        report_to="none",
         eval_strategy="steps",
         save_strategy="no",
         learning_rate=5e-4,
