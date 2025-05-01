@@ -9,5 +9,6 @@
 source ~/.bashrc
 source $HOME/gpu_env/bin/activate
 
-HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \luster/home/salsil/msc_thesis_root/msc_thesis/evaluate_model_trained.py \
+HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \
+python /cluster/home/salsil/msc_thesis_root/msc_thesis/evaluate_model_trained.py \
 --model-name $MODEL --checkpoint 12000 --task-id 14 $ADDITIONAL
