@@ -47,10 +47,42 @@ if __name__ == '__main__':
         benign = [d for d in combined_dataset if d["label"] == 0]
         pathogenic = [d for d in combined_dataset if d["label"] == 1]
 
+        """
+        Get length distribution
+        """
+        if length is None:
+            len_benign = []
+            len_pathogenic = []
+
+            for p in pathogenic:
+                len_pathogenic.append(len(p['sequence']))
+            for b in benign:
+                len_benign.append(len(b['sequence']))
+
+            with open(os.path.join(dataset_location, f"sequence_lengths{f'_{length}' if length is not None else ''}.json"),
+                      "w") as f:
+                json.dump({"benign": len_benign, "pathogenic": len_pathogenic}, f)
+
+
+        """
+        Downstream Tasks have comparatively small datasets, downsize results
+        """
+        random.shuffle(benign)
+        random.shuffle(pathogenic)
+
+        perc = len(benign) /len(pathogenic)
+        full_size = 200000
+
+        size_benign = int(full_size * perc)
+        size_pathogenic = full_size - size_benign
+
+        benign = benign[:size_benign]
+        pathogenic = pathogenic[:size_pathogenic]
+
         print(f"Total: {len(combined_dataset)}, Benign: {len(benign)}, Pathogenic: {len(pathogenic)}")
 
-        benign_train, benign_test = train_test_split(benign, test_size=0.2)
-        pathogenic_train, pathogenic_test = train_test_split(pathogenic, test_size=0.2)
+        benign_train, benign_test = train_test_split(benign, test_size=0.25)
+        pathogenic_train, pathogenic_test = train_test_split(pathogenic, test_size=0.25)
 
         train_data = benign_train + pathogenic_train
         test_data = benign_test + pathogenic_test
@@ -75,12 +107,17 @@ if __name__ == '__main__':
         train_dataset = Dataset.from_generator(lambda: gen(train_data), features=features)
         test_dataset = Dataset.from_generator(lambda: gen(test_data), features=features)
 
+        print(train_dataset)
+        print(test_dataset)
+        dataset = Dataset.spl
         dataset = DatasetDict({
             "train": train_dataset,
             "test": test_dataset
         })
 
-        dataset.save_to_disk(os.path.join(dataset_location, f"5_utr_classification{f'_{length}' if length is not None else ''}"))
+        print(dataset)
+
+        dataset.save_to_disk(os.path.join(dataset_location, f"5_utr_classification{f'_fixed_{length}' if length is not None else ''}"))
 
 
 
