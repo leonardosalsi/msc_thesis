@@ -78,7 +78,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
 
     """Load model and move to device"""
 
-    model = get_eval_model(args, task['num_labels'], device)
+    model, repo = get_eval_model(args, task['num_labels'], device)
 
     """Employ LoRA """
     modules_to_save = None
@@ -93,7 +93,6 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         modules_to_save=modules_to_save
     )
 
-    sys.stdout.flush()
     lora_classifier = get_peft_model(model, peft_config)
     lora_classifier.to(device)
 
@@ -112,7 +111,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     train_sequences, validation_sequences, train_labels, validation_labels = train_test_split(train_sequences, train_labels, test_size=0.05, random_state=random_seed)
 
     """Load model overrides"""
-    tokenizer = get_eval_tokenizer(args)
+    tokenizer = get_eval_tokenizer(args, repo)
 
     #logger.log(LOGLEVEL, f"Tokenizer {model_dict['name']} loaded")
     """Repack splits"""

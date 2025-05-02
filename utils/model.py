@@ -53,8 +53,8 @@ def get_model(args, device):
     return model
 
 def get_eval_model(args, num_labels, device):
+    repo = None
     if 'untrained' in args.model_name:
-        repo = None
         match = re.search(r'\d+', args.model_name)
         if match:
             number = int(match.group())
@@ -125,4 +125,4 @@ def get_eval_model(args, num_labels, device):
 
     model.to(device)
 
-    return model
+    return model, repo
