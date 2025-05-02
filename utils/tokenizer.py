@@ -56,7 +56,6 @@ def get_tokenizer(args):
     :param args: Arguments containing the tokenizer type and chunk_size.
     :return: A tuple (tokenizer, num_tokens)
     """
-    print(args)
     selected_tokenizer = args.tokenizer
     chunk_size = args.chunk_size
     num = math.floor(chunk_size / 1000)
@@ -80,3 +79,32 @@ def get_tokenizer(args):
     else:
         raise ValueError("The specified tokenizer does not exist.")
     return tokenizer, num_tokens
+
+
+def get_eval_tokenizer(args):
+    tokenizer = None
+    if 'default' in args.model_name:
+        tokenizer = AutoTokenizer.from_pretrained(
+            "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+            model_max_length=2048,
+            cache_dir=models_cache_dir,
+            remove_columns=['sequence'],
+            trust_remote_code=True,
+            local_files_only=True
+        )
+    elif 'overlap' in args.model_name:
+        if '2kb' in args.model_name:
+            num_tokens = 2000
+        else:
+            num_tokens = 1000
+
+        tokenizer = OverlappingTokenizer(
+            vocab_file="model_configs/vocab.txt",
+            model_max_length=2048,
+            num_tokens=num_tokens
+        )
+
+    if tokenizer is None:
+        raise ValueError("The specified tokenizer does not exist.")
+
+    return tokenizer

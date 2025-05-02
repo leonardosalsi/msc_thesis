@@ -18,8 +18,11 @@ from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelFor
     AutoModelForMaskedLM, default_data_collator
 from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
-from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir, results_dir
+from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir, results_dir, logs_dir
 from datasets.utils.logging import disable_progress_bar, set_verbosity
+
+from utils.model import get_eval_model
+from utils.tokenizer import get_eval_tokenizer
 from utils.util import print_args, get_device
 from util import init_logger, get_task_by_id
 import numpy as np
@@ -74,59 +77,20 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         )
 
     """Load model and move to device"""
-    model_dir = os.path.join(pretrained_models_cache_dir, f"{args.model_name}", f"checkpoint-{args.checkpoint}")
 
-    if args.model_name == 'default_multi_species_untrained':
-        model_dir = "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species"
-
-    if args.pca:
-        base_model = AutoModelForMaskedLM.from_pretrained(
-            model_dir,
-            cache_dir=models_cache_dir,
-            num_labels=task['num_labels'],
-            trust_remote_code=True,
-            local_files_only=True
-        )
-
-        pca_model = EsmForMaskedLMPCA(
-            config=base_model.config,
-            base_model=base_model,
-            pca_dim=args.pca_dims,
-            aux_loss_weight=0.1,
-            temperature=0.1,
-            pca_embeddings=args.pca_embeddings,
-            gradient_accumulation_steps=50,
-            contrastive=False
-        )
-
-        state_dict = load_file(f"{model_dir}/model.safetensors")
-        missing_keys, unexpected_keys = pca_model.load_state_dict(state_dict, strict=True)
-
-        if len(missing_keys) > 0:
-            print("Missing keys:", missing_keys)
-        if len(unexpected_keys) > 0:
-            print("Unexpected keys:", unexpected_keys)
-
-        model = EsmForSequenceClassificationPCA(pca_model=pca_model, num_labels=task['num_labels'])
-    else:
-        model = AutoModelForSequenceClassification.from_pretrained(
-            model_dir,
-            cache_dir=models_cache_dir,
-            num_labels=task["num_labels"],
-            trust_remote_code=True,
-            local_files_only=True
-        )
-
-    model = model.to(device)
+    model = get_eval_model(args, task['num_labels'], device)
 
     """Employ LoRA """
+    modules_to_save = None
+    if args.pca:
+        modules_to_save = ["pca_proj", "layernorm"]
     peft_config = LoraConfig(
         task_type=TaskType.SEQ_CLS,
         inference_mode=False,
         lora_alpha=32,
         lora_dropout=0.1,
         target_modules=["query", "value"],
-        modules_to_save=["classifier", "pca_proj", "layernorm"]
+        modules_to_save=modules_to_save
     )
 
     sys.stdout.flush()
@@ -148,12 +112,8 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     train_sequences, validation_sequences, train_labels, validation_labels = train_test_split(train_sequences, train_labels, test_size=0.05, random_state=random_seed)
 
     """Load model overrides"""
-    tokenizer = AutoTokenizer.from_pretrained(
-        "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
-        cache_dir=models_cache_dir,
-        trust_remote_code=True,
-        local_files_only = True,
-    )
+    tokenizer = get_eval_tokenizer(args)
+
     #logger.log(LOGLEVEL, f"Tokenizer {model_dict['name']} loaded")
     """Repack splits"""
     _ds_train = Dataset.from_dict({"data": train_sequences,'labels':train_labels})
@@ -181,7 +141,6 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         batched=True,
         remove_columns=["data"],
     )
-
 
     """Configure trainer"""
     batch_size = 8
@@ -212,7 +171,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         label_names=["labels"],
         dataloader_drop_last=True,
         max_steps= 1000,
-        logging_dir='./log',
+        logging_dir=logs_dir,
         disable_tqdm=True
     )
 
