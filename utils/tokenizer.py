@@ -81,11 +81,13 @@ def get_tokenizer(args):
     return tokenizer, num_tokens
 
 
-def get_eval_tokenizer(args):
+def get_eval_tokenizer(args, repo=None):
     tokenizer = None
+    if repo is None:
+        repo = "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species"
     if 'default' in args.model_name:
         tokenizer = AutoTokenizer.from_pretrained(
-            "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+            repo,
             model_max_length=2048,
             cache_dir=models_cache_dir,
             remove_columns=['sequence'],
