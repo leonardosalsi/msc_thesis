@@ -29,8 +29,9 @@ TASKS = [
     {'taskId': 24,'repo': "katarinagresova/Genomic_Benchmarks_demo_coding_vs_intergenomic_seqs", 'name': "", 'alias': "gb_demo_coding_vs_intergenomic_seqs", 'len': 200, 'sequence_feature': 'seq', 'label_feature': 'label', 'num_labels': 2, 'data_alias': 'Coding vs Intergenomic Seq.'},
     {'taskId': 25,'repo': "katarinagresova/Genomic_Benchmarks_human_enhancers_ensembl", 'name': "", 'alias': "gb_human_enhancers_ensembl", 'len': 600, 'sequence_feature': 'seq', 'label_feature': 'label', 'num_labels': 2, 'data_alias': 'Enhancers (human ensemble)'}, #1-600
     {'taskId': 26,'repo': "katarinagresova/Genomic_Benchmarks_human_enhancers_cohn", 'name': "", 'alias': "gb_human_enhancers_cohn", 'len': 500, 'sequence_feature': 'seq', 'label_feature': 'label', 'num_labels': 2, 'data_alias': 'Enhancers (human cohn)'},
-    {'taskId': 27,'repo': os.path.join(datasets_cache_dir, '5_utr_classification'), 'name': "", 'alias': "utr5_ben_pat", 'len': 1000, 'sequence_feature': 'sequence', 'label_feature': 'label', 'num_labels': 2, 'data_alias': "UTR'5 Class."},
-    {'taskId': 28,'repo': os.path.join(datasets_cache_dir, '5_utr_classification_fixed_1200'), 'name': "", 'alias': "utr5_ben_pat_fixed", 'len': 1200, 'sequence_feature': 'sequence', 'label_feature': 'label', 'num_labels': 2, 'data_alias': "UTR'5 Class. (fixed length)"}
+    {'taskId': 27,'repo': "katarinagresova/Genomic_Benchmarks_human_nontata_promoters", 'name': "", 'alias': "gb_human_nontata_promoters", 'len': 251, 'sequence_feature': 'seq', 'label_feature': 'label', 'num_labels': 2, 'data_alias': 'Promoter Human (no TATA)'},
+    {'taskId': 28,'repo': os.path.join(datasets_cache_dir, '5_utr_classification'), 'name': "", 'alias': "utr5_ben_pat", 'len': 1000, 'sequence_feature': 'sequence', 'label_feature': 'label', 'num_labels': 2, 'data_alias': "UTR'5 Class."},
+    {'taskId': 29,'repo': os.path.join(datasets_cache_dir, '5_utr_classification_fixed_1200'), 'name': "", 'alias': "utr5_ben_pat_fixed", 'len': 1200, 'sequence_feature': 'sequence', 'label_feature': 'label', 'num_labels': 2, 'data_alias': "UTR'5 Class. (fixed length)"}
 ]
 
 MODELS = [
