@@ -142,9 +142,9 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     )
 
     """Configure trainer"""
-    batch_size = 8
+    batch_size = 4
     eval_batch_size = 16
-    gradient_accumulation_steps = 1
+    gradient_accumulation_steps = 2
     ignore_keys = None
 
     if task["taskId"] in [23]:
