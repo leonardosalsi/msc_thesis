@@ -86,7 +86,6 @@ class EWCTrainer(Trainer):
         """
         outputs = model(**inputs)
 
-        pprint(outputs)
         self.auxiliary_loss = getattr(outputs, "auxiliary_loss", None)
         if self.auxiliary_loss is not None:
             self.auxiliary_loss = self.auxiliary_loss.item()
