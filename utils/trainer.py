@@ -84,8 +84,13 @@ class EWCTrainer(Trainer):
         Compute the loss with an added EWC penalty term.
         """
         outputs = model(**inputs)
-        self.auxiliary_loss = outputs.auxiliary_loss.item() if outputs.auxiliary_loss is not None else None
-        self.model_loss = outputs.model_loss.item() if outputs.model_loss is not None else None
+        self.auxiliary_loss = getattr(outputs, "auxiliary_loss", None)
+        if self.auxiliary_loss is not None:
+            self.auxiliary_loss = self.auxiliary_loss.item()
+
+        self.model_loss = getattr(outputs, "model_loss", None)
+        if self.model_loss is not None:
+            self.model_loss = self.model_loss.item()
         if hasattr(outputs, "loss"):
             base_loss = outputs.loss
         elif isinstance(outputs, tuple):
