@@ -1,3 +1,4 @@
+from pprint import pprint
 from typing import Dict, Optional
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -84,6 +85,8 @@ class EWCTrainer(Trainer):
         Compute the loss with an added EWC penalty term.
         """
         outputs = model(**inputs)
+
+        pprint(outputs)
         self.auxiliary_loss = getattr(outputs, "auxiliary_loss", None)
         if self.auxiliary_loss is not None:
             self.auxiliary_loss = self.auxiliary_loss.item()
