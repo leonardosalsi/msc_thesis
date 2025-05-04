@@ -55,7 +55,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
 
     """Load dataset splits"""
     """5'UTR-Tasks are generated locally and must be loaded from disk"""
-    if task['taskId'] in [27, 28]:
+    if task['taskId'] in [28, 29]:
         _dataset = load_from_disk(task["repo"])
         dataset_train = _dataset['train']
         dataset_test = _dataset['test']
