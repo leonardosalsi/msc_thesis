@@ -3,7 +3,7 @@ cd ..
 
 MODEL='overlap_logan_ewc_25'
 
-sbatch  --export=ALL,MODEL="$MODEL",ADDITIONAL="$ADDITIONAL" --job-name="H3K36me3_${MODEL}" jobs/evaluate_trained/H3K36me3.sh
+sbatch  --export=ALL,MODEL="$MODEL",ADDITIONAL="$ADDITIONAL" --job-name="H3K27me3_${MODEL}" jobs/evaluate_trained/H3K27me3.sh
 
 
 MODEL='overlap_logan_no_ewc'
