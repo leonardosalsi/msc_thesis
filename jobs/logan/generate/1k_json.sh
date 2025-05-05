@@ -16,7 +16,7 @@ HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \
 python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/create_logan_dataset.py \
 "$TMPDIR" \
 --metadata_file_path /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/logan/data/metadata.csv \
---chunk_size 1200 \
+--chunk_size 6200 \
 --reverse_complement --max_workers 8 --acc_column acc --group_id_column kmeans --use_scratch --use_json
 
 export JSONDIR="$(date +'%Y%m%d_%H%M%S')"
