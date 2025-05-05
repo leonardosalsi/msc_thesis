@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=gen_logan_2k
-#SBATCH --output=/cluster/home/salsil/msc_thesis_root/out/scratch_gen_logan_2k.txt
+#SBATCH --job-name=gen_logan_6k
+#SBATCH --output=/cluster/home/salsil/msc_thesis_root/out/scratch_gen_logan_6k.txt
 #SBATCH --cpus-per-task=4
 #SBATCH --time=100:00:00
 #SBATCH --mem-per-cpu=128G
