@@ -19,6 +19,6 @@ python /cluster/home/salsil/msc_thesis_root/msc_thesis/create_logan_dataset.py \
 --chunk_size 6200 \
 --reverse_complement --max_workers 4 --acc_column acc --group_id_column kmeans --use_scratch --use_json
 
-export JSONDIR="$(date +'%Y%m%d_%H%M%S')"
+export JSONDIR="random_walk_6200"
 mkdir "/cluster/scratch/salsil/$JSONDIR"
 cp -r "$TMPDIR"/*.json "/cluster/scratch/salsil/$JSONDIR/"
