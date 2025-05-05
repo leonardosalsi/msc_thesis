@@ -33,7 +33,8 @@ From ClinVar only get benign sequences and from gnomAD both benign and pathogeni
 """
 if __name__ == '__main__':
     dataset_location = "/shared/5_utr/"
-    length = None
+    length = 2200
+    full = True
 
     gnomAD_filename = f"utr5_dataset_gnomAD{f'_{length}' if length is not None else ''}.json"
     dataset_gnomAD = load_or_generate(get_from_gnomAD.get, dataset_location, gnomAD_filename, length)
@@ -70,14 +71,15 @@ if __name__ == '__main__':
         random.shuffle(benign)
         random.shuffle(pathogenic)
 
-        perc = len(benign) /len(pathogenic)
-        full_size = 200000
+        if not full:
+            perc = len(benign) /len(pathogenic)
+            full_size = 200000
 
-        size_benign = int(full_size * perc)
-        size_pathogenic = full_size - size_benign
+            size_benign = int(full_size * perc)
+            size_pathogenic = full_size - size_benign
 
-        benign = benign[:size_benign]
-        pathogenic = pathogenic[:size_pathogenic]
+            benign = benign[:size_benign]
+            pathogenic = pathogenic[:size_pathogenic]
 
         print(f"Total: {len(combined_dataset)}, Benign: {len(benign)}, Pathogenic: {len(pathogenic)}")
 
@@ -107,17 +109,12 @@ if __name__ == '__main__':
         train_dataset = Dataset.from_generator(lambda: gen(train_data), features=features)
         test_dataset = Dataset.from_generator(lambda: gen(test_data), features=features)
 
-        print(train_dataset)
-        print(test_dataset)
-        dataset = Dataset.spl
         dataset = DatasetDict({
             "train": train_dataset,
             "test": test_dataset
         })
 
-        print(dataset)
-
-        dataset.save_to_disk(os.path.join(dataset_location, f"5_utr_classification{f'_fixed_{length}' if length is not None else ''}"))
+        dataset.save_to_disk(os.path.join(dataset_location, f"5_utr_classification{f'_fixed_{length}' if length is not None else ''}{'_full' if full else ''}"))
 
 
 
