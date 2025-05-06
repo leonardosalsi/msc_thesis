@@ -10,7 +10,7 @@ source ~/.bashrc
 conda activate gpu_env
 
 HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \
-python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/create_logan_dataset.py \
+python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/create_logan_dataset.py \
 /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/logan/data \
 --metadata_file_path /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/logan/data/metadata.csv \
 --chunk_size 6200 \
