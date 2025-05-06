@@ -78,8 +78,6 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
 
     """Load model and move to device"""
 
-    print(dataset_train)
-
     model, repo = get_eval_model(args, task['num_labels'], device)
 
     """Employ LoRA """
