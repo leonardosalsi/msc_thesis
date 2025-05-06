@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=gen_logan_2k
-#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis//out/scratch_gen_logan_2k.txt
+#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/scratch_gen_logan_2k.txt
 #SBATCH --cpus-per-task=4
 #SBATCH --time=100:00:00
 #SBATCH --mem-per-cpu=128G
