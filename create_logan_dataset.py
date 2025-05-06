@@ -41,6 +41,12 @@ def parse_args():
     )
 
     parser.add_argument(
+        "--output_path",
+        type=str,
+        help="Path where files are stored"
+    )
+
+    parser.add_argument(
         "--group_id_column",
         type=str,
         help="Column header name of group id of accession in metadata file"
@@ -109,6 +115,7 @@ if __name__ == "__main__":
         reverse_complement = args.reverse_complement
         fasta_files_path = args.fasta_files_path
         metadata_path = args.metadata_file_path
+        output_path = args.output_path
         metadata_acc_column = args.acc_column
         metadata_group_id_column = args.group_id_column
         use_scratch = args.use_scratch
@@ -173,6 +180,7 @@ if __name__ == "__main__":
                 reverse_complement,
                 fasta_files_path,
                 metadata_path,
+                output_path,
                 metadata_acc_column,
                 metadata_group_id_column,
                 max_workers,
