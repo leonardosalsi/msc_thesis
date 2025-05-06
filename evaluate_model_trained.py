@@ -215,7 +215,10 @@ def parse_args():
     return parser.parse_args()
 
 def get_output_dir(args):
-    benchmark_dir = os.path.join(results_dir, f"benchmark")
+    if args.task_id in [28, 29]:
+        benchmark_dir = os.path.join(results_dir, f"benchmark")
+    else:
+        benchmark_dir = os.path.join(results_dir, f"utr5")
     os.makedirs(benchmark_dir, exist_ok=True)
     benchmark_dir = os.path.join(benchmark_dir, args.model_name)
     os.makedirs(benchmark_dir, exist_ok=True)
