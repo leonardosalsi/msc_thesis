@@ -12,6 +12,7 @@ conda activate gpu_env
 HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \
 python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/create_logan_dataset.py \
 /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/logan/data \
+--output_path /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/generated_datasets/logan_6200/random_walk \
 --metadata_file_path /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/logan/data/metadata.csv \
 --chunk_size 6200 \
 --reverse_complement --max_workers 4 --acc_column acc --group_id_column kmeans --use_json
