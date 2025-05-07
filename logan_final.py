@@ -65,16 +65,13 @@ if __name__ == "__main__":
 
         #full_dataset = load_dataset("json", data_dir=json_files_dir, num_proc=8)
 
-        split_dataset = full_dataset.train_test_split(test_size=0.2, seed=112)
+        split_dataset = full_dataset.train_test_split(test_size=0.2)
         train_dataset = split_dataset['train']
         test_dataset = split_dataset['test']
         dataset = DatasetDict({
             "train": train_dataset,
             "validation": test_dataset
         })
-
-        print(dataset)
-        print(dataset['train'][0])
 
         save_path = None
         final_save_path = os.path.join(generated_datasets_dir, "logan")

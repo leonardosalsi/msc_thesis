@@ -2,16 +2,27 @@ import os
 import random
 from dataclasses import dataclass
 from typing import Optional
+import sys
+import torch
+import json
+
+from torch.utils.data import DataLoader
+
+from util import LOGLEVEL
 from utils.PCAModel import EsmForMaskedLMPCA, EsmForSequenceClassificationPCA
 from argparse_dataclass import ArgumentParser
-from datasets import load_dataset, Dataset
+from datasets import load_dataset, Dataset, load_from_disk
 from tqdm import tqdm
 from safetensors.torch import load_file
-from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification, logging, AutoModelForMaskedLM
+from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification, logging, \
+    AutoModelForMaskedLM, default_data_collator
 from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
-from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir, results_dir
+from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir, results_dir, logs_dir
 from datasets.utils.logging import disable_progress_bar, set_verbosity
+
+from utils.model import get_eval_model
+from utils.tokenizer import get_eval_tokenizer
 from utils.util import print_args, get_device
 from util import init_logger, get_task_by_id
 import numpy as np
@@ -43,75 +54,45 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     logging.set_verbosity_error()
 
     """Load dataset splits"""
-    dataset_train = load_dataset(
-        task["repo"],
-        name=task["name"],
-        cache_dir=datasets_cache_dir,
-        trust_remote_code=True,
-        split='train'
-    )
+    """5'UTR-Tasks are generated locally and must be loaded from disk"""
+    if task['taskId'] in [28, 29]:
+        _dataset = load_from_disk(task["repo"])
+        dataset_train = _dataset['train']
+        dataset_test = _dataset['test']
+    else:
+        dataset_train = load_dataset(
+            task["repo"],
+            name=task["name"],
+            cache_dir=datasets_cache_dir,
+            trust_remote_code=True,
+            split='train'
+        )
 
-    dataset_test = load_dataset(
-        task["repo"],
-        name=task["name"],
-        cache_dir=datasets_cache_dir,
-        trust_remote_code=True,
-        split='train'
-    )
+        dataset_test = load_dataset(
+            task["repo"],
+            name=task["name"],
+            cache_dir=datasets_cache_dir,
+            trust_remote_code=True,
+            split='test'
+        )
 
     """Load model and move to device"""
-    model_dir = os.path.join(pretrained_models_cache_dir, f"{args.model_name}", f"checkpoint-{args.checkpoint}")
 
-    if args.pca:
-        base_model = AutoModelForMaskedLM.from_pretrained(
-            model_dir,
-            cache_dir=models_cache_dir,
-            num_labels=2,
-            trust_remote_code=True,
-            local_files_only=True
-        )
-
-        pca_model = EsmForMaskedLMPCA(
-            config=base_model.config,
-            base_model=base_model,
-            pca_dim=args.pca_dims,
-            aux_loss_weight=0.1,
-            temperature=0.1,
-            pca_embeddings=args.pca_embeddings,
-            gradient_accumulation_steps=50,
-            contrastive=False
-        )
-
-        state_dict = load_file(f"{model_dir}/model.safetensors")
-        missing_keys, unexpected_keys = pca_model.load_state_dict(state_dict, strict=True)
-
-        if len(missing_keys) > 0:
-            print("Missing keys:", missing_keys)
-        if len(unexpected_keys) > 0:
-            print("Unexpected keys:", unexpected_keys)
-
-        model = EsmForSequenceClassificationPCA(pca_model=pca_model, num_labels=task['num_labels'])
-    else:
-        model = AutoModelForSequenceClassification.from_pretrained(
-            model_dir,
-            cache_dir=models_cache_dir,
-            num_labels=task["num_labels"],
-            trust_remote_code=True,
-            local_files_only=True
-        )
-
-    model = model.to(device)
+    model, repo = get_eval_model(args, task['num_labels'], device)
 
     """Employ LoRA """
+    modules_to_save = None
+    if args.pca:
+        modules_to_save = ["pca_proj", "layernorm"]
     peft_config = LoraConfig(
         task_type=TaskType.SEQ_CLS,
         inference_mode=False,
-        r=8,
         lora_alpha=32,
         lora_dropout=0.1,
         target_modules=["query", "value"],
-        modules_to_save=["classifier", "pca_proj", "layernorm"]
+        modules_to_save=modules_to_save
     )
+
     lora_classifier = get_peft_model(model, peft_config)
     lora_classifier.to(device)
 
@@ -130,12 +111,8 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     train_sequences, validation_sequences, train_labels, validation_labels = train_test_split(train_sequences, train_labels, test_size=0.05, random_state=random_seed)
 
     """Load model overrides"""
-    tokenizer = AutoTokenizer.from_pretrained(
-        "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
-        cache_dir=models_cache_dir,
-        trust_remote_code=True,
-        local_files_only = True
-    )
+    tokenizer = get_eval_tokenizer(args, repo)
+
     #logger.log(LOGLEVEL, f"Tokenizer {model_dict['name']} loaded")
     """Repack splits"""
     _ds_train = Dataset.from_dict({"data": train_sequences,'labels':train_labels})
@@ -165,35 +142,38 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     )
 
     """Configure trainer"""
-    batch_size = 8
-    if task["taskId"] == 23:
-        eval_batch_size = 32
-    else:
-        eval_batch_size = 64
+    batch_size = 4
+    eval_batch_size = 16
+    gradient_accumulation_steps = 2
+    ignore_keys = None
 
-    gradient_accumulation_steps = 10
+    if task["taskId"] in [23]:
+        eval_batch_size = 8
+
     if args.pca:
         batch_size = int(batch_size / 2)
-        eval_batch_size = int(eval_batch_size / 2)
+        eval_batch_size = int(eval_batch_size / 4)
         gradient_accumulation_steps = int(gradient_accumulation_steps * 2)
+        ignore_keys = ["hidden_states", "attentions", "auxiliary_loss", "model_loss", "pca_embedding"]
 
     training_args = TrainingArguments(
         run_name=timestamp,
         remove_unused_columns=False,
+        report_to="none",
         eval_strategy="steps",
         save_strategy="no",
         learning_rate=5e-4,
         per_device_train_batch_size=batch_size,
         gradient_accumulation_steps= gradient_accumulation_steps,
         per_device_eval_batch_size= eval_batch_size,
-        num_train_epochs= 100,
+        num_train_epochs= 2,
         logging_steps= 100,
         load_best_model_at_end=False,
         metric_for_best_model="mcc_score",
         label_names=["labels"],
         dataloader_drop_last=True,
-        max_steps= 10000,
-        logging_dir='./log',
+        max_steps= 1000,
+        logging_dir=logs_dir,
         disable_tqdm=True
     )
 
@@ -207,25 +187,18 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     )
 
     """Finetune pre-trained model"""
-    _ = trainer.train()
-    if args.pca:
-        trainer.args.per_device_eval_batch_size = int(eval_batch_size / 2)
+    _ = trainer.train(ignore_keys_for_eval=ignore_keys)
+
     train_history = trainer.state.log_history
     """Get MCC score"""
-    preduction_results = trainer.predict(tokenized_test_sequences)
-    predictions = np.argmax(preduction_results.predictions, axis=-1)
-    labels = preduction_results.label_ids
 
-    return {'labels': labels.tolist(), 'predictions': predictions.tolist(), 'training': train_history}
+    prediction_results = trainer.predict(tokenized_test_sequences, ignore_keys=ignore_keys)
+    predictions = np.argmax(prediction_results.predictions, axis=-1)
+    labels = prediction_results.label_ids
+    labels = labels.tolist()
+    predictions = predictions.tolist()
 
-import sys
-import torch
-print(torch.cuda.is_available())
-print(torch.version.cuda)
-from downstream_tasks import TASKS, MODELS
-import json
-from util import LOGLEVEL
-import argparse
+    return {'labels': labels, 'predictions': predictions, 'training': train_history}
 
 @dataclass
 class EvalConfig:
@@ -237,13 +210,15 @@ class EvalConfig:
     pca_embeddings: Optional[str] = None
     pca_dims: Optional[int] = None
 
-
 def parse_args():
     parser = ArgumentParser(EvalConfig)
     return parser.parse_args()
 
 def get_output_dir(args):
-    benchmark_dir = os.path.join(results_dir, f"benchmark")
+    if args.task_id in [28, 29]:
+        benchmark_dir = os.path.join(results_dir, f"benchmark")
+    else:
+        benchmark_dir = os.path.join(results_dir, f"utr5")
     os.makedirs(benchmark_dir, exist_ok=True)
     benchmark_dir = os.path.join(benchmark_dir, args.model_name)
     os.makedirs(benchmark_dir, exist_ok=True)
