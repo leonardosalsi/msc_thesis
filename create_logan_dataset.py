@@ -75,6 +75,12 @@ def parse_args():
     )
 
     parser.add_argument(
+        "--keep_remainder",
+        action="store_true",
+        dest="keep_remainder",
+    )
+
+    parser.add_argument(
         "--max_workers",
         type=int,
         default=1,
@@ -105,6 +111,13 @@ def parse_args():
         dest="file_level",
     )
 
+    parser.add_argument(
+        "--identity_threshold",
+        type=float,
+        default=0.0,
+        help="Filter out sequences with identity value above this value",
+    )
+
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -122,6 +135,8 @@ if __name__ == "__main__":
         use_json = args.use_json
         run_statistics = args.run_statistics
         file_level = args.file_level
+        keep_remainder = args.keep_remainder
+        identity_threshold = args.identity_threshold
 
         if run_statistics:
             gen = fasta_walker.run_statistics(
@@ -177,6 +192,7 @@ if __name__ == "__main__":
             fasta_walker.create_random_walk_sequences_json(
                 kmer,
                 chunk_size,
+                keep_remainder,
                 reverse_complement,
                 fasta_files_path,
                 metadata_path,
@@ -184,7 +200,8 @@ if __name__ == "__main__":
                 metadata_acc_column,
                 metadata_group_id_column,
                 max_workers,
-                use_scratch
+                use_scratch,
+                identity_threshold,
             )
         else:
             TMP_DIR = os.environ["TMPDIR"]
@@ -217,6 +234,7 @@ if __name__ == "__main__":
                 lambda: fasta_walker.create_random_walk_sequences(
                     kmer,
                     chunk_size,
+                    keep_remainder,
                     reverse_complement,
                     fasta_files_path,
                     metadata_path,
@@ -224,7 +242,8 @@ if __name__ == "__main__":
                     metadata_acc_column,
                     metadata_group_id_column,
                     max_workers,
-                    use_scratch
+                    use_scratch,
+                    identity_threshold
                 ),
                 cache_dir=cache_dir,
                 features=features
