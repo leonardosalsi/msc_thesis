@@ -7,7 +7,7 @@
 #SBATCH --mem-per-cpu=16G
 
 source ~/.bashrc
-conda activate fasta_env
+conda activate gpu_env
 
 python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/filter.py \
 /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/generated_datasets/logan_6200/random_walk/random_walk_366.json \
