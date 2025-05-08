@@ -7,4 +7,3 @@ if [ -z "$MODEL" ]; then
 fi
 
 sbatch --export=MODEL,ADDITIONAL --job-name="utr5_fixed_${MODEL}" jobs/utr5_classification/utr5_fixed.sh
-sbatch --export=MODEL,ADDITIONAL --job-name="utr5_${MODEL}" jobs/utr5_classification/utr5.sh

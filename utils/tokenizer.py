@@ -82,6 +82,8 @@ def get_tokenizer(args):
 
 
 def get_eval_tokenizer(args, repo=None):
+    """
+    We use default tokenizer for all tasks for fair comparison.
     tokenizer = None
     if repo is None:
         repo = "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species"
@@ -107,6 +109,16 @@ def get_eval_tokenizer(args, repo=None):
         )
 
     if tokenizer is None:
-        raise ValueError("The specified tokenizer does not exist.")
+        raise ValueError("The specified tokenizer does not exist.")"""
+    if repo is None:
+        repo = "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species"
+    tokenizer = AutoTokenizer.from_pretrained(
+        repo,
+        model_max_length=2048,
+        cache_dir=models_cache_dir,
+        remove_columns=['sequence'],
+        trust_remote_code=True,
+        local_files_only=True
+    )
 
     return tokenizer
