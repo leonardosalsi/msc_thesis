@@ -1,7 +1,7 @@
 import os
 import random
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Counter
 import sys
 import torch
 import json
@@ -46,6 +46,8 @@ def compute_metrics_mcc(eval_pred):
 
     predictions = np.argmax(preds, axis=-1)
     references = eval_pred.label_ids
+    print("Prediction distribution:", Counter(predictions))
+    print("References distribution:", Counter(references))
     return {'mcc_score': matthews_corrcoef(references, predictions)}
 
 def finetune_model_by_task_mcc(args, device, task, timestamp):
@@ -147,7 +149,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     gradient_accumulation_steps = 2
     ignore_keys = None
 
-    if task["taskId"] in [23]:
+    if task["taskId"] in [23, 29]:
         eval_batch_size = 8
 
     if args.pca:
@@ -197,7 +199,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     labels = prediction_results.label_ids
     labels = labels.tolist()
     predictions = predictions.tolist()
-
+    print(matthews_corrcoef(labels, predictions))
     return {'labels': labels, 'predictions': predictions, 'training': train_history}
 
 @dataclass
@@ -216,9 +218,9 @@ def parse_args():
 
 def get_output_dir(args):
     if args.task_id in [28, 29]:
-        benchmark_dir = os.path.join(results_dir, f"benchmark")
-    else:
         benchmark_dir = os.path.join(results_dir, f"utr5")
+    else:
+        benchmark_dir = os.path.join(results_dir, f"benchmark")
     os.makedirs(benchmark_dir, exist_ok=True)
     benchmark_dir = os.path.join(benchmark_dir, args.model_name)
     os.makedirs(benchmark_dir, exist_ok=True)
