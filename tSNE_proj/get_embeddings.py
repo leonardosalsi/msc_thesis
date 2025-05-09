@@ -1,28 +1,15 @@
-import json
 import os
-import subprocess
 from dataclasses import dataclass
-from pprint import pprint
 import pickle
 import numpy as np
-import pandas as pd
 import torch
-from Bio import SeqIO, Entrez
 from argparse_dataclass import ArgumentParser
-from datasets import load_dataset, load_from_disk
-from sklearn.decomposition import PCA
+from datasets import load_from_disk
 from tqdm import tqdm
-from transformers import AutoTokenizer, AutoModel, AutoModelForSequenceClassification, AutoModelForMaskedLM
-from sklearn.manifold import TSNE
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-from config import models_cache_dir, pretrained_models_cache_dir, datasets_cache_dir, generated_datasets_dir, \
-    results_dir
+from config import generated_datasets_dir, results_dir
 from utils.model import get_emb_model
 from utils.tokenizer import get_eval_tokenizer
 from utils.util import get_device, print_args
-
 
 @dataclass
 class EmbConfig:
