@@ -34,7 +34,10 @@ def extract_region_embeddings(args, device):
 
     L = model.config.num_hidden_layers
     layers = sorted(set([0, int(L * 0.25), int(L * 0.70), int(L * 0.90)]))
-    batch_size = 32
+    if num_params == 50:
+        batch_size = 32
+    else:
+        batch_size = 16
     all_embeddings = {layer: [] for layer in layers}
     meta = {layer: [] for layer in layers}
 
