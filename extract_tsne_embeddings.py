@@ -1,79 +1,100 @@
-import random
 import os
-
-from datasets import Dataset
+from dataclasses import dataclass
+import pickle
+import numpy as np
+import torch
+from argparse_dataclass import ArgumentParser
+from datasets import load_from_disk
 from tqdm import tqdm
-import pysam
+from config import generated_datasets_dir, results_dir
+from utils.model import get_emb_model
+from utils.tokenizer import get_eval_tokenizer
+from utils.util import get_device, print_args
 
-from config import generated_datasets_dir
-from tSNE_proj.generate_bed_files import get_files
+@dataclass
+class EmbConfig:
+    model_name: str
+    checkpoint: str
+    pca: bool = False
 
-FASTA_PATH = "/shared/DS/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
-SEQUENCE_LENGTH = 6000
-SAMPLES_PER_REGION = 10000
+def parse_args():
+    parser = ArgumentParser(EmbConfig)
+    return parser.parse_args()
 
-def parse_bed_file(file_path):
-    with open(file_path) as f:
-        for line in f:
-            parts = line.strip().split()
-            if len(parts) >= 3:
-                chrom = parts[0].removeprefix("chr")
-                yield chrom, int(parts[1]), int(parts[2])
+def extract_region_embeddings(args, device):
 
-def sample_sequence(fasta, chrom, region_start, region_end, seq_len):
-    region_len = region_end - region_start
-    if region_len < 1:
-        return None
+    model, repo, num_params = get_emb_model(args, device)
+    model.eval()
+    print(model.config.num_hidden_layers)
 
-    center = random.randint(region_start, region_end - 1)
-    half_len = seq_len // 2
-    seq_start = max(0, center - half_len)
-    seq_end = seq_start + seq_len
+    tokenizer = get_eval_tokenizer(args, repo)
 
-    # Adjust if we're near the chromosome end (avoid short fetches)
-    if fasta.get_reference_length(chrom) < seq_end:
-        seq_start = fasta.get_reference_length(chrom) - seq_len
-        seq_end = fasta.get_reference_length(chrom)
+    dataset = load_from_disk(os.path.join(generated_datasets_dir, 'tSNE_6000'))
+    dataset = dataset.shuffle()
 
-    if seq_start < 0:
-        return None
+    L = model.config.num_hidden_layers
+    layers = sorted(set([0, int(L * 0.25), int(L * 0.70), int(L * 0.90)]))
+    batch_size = 32
+    all_embeddings = {layer: [] for layer in layers}
+    meta = {layer: [] for layer in layers}
 
-    seq = fasta.fetch(chrom, seq_start, seq_end).upper()
-    if len(seq) == seq_len and "N" not in seq:
-        return seq, seq_start, seq_end
-    return None
+    def get_kmer_offsets(sequence: str, kmer: int = 6):
+        return [(i, i + kmer) for i in range(0, len(sequence) - kmer + 1, kmer)]
+
+    for i in tqdm(range(0, len(dataset), batch_size), desc="Extracting mean-pooled embeddings"):
+        batch = dataset[i:i + batch_size]
+        sequences = batch["sequence"]
+        feat_starts = batch["region_start"]
+        feat_ends = batch["region_end"]
+
+        tokens = tokenizer(sequences, return_tensors="pt", padding=True, truncation=True, return_attention_mask=True,
+                           add_special_tokens=False)
+
+        with torch.no_grad():
+            tokens = {k: v.to(device) for k, v in tokens.items() if isinstance(v, torch.Tensor)}
+            outputs = model(**tokens, output_hidden_states=True)
+
+        all_layer_embeddings = outputs.hidden_states
+        for layer in layers:
+            embeddings = all_layer_embeddings[layer]
+            for j in range(len(sequences)):
+                seq = sequences[j]
+                rel_feat_start = feat_starts[j] - batch["start"][j]
+                rel_feat_end = feat_ends[j] - batch["start"][j]
+
+                kmer_offsets = get_kmer_offsets(seq, kmer=6)
+
+                token_indices = [
+                    idx for idx, (s, e) in enumerate(kmer_offsets)
+                    if not (e <= rel_feat_start or s >= rel_feat_end) and 0 <= idx < embeddings.shape[1]
+                ]
+
+                if not token_indices:
+                    print(f"[WARN] No valid overlapping tokens for sample {i + j}, skipping. Len: {len(all_embeddings)}")
+                    continue
+
+                selected = embeddings[j, token_indices, :]
+                pooled = selected.mean(dim=0).cpu().numpy()
+                all_embeddings[layer].append(pooled)
+                meta[layer].append({
+                    "sequence": seq,
+                    "label": batch["region"][j]
+                })
+
+    ouput_dir = os.path.join(results_dir, f"tSNE_embeddings")
+    os.makedirs(ouput_dir, exist_ok=True)
+    model_dir = os.path.join(ouput_dir, args.model_name)
+    os.makedirs(model_dir, exist_ok=True)
+    for layer, embeddings in all_embeddings.items():
+        output_path = os.path.join(model_dir, f"layer_{layer}.pkl")
+        with open(output_path, "wb") as f:
+            pickle.dump({
+                "embeddings": np.vstack(embeddings),
+                "meta": meta[layer]
+            }, f)
 
 if __name__ == "__main__":
-    os.makedirs("tSNE_proj/data", exist_ok=True)
-    bed_files = get_files()
-
-    def gen():
-        fasta = pysam.FastaFile(FASTA_PATH)
-        for label, bed_path in bed_files.items():
-            print(f"Sampling from {label} regions...")
-            sampled = 0
-            for chrom, start, end in tqdm(parse_bed_file(bed_path), desc=f"{label}", unit="region"):
-                result = sample_sequence(fasta, chrom, start, end, SEQUENCE_LENGTH)
-                if result is None:
-                    continue
-                seq, seq_start, seq_end = result
-                if seq:
-                    label_id = list(bed_files.keys()).index(label)
-                    yield {
-                        "sequence": seq,
-                        "label": label_id,
-                        "region": label,
-                        "chrom": chrom,
-                        "start": seq_start,
-                        "end": seq_end,
-                        "region_start": start,
-                        "region_end": end
-                    }
-
-                    sampled += 1
-                if sampled >= SAMPLES_PER_REGION:
-                    break
-            print(f"Collected {sampled} sequences for {label}")
-
-    dataset = Dataset.from_generator(gen)
-    dataset.save_to_disk(os.path.join(generated_datasets_dir, f'tSNE_{SEQUENCE_LENGTH}'))
+    args = parse_args()
+    timestamp = print_args(args, "EMBEDDING EXTRACTION ARGUMENTS")
+    device = get_device()
+    extract_region_embeddings(args, device)
