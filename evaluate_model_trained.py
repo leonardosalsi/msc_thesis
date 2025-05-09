@@ -51,9 +51,12 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         dataset_train = _dataset['train']
         dataset_test = _dataset['test']
     else:
+        ds_name = ""
+        if task['taskid'] >= 1 and task['taskid'] <= 18:
+            ds_name = task['name']
         dataset_train = load_dataset(
             task["repo"],
-            name=task["name"],
+            name=ds_name,
             cache_dir=datasets_cache_dir,
             trust_remote_code=True,
             split='train'
@@ -61,7 +64,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
 
         dataset_test = load_dataset(
             task["repo"],
-            name=task["name"],
+            name=ds_name,
             cache_dir=datasets_cache_dir,
             trust_remote_code=True,
             split='test'
@@ -223,14 +226,14 @@ if __name__ == "__main__":
 
     task = get_task_by_id(args.task_id)
     logger = init_logger()
-    logger.log(LOGLEVEL, f"{args.model_name} on {task['alias']}")
+    logger.log(LOGLEVEL, f"{args.model_name} on {task['name']}")
 
     device = get_device()
     eval_trained_dir = get_output_dir(args)
 
     logger.log(LOGLEVEL, f"Output directory: {eval_trained_dir}")
 
-    output_file = os.path.join(eval_trained_dir ,f"{task['alias']}.json")
+    output_file = os.path.join(eval_trained_dir ,f"{task['name']}.json")
     logger.log(LOGLEVEL, f"Output file: {output_file}")
     if os.path.exists(output_file):
         exit(0)

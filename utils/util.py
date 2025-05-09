@@ -5,7 +5,7 @@ import torch
 from util import init_logger, LOGLEVEL
 import logging as pyLogging
 
-from utils.model_definitions import MODELS, PRETRAINED_MODELS, TASKS
+from utils.model_definitions import TASKS
 
 LOGLEVEL = 22
 LOGGER = init_logger()
@@ -83,19 +83,6 @@ def init_logger():
     console_handler.setFormatter(pyLogging.Formatter("%(message)s"))
     logger.addHandler(console_handler)
     return logger
-
-
-def get_model_by_id(modelId):
-    for model in MODELS:
-        if model['modelId'] == modelId:
-            return model
-    return None
-
-def get_pretrained_model_by_id(modelId):
-    for model in PRETRAINED_MODELS:
-        if model['modelId'] == modelId:
-            return model
-    return None
 
 def get_task_by_id(taskId):
     for task in TASKS:

@@ -16,7 +16,7 @@ from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
 from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir, results_dir, temp_dir
 from datasets.utils.logging import disable_progress_bar, set_verbosity
-from utils.util import LOGLEVEL, init_logger, get_model_by_id, get_task_by_id, get_pretrained_model_by_id
+from utils.util import LOGLEVEL, init_logger, get_task_by_id
 import numpy as np
 from peft import LoraConfig, TaskType, get_peft_model
 import psutil
