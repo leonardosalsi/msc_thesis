@@ -9,6 +9,6 @@
 source ~/.bashrc
 source $HOME/gpu_env/bin/activate
 
-HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 WANDB_DISABLED=true HF_DATASETS_REPORT_TO=none\
+HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 WANDB_DISABLED=true HF_DATASETS_REPORT_TO=none \
 python /cluster/home/salsil/msc_thesis_root/msc_thesis/extract_tsne_embeddings.py \
 --model-name $MODEL --checkpoint 12000
