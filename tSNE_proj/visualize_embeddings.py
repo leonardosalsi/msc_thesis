@@ -54,7 +54,7 @@ def visualize_embeddings(model_name):
                         ax=ax, legend=(idx == n - 1))
 
         # Annotate layer on the right side
-        ax.text(1.01, 0.5, f"Layer {layer}", transform=ax.transAxes,
+        ax.text(1.01, 0.5, f"Layer {layer + 1}", transform=ax.transAxes,
                 rotation=270, va='center', ha='left', fontsize=12)
 
         rect = patches.FancyBboxPatch(
