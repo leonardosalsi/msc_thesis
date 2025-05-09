@@ -1,0 +1,14 @@
+#!/bin/bash
+
+#SBATCH --output=/cluster/home/salsil/msc_thesis_root/out/%x.txt
+#SBATCH --cpus-per-task=2
+#SBATCH --time=100:00:00
+#SBATCH --mem-per-cpu=4G
+#SBATCH --gpus=1
+
+source ~/.bashrc
+source $HOME/gpu_env/bin/activate
+
+HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 WANDB_DISABLED=true HF_DATASETS_REPORT_TO=none\
+python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/tSNE_proj/get_embeddings.py \
+--model-name $MODEL --checkpoint 12000

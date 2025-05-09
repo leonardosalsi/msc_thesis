@@ -11,3 +11,6 @@ jobs/tokenize*
 getting_started_with_logan.ipynb
 .archive
 slurm_jobs_generator
+/slurm_jobs_generator/
+/tSNE_proj/bed_files/*
+/tSNE_proj/data/*
