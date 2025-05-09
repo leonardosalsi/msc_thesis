@@ -2,9 +2,8 @@ import os
 import shutil
 import glob
 import json
-import datasets
 from datasets import load_dataset, load_from_disk, Dataset
-from config import datasets_cache_dir, generated_datasets_dir, generator_cache_dir
+from config import datasets_cache_dir, generator_cache_dir
 from utils.util import check_folders
 import re
 

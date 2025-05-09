@@ -1,10 +1,8 @@
 import argparse
-import csv
 import os
-from pprint import pprint
 import json
 from datasets import Dataset, DatasetDict, Features, Value
-from config import logan_datasets_dir, generated_datasets_dir, generator_cache_dir, logs_dir
+from config import generated_datasets_dir, generator_cache_dir, logs_dir
 import fasta_walker
 
 def format_statistics(statistics):

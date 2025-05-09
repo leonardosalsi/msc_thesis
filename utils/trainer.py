@@ -1,17 +1,12 @@
-from pprint import pprint
 from typing import Dict, Optional
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import Trainer
-
 from utils.dataset import get_original_training_dataset
-
 import os
 import torch
-
 from utils.util import LOGGER
 from util import LOGLEVEL
-
 
 def save_fisher_matrix(fisher_matrix, save_path):
     torch.save(fisher_matrix, save_path)

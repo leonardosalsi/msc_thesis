@@ -1,15 +1,11 @@
 import argparse
-import csv
 import glob
 import os
 import re
 import shutil
-from pprint import pprint
 import json
-from datasets import Dataset, DatasetDict, Features, Value, load_dataset
-
-from config import logan_datasets_dir, generated_datasets_dir, generator_cache_dir, logs_dir
-
+from datasets import Dataset, DatasetDict
+from config import generated_datasets_dir, generator_cache_dir
 
 def json_files_generator(folder_path):
     pattern = os.path.join(folder_path, '*.json')
@@ -30,7 +26,6 @@ def json_files_generator(folder_path):
                     print(f"Skipping file {file_path}: Expected a JSON array but got {type(array)}")
             except Exception as e:
                 print(f"Error reading {file_path}: {e}")
-
 
 def parse_args():
     parser = argparse.ArgumentParser(

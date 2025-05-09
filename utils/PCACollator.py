@@ -1,11 +1,12 @@
+import torch
+
 class PCACollator:
     def __init__(self, tokenizer, mlm_probability=0.15):
         self.tokenizer = tokenizer
         self.mlm_probability = mlm_probability
 
     def __call__(self, examples):
-        from transformers.data.data_collator import torch_default_data_collator
-        import torch
+
 
         batch = self.tokenizer.pad(
             examples,

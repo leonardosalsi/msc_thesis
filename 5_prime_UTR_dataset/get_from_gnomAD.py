@@ -6,7 +6,6 @@ from gnomad_db.database import gnomAD_DB
 import pysam
 from multiprocessing import Pool, cpu_count
 
-
 def _load_five_prime_utrs_from_gtf(gtf_path):
     col_names = ["seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attribute"]
 

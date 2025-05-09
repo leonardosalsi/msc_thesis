@@ -1,30 +1,21 @@
 import os
 import random
 from dataclasses import dataclass
-from typing import Optional, Counter
-import sys
+from typing import Optional
 import torch
 import json
-
-from torch.utils.data import DataLoader
-
-from util import LOGLEVEL
-from utils.PCAModel import EsmForMaskedLMPCA, EsmForSequenceClassificationPCA
+from utils.util import LOGLEVEL, init_logger, get_task_by_id
 from argparse_dataclass import ArgumentParser
 from datasets import load_dataset, Dataset, load_from_disk
 from tqdm import tqdm
-from safetensors.torch import load_file
-from transformers import AutoTokenizer, TrainingArguments, Trainer, AutoModelForSequenceClassification, logging, \
-    AutoModelForMaskedLM, default_data_collator
+from transformers import TrainingArguments, Trainer, logging
 from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
-from config import models_cache_dir, datasets_cache_dir, pretrained_models_cache_dir, results_dir, logs_dir
+from config import  datasets_cache_dir, results_dir, logs_dir
 from datasets.utils.logging import disable_progress_bar, set_verbosity
-
 from utils.model import get_eval_model
 from utils.tokenizer import get_eval_tokenizer
 from utils.util import print_args, get_device
-from util import init_logger, get_task_by_id
 import numpy as np
 from peft import LoraConfig, TaskType, get_peft_model
 import psutil

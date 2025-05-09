@@ -1,18 +1,12 @@
-import argparse
 import json
 import os
 import sys
-from pprint import pprint
-from typing import Optional
 from argparse_dataclass import ArgumentParser
-import numpy as np
 from dataclasses import dataclass
-from datasets import load_from_disk, load_dataset
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModel
-
 from config import models_cache_dir, results_dir
 from utils.dataset import get_dataset
 from utils.util import print_args, get_device

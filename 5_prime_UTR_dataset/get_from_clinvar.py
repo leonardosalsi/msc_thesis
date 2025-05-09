@@ -1,14 +1,11 @@
 import json
 import os
 import subprocess
-import tempfile
 import random
 from multiprocessing import Pool, cpu_count
 
 import pysam
-import requests
 import pandas as pd
-from tqdm import tqdm
 
 def _download_from_clinvar(tempdir):
     url = 'https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar.vcf.gz'
