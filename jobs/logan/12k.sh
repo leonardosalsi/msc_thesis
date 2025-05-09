@@ -14,5 +14,5 @@ python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-ms
 --output-path /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/generated_datasets/logan_12200 \
 --fasta-files-path /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/logan/data \
 --metadata-file-path /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/logan/data/metadata.csv  \
---chunk-size 12200 --reverse-complement --max-workers 6 --acc-column acc --group-id-column kmeans --identity_threshold 0.85
+--chunk-size 12200 --reverse-complement --max-workers 6 --acc-column acc --group-id-column kmeans --identity-threshold 0.85
 
