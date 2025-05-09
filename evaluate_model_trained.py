@@ -46,8 +46,6 @@ def compute_metrics_mcc(eval_pred):
 
     predictions = np.argmax(preds, axis=-1)
     references = eval_pred.label_ids
-    print("Prediction distribution:", Counter(predictions))
-    print("References distribution:", Counter(references))
     return {'mcc_score': matthews_corrcoef(references, predictions)}
 
 def finetune_model_by_task_mcc(args, device, task, timestamp):

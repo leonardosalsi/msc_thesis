@@ -126,3 +126,52 @@ def get_eval_model(args, num_labels, device):
     model.to(device)
 
     return model, repo
+
+def get_emb_model(args, device):
+    repo = None
+    num_params = None
+    if 'untrained' in args.model_name:
+        match = re.search(r'\d+', args.model_name)
+        if match:
+            number = int(match.group())
+            if number == 100:
+                num_params = 100
+                repo = 'InstaDeepAI/nucleotide-transformer-v2-100m-multi-species'
+            elif number == 250:
+                num_params = 250
+                repo = 'InstaDeepAI/nucleotide-transformer-v2-250m-multi-species'
+            elif number == 500:
+                num_params = 500
+                if 'tg' in args.model_name:
+                    repo = 'InstaDeepAI/nucleotide-transformer-500m-1000g'
+                elif 'human' in args.model_name:
+                    repo = 'InstaDeepAI/nucleotide-transformer-500m-human-ref'
+                else:
+                    repo = 'InstaDeepAI/nucleotide-transformer-v2-500m-multi-species'
+        else:
+            num_params = 50
+            repo = 'InstaDeepAI/nucleotide-transformer-v2-50m-multi-species'
+
+        if repo is None:
+            raise ValueError(f"No model existing with {args.model_name}")
+
+        model = AutoModelForMaskedLM.from_pretrained(
+            repo,
+            cache_dir=models_cache_dir,
+            trust_remote_code=True,
+            local_files_only=True
+        )
+
+    else:
+        num_params = 50
+        model_dir = os.path.join(pretrained_models_cache_dir, f"{args.model_name}", f"checkpoint-{args.checkpoint}")
+        model = AutoModelForMaskedLM.from_pretrained(
+            model_dir,
+            cache_dir=models_cache_dir,
+            trust_remote_code=True,
+            local_files_only=True
+        )
+
+    model.to(device)
+
+    return model, repo, num_params
