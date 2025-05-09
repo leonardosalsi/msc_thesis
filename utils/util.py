@@ -2,12 +2,26 @@ import datetime
 import os
 import sys
 import torch
-from util import init_logger, LOGLEVEL
 import logging as pyLogging
 
 from utils.model_definitions import TASKS
 
 LOGLEVEL = 22
+
+def init_logger():
+    pyLogging.basicConfig(
+        filename=f"/dev/null",
+        filemode="a",
+        level=LOGLEVEL,  # Log level
+        format="%(message)s"
+    )
+    logger = pyLogging.getLogger()
+    console_handler = pyLogging.StreamHandler()
+    console_handler.setLevel(LOGLEVEL)
+    console_handler.setFormatter(pyLogging.Formatter("%(message)s"))
+    logger.addHandler(console_handler)
+    return logger
+
 LOGGER = init_logger()
 
 def print_args(args, title):
@@ -69,20 +83,6 @@ def get_filtered_dataset_name(chunk_size, shannon, gc) -> str:
         gc_txt = f"_gc_{gc[0]}_{gc[1]}"
     chunk_size_file_name = get_chunk_size_file_name(chunk_size)
     return f"{chunk_size_file_name}{shannon_txt}{gc_txt}".replace(".", "_")
-
-def init_logger():
-    pyLogging.basicConfig(
-        filename=f"/dev/null",
-        filemode="a",
-        level=LOGLEVEL,  # Log level
-        format="%(message)s"
-    )
-    logger = pyLogging.getLogger()
-    console_handler = pyLogging.StreamHandler()
-    console_handler.setLevel(LOGLEVEL)
-    console_handler.setFormatter(pyLogging.Formatter("%(message)s"))
-    logger.addHandler(console_handler)
-    return logger
 
 def get_task_by_id(taskId):
     for task in TASKS:
