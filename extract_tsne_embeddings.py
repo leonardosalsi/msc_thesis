@@ -1,5 +1,4 @@
 import random
-import csv
 import os
 
 from datasets import Dataset
@@ -7,7 +6,7 @@ from tqdm import tqdm
 import pysam
 
 from config import generated_datasets_dir
-from generate_bed_files import get_files
+from tSNE_proj.generate_bed_files import get_files
 
 FASTA_PATH = "/shared/DS/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
 SEQUENCE_LENGTH = 6000
@@ -45,7 +44,7 @@ def sample_sequence(fasta, chrom, region_start, region_end, seq_len):
     return None
 
 if __name__ == "__main__":
-    os.makedirs("data", exist_ok=True)
+    os.makedirs("tSNE_proj/data", exist_ok=True)
     bed_files = get_files()
 
     def gen():

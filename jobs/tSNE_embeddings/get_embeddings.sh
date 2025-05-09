@@ -12,5 +12,5 @@ conda activate gpu_env
 which python
 
 HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \
-python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/tSNE_proj/get_embeddings.py \
+python /cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/msc_thesis/extract_tsne_embeddings.py \
 --model-name $MODEL --checkpoint 12000
