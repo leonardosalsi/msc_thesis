@@ -12,7 +12,6 @@ from generate_bed_files import get_files
 FASTA_PATH = "/shared/DS/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
 SEQUENCE_LENGTH = 6000
 SAMPLES_PER_REGION = 10000
-OUTPUT_CSV = "data/labeled_sequences.csv"
 
 def parse_bed_file(file_path):
     with open(file_path) as f:
@@ -51,36 +50,31 @@ if __name__ == "__main__":
 
     def gen():
         fasta = pysam.FastaFile(FASTA_PATH)
-        with open(OUTPUT_CSV, "w", newline="") as out_csv:
-            writer = csv.writer(out_csv)
-            writer.writerow(["sequence_id", "sequence", "label"])
+        for label, bed_path in bed_files.items():
+            print(f"Sampling from {label} regions...")
+            sampled = 0
+            for chrom, start, end in tqdm(parse_bed_file(bed_path), desc=f"{label}", unit="region"):
+                result = sample_sequence(fasta, chrom, start, end, SEQUENCE_LENGTH)
+                if result is None:
+                    continue
+                seq, seq_start, seq_end = result
+                if seq:
+                    label_id = list(bed_files.keys()).index(label)
+                    yield {
+                        "sequence": seq,
+                        "label": label_id,
+                        "region": label,
+                        "chrom": chrom,
+                        "start": seq_start,
+                        "end": seq_end,
+                        "region_start": start,
+                        "region_end": end
+                    }
 
-            for label, bed_path in bed_files.items():
-                print(f"Sampling from {label} regions...")
-                sampled = 0
-                for chrom, start, end in tqdm(parse_bed_file(bed_path), desc=f"{label}", unit="region"):
-                    result = sample_sequence(fasta, chrom, start, end, SEQUENCE_LENGTH)
-                    if result is None:
-                        continue
-                    seq, seq_start, seq_end = result
-                    if seq:
-                        label_id = list(bed_files.keys()).index(label)
-                        yield {
-                            "sequence": seq,
-                            "label": label_id,
-                            "region": label,
-                            "chrom": chrom,
-                            "start": seq_start,
-                            "end": seq_end,
-                            "region_start": start,
-                            "region_end": end
-                        }
-
-                        writer.writerow([f"{label}_{sampled}", seq, label])
-                        sampled += 1
-                    if sampled >= SAMPLES_PER_REGION:
-                        break
-                print(f"Collected {sampled} sequences for {label}")
+                    sampled += 1
+                if sampled >= SAMPLES_PER_REGION:
+                    break
+            print(f"Collected {sampled} sequences for {label}")
 
     dataset = Dataset.from_generator(gen)
     dataset.save_to_disk(os.path.join(generated_datasets_dir, f'tSNE_{SEQUENCE_LENGTH}'))
