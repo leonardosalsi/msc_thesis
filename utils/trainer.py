@@ -2,6 +2,8 @@ from typing import Dict, Optional
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import Trainer
+
+from config import generator_cache_dir
 from utils.dataset import get_original_training_dataset
 import os
 import torch
@@ -115,7 +117,7 @@ def compute_fisher(args, model, device, orig_data_loader):
     Compute diagonal Fisher Information for all model parameters on the original domain data.
     Returns a dict mapping parameter names to their Fisher values (tensor of same shape).
     """
-    fisher_matrix_file = os.path.join(args.original_dataset, 'fisher_matrix.pt')
+    fisher_matrix_file = os.path.join(generator_cache_dir, f'{args.original_dataset}_fisher_matrix.pt')
 
     if not fisher_matrix_exists(fisher_matrix_file):
         LOGGER.log(LOGLEVEL, f"Creating fisher matrix {fisher_matrix_file}")
