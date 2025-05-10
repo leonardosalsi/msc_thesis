@@ -1,7 +1,9 @@
 import os
 import json
 from argparse_dataclass import dataclass, ArgumentParser
-from config import logs_dir
+from datasets import Dataset, DatasetDict, load_dataset
+
+from config import logs_dir, datasets_cache_dir
 import fasta_walker
 from utils.util import print_args
 
@@ -19,11 +21,11 @@ def format_statistics(statistics):
 
 @dataclass
 class LoganCreateConfig:
-    fasta_files_path: str
-    metadata_file_path: str
-    output_path: str
-    acc_column: str
-    group_id_column: str
+    fasta_files_path: str = ""
+    metadata_file_path: str = ""
+    output_path: str = ""
+    acc_column: str = ""
+    group_id_column: str = ""
     kmer: int = 32
     max_workers: int = 1
     keep_remainder: bool = False
@@ -33,6 +35,7 @@ class LoganCreateConfig:
     run_statistics: bool = False
     file_level: bool = False
     identity_threshold: float = 0.85
+    skip_json: bool = False
 
 
 def parse_args():
@@ -94,17 +97,66 @@ if __name__ == "__main__":
                 json.dump(final_stats, f, indent=4)
             exit(0)
         else:
-            fasta_walker.create_random_walk_sequences_json(
-                args.kmer,
-                args.chunk_size,
-                args.keep_remainder,
-                args.reverse_complement,
-                args.fasta_files_path,
-                args.metadata_file_path,
-                args.output_path,
-                args.acc_column,
-                args.group_id_column,
-                args.max_workers,
-                args.use_scratch,
-                args.identity_threshold,
+            if not args.skip_json:
+                fasta_walker.create_random_walk_sequences_json(
+                    args.kmer,
+                    args.chunk_size,
+                    args.keep_remainder,
+                    args.reverse_complement,
+                    args.fasta_files_path,
+                    args.metadata_file_path,
+                    args.output_path,
+                    args.acc_column,
+                    args.group_id_column,
+                    args.max_workers,
+                    args.use_scratch,
+                    args.identity_threshold,
+                )
+            folder_name = os.path.basename(args.output_path.rstrip('/'))
+            dataset_dir = os.path.join(datasets_cache_dir, folder_name)
+            os.makedirs(dataset_dir, exist_ok=True)
+
+            file_list = [os.path.join(args.output_path, f) for f in os.listdir(args.output_path) if f.endswith('.json')]
+
+            validation_size = 500000
+
+            def gen():
+                for file in file_list:
+                    with open(file, 'r') as f:
+                        data = json.load(f)
+                        for item in data:
+                            yield {'sequence': item}
+
+            dataset = Dataset.from_generator(gen)
+            dataset = dataset.shuffle()
+            train_dataset = dataset.select(range(validation_size, len(dataset)))
+            validation_dataset = dataset.select(range(validation_size))
+
+            dataset = DatasetDict({
+                "train": train_dataset,
+                "validation": validation_dataset
+            })
+
+            dataset.save_to_disk(dataset_dir)
+
+            dataset_train = load_dataset(
+                dataset_dir,
+                cache_dir=datasets_cache_dir,
+                split='train',
+                trust_remote_code=True,
             )
+            dataset_validation = load_dataset(
+                dataset_dir,
+                cache_dir=datasets_cache_dir,
+                split='validation',
+                trust_remote_code=True
+            )
+
+            print("TRAIN DATASET")
+            print(dataset_train)
+            print("VALIDATION DATASET")
+            print(dataset_validation)
+
+
+
+
