@@ -19,4 +19,4 @@ accelerate launch --num_processes 5 --num_machines 1 --mixed_precision no --dyna
 --dataset /cluster/scratch/salsil/datasets/logan_6200 --tokenizer default \
 --logging-steps 500 --train-size 10 --eval-size 32 \
 --gradient-accumulation 10 --max-workers 4 --load-from-json --ewc-lambda 2 \
---original-dataset /cluster/scratch/salsil/multi_genome_species/1k
+--original-dataset InstaDeepAI/multi_species_genomes

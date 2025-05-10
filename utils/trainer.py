@@ -144,7 +144,7 @@ def get_trainer(args, training_args, model, device, tokenizer, training_dataset,
     ewc_lambda = args.ewc_lambda
     if ewc_lambda and ewc_lambda > 0:
         original_dataset = get_original_training_dataset(args)
-        original_dataset = original_dataset.select(range(20000))
+        original_dataset = original_dataset.select(range(200000))
 
         def tokenize_function(examples):
             return tokenizer(examples['sequence'], max_length=num_tokens, truncation=True, padding=True)

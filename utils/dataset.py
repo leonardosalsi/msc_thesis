@@ -104,8 +104,7 @@ def get_dataset(args):
 
 
 def get_original_training_dataset(args):
-    selected_tokenizer = args.tokenizer
-    if selected_tokenizer == "Default":
+    if 'InstaDeepAI' in args.original_dataset:
         dataset_train = load_dataset(
             "InstaDeepAI/multi_species_genomes",
             cache_dir=datasets_cache_dir,
