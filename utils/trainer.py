@@ -8,7 +8,7 @@ from utils.dataset import get_original_training_dataset
 import os
 import torch
 from utils.util import LOGGER
-from util import LOGLEVEL
+from utils.util import LOGLEVEL
 
 def save_fisher_matrix(fisher_matrix, save_path):
     torch.save(fisher_matrix, save_path)
