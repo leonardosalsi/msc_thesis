@@ -86,7 +86,7 @@ def get_dataset(args):
                         for item in data:
                             yield {'sequence': item}
 
-            dataset = Dataset.from_generator(gen)
+            dataset = Dataset.from_generator(gen, cache_dir=generator_cache_dir)
             dataset = dataset.shuffle()
             dataset_train = dataset.select(range(validation_size, len(dataset)))
             dataset_validation = dataset.select(range(validation_size))
