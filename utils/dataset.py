@@ -60,7 +60,7 @@ def get_dataset(args):
             shutil.copytree(selected_dataset_path, scratch_dataset_path)
         selected_dataset_path = scratch_dataset_path
 
-    if selected_tokenizer == "Default":
+    if 'InstaDeepAI' in selected_dataset_path:
         dataset_train = load_dataset(
             "InstaDeepAI/multi_species_genomes",
             cache_dir=datasets_cache_dir,
@@ -77,17 +77,21 @@ def get_dataset(args):
         )
     else:
         if load_from_json:
-            full_dataset = Dataset.from_generator(
-                generator=lambda: json_files_generator(selected_dataset_path),
-                cache_dir=os.path.join(generator_cache_dir, 'logan')
-            )
-            split_dataset = full_dataset.train_test_split(test_size=0.2, seed=112, keep_in_memory=keep_in_memory)
-            dataset_train = split_dataset['train']
-            dataset_validation = split_dataset['test']
+            file_list = [os.path.join(selected_dataset_path, f) for f in os.listdir(selected_dataset_path) if f.endswith('.json')]
+            validation_size = 500000
+            def gen():
+                for file in file_list:
+                    with open(file, 'r') as f:
+                        data = json.load(f)
+                        for item in data:
+                            yield {'sequence': item}
+
+            dataset = Dataset.from_generator(gen)
+            dataset = dataset.shuffle()
+            dataset_train = dataset.select(range(validation_size, len(dataset)))
+            dataset_validation = dataset.select(range(validation_size))
         else:
-
             train_path, validation_path = check_folders(selected_dataset_path)
-
             dataset_train = load_from_disk(train_path, keep_in_memory=keep_in_memory)
             dataset_validation = load_from_disk(validation_path, keep_in_memory=keep_in_memory)
 
@@ -100,8 +104,17 @@ def get_dataset(args):
 
 
 def get_original_training_dataset(args):
-    train_path, _ = check_folders(args.original_dataset)
-    dataset_train = load_from_disk(train_path, keep_in_memory=False)
+    selected_tokenizer = args.tokenizer
+    if selected_tokenizer == "Default":
+        dataset_train = load_dataset(
+            "InstaDeepAI/multi_species_genomes",
+            cache_dir=datasets_cache_dir,
+            split='train',
+            trust_remote_code=True,
+        )
+    else:
+        train_path, _ = check_folders(args.original_dataset)
+        dataset_train = load_from_disk(train_path, keep_in_memory=False)
     columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
     dataset_train = dataset_train.remove_columns(columns_to_remove)
     return dataset_train
