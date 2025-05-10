@@ -105,10 +105,21 @@ def get_dataset(args):
 
 
 def get_original_training_dataset(args):
+
     if 'InstaDeepAI' in args.original_dataset:
+        cache_dir = datasets_cache_dir
+        if args.use_scratch:
+            folder_name = args.original_dataset.replace("/", "___")
+            tmpdir = os.environ.get("TMPDIR")
+            if tmpdir is None:
+                raise ValueError("TMPDIR environment variable is not set, but use_scratch is True.")
+            scratch_dataset_path = os.path.join(tmpdir, os.path.basename(folder_name))
+            if not os.path.exists(scratch_dataset_path):
+                shutil.copytree(os.path.join(datasets_cache_dir, folder_name), scratch_dataset_path)
+            cache_dir = scratch_dataset_path
         dataset_train = load_dataset(
             "InstaDeepAI/multi_species_genomes",
-            cache_dir=datasets_cache_dir,
+            cache_dir=cache_dir,
             split='train',
             trust_remote_code=True,
         )
