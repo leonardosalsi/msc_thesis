@@ -105,7 +105,6 @@ def get_dataset(args):
 
 
 def get_original_training_dataset(args):
-
     if 'InstaDeepAI' in args.original_dataset:
         cache_dir = datasets_cache_dir
         if args.use_scratch:
@@ -120,12 +119,14 @@ def get_original_training_dataset(args):
         dataset_train = load_dataset(
             "InstaDeepAI/multi_species_genomes",
             cache_dir=cache_dir,
-            split='train',
             trust_remote_code=True,
         )
+        dataset_train = dataset_train['train']
     else:
         train_path, _ = check_folders(args.original_dataset)
         dataset_train = load_from_disk(train_path, keep_in_memory=False)
+
+    dataset_train = dataset_train.shuffle()
     columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
     dataset_train = dataset_train.remove_columns(columns_to_remove)
     return dataset_train
