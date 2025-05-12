@@ -21,6 +21,15 @@ def parse_args():
     parser = ArgumentParser(EmbConfig)
     return parser.parse_args()
 
+def get_cg_content(seq):
+    """
+    Calculation via Brock Biology of Microorganisms 10th edition
+    @book{Madigan_Martinko_Parker_2003, place={Upper Saddle River, NJ}, title={Brock Biology of Microorganisms}, publisher={Prentice Hall/Pearson Education}, author={Madigan, Michael T. and Martinko, John M. and Parker, Jack}, year={2003}}
+    """
+    full_len = len(seq)
+    num_GC = seq.count("G") + seq.count("C")
+    return num_GC / full_len * 100
+
 def extract_region_embeddings(args, device):
 
     model, repo, num_params = get_emb_model(args, device)
@@ -84,6 +93,10 @@ def extract_region_embeddings(args, device):
                     "label": batch["region"][j],
                     "start": feat_starts,
                     "end": feat_ends,
+                    "GC": get_cg_content(seq[feat_starts[j]:feat_ends[j] + 1]),
+                    "full_start":  batch["start"][j],
+                    "full_end": batch["end"][j],
+                    "GC_full": get_cg_content(seq)
                 })
 
     ouput_dir = os.path.join(results_dir, f"tSNE_embeddings")
