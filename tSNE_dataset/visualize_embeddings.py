@@ -13,10 +13,19 @@ from tqdm import tqdm
 from config import results_dir
 from utils.model_definitions import MODELS
 
+VAR = False
+
 def visualize_embeddings(model_name):
     model_results = os.path.join(results_dir, 'tSNE_embeddings', model_name)
-    files = sorted([f for f in os.listdir(model_results) if f.endswith(".pkl") and not f.startswith("tsne_")],
-                   key=lambda f: int(f.split("layer_")[-1].split(".")[0]))
+    if VAR:
+        files = sorted([f for f in os.listdir(model_results) if
+                        f.endswith(".pkl") and not f.startswith("tsne_") and 'var' in f],
+                       key=lambda f: int(f.split("layer_")[-1].split(".")[0]))
+    else:
+        files = sorted([f for f in os.listdir(model_results) if
+                        f.endswith(".pkl") and not f.startswith("tsne_") and not 'var' in f],
+                       key=lambda f: int(f.split("layer_")[-1].split(".")[0]))
+        files = [f.replace('_var', '') for f in files]
 
     n = len(files)
     fig, axes = plt.subplots(n, 1, figsize=(6, 4 * n), sharex=True, sharey=True)
@@ -26,14 +35,16 @@ def visualize_embeddings(model_name):
         axes = [axes]
 
     for idx, (ax, fpath) in enumerate(zip(axes, files)):
-        layer = fpath.split("layer_")[-1].split(".")[0]
-        tsne_path = os.path.join(model_results, f"tsne_{layer}.pkl")
+        layer = int(fpath.split("layer_")[-1].split(".")[0])
+        print(layer)
+        tsne_path = os.path.join(model_results, f"tsne_{layer}{'_var' if VAR else ''}.pkl")
 
         with open(os.path.join(model_results, fpath), "rb") as f:
             data = pickle.load(f)
 
         embeddings = data["embeddings"]
         meta = data["meta"]
+        print(meta)
         df = pd.DataFrame(meta)
 
         if os.path.exists(tsne_path):

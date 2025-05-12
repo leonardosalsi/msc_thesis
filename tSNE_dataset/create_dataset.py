@@ -1,13 +1,10 @@
 import random
 import os
-
 from datasets import Dataset
 from tqdm import tqdm
 import pysam
-
 from config import generated_datasets_dir
 from tSNE_dataset.generate_bed_files import get_files
-
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 FASTA_PATH = os.path.join(base_dir, "data/Homo_sapiens.GRCh38.dna.primary_assembly.fa")
@@ -48,13 +45,13 @@ def sample_sequence(fasta, chrom, region_start, region_end, seq_len):
     max_seq_start = region_start
 
     if min_seq_start > max_seq_start:
-        return None  # Not enough space to include the full region
+        return None
 
     seq_start = random.randint(min_seq_start, max_seq_start)
     seq_end = seq_start + seq_len
 
     if fasta.get_reference_length(chrom) < seq_end:
-        return None  # Window goes beyond chromosome end
+        return None
 
     seq = fasta.fetch(chrom, seq_start, seq_end).upper()
     if len(seq) == seq_len and "N" not in seq:
@@ -80,12 +77,9 @@ if __name__ == "__main__":
                 region_relative_start = start - seq_start
                 region_relative_end = end - seq_start
                 if seq is None:
-
-
                     continue
 
                 region = seq[region_relative_start:region_relative_end]
-
 
                 label_id = list(bed_files.keys()).index(label)
                 if len(seq) > MAX_SEQUENCE_LENGTH:
@@ -106,8 +100,20 @@ if __name__ == "__main__":
                                 "region_start": chunk_start,
                                 "region_end": chunk_end,
                                 "seq_gc": get_cg_content(chunk),
-                                "region_gc": get_cg_content(chunk)  # you may keep using original region gc too
+                                "region_gc": get_cg_content(chunk)
                             }
+                            print({
+                                "sequence": chunk,
+                                "label": label_id,
+                                "region": label,
+                                "chrom": chrom,
+                                "start": chunk_start,
+                                "end": chunk_end,
+                                "region_start": chunk_start,
+                                "region_end": chunk_end,
+                                "seq_gc": get_cg_content(chunk),
+                                "region_gc": get_cg_content(chunk)
+                            })
                         else:
                             reserve.append({
                                 "sequence": chunk,
@@ -119,7 +125,7 @@ if __name__ == "__main__":
                                 "region_start": chunk_start,
                                 "region_end": chunk_end,
                                 "seq_gc": get_cg_content(chunk),
-                                "region_gc": get_cg_content(chunk)  # you may keep using original region gc too
+                                "region_gc": get_cg_content(chunk)
                             })
                 else:
                     sampled += 1
@@ -135,6 +141,15 @@ if __name__ == "__main__":
                         "seq_gc": get_cg_content(seq),
                         "region_gc": get_cg_content(region)
                     }
+                    print({
+                        "sequence": seq,
+                        "label": label_id,
+                        "region": label,
+                        "chrom": chrom,
+                        "start": seq_start,
+                        "end": seq_end,
+                        "region_start": start,
+                    })
 
 
                 if sampled >= SAMPLES_PER_REGION:
@@ -149,7 +164,7 @@ if __name__ == "__main__":
                         print(f"[WARN] Not enough reserve entries to reach {SAMPLES_PER_REGION}")
                         break
                     sampled += 1
-                    yield reserve.pop()
+                    yield
             print(f"Collected {sampled} sequences for {label}")
 
     dataset = Dataset.from_generator(gen)

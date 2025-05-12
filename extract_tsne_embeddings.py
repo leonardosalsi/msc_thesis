@@ -86,8 +86,8 @@ def extract_region_embeddings(args, device):
                 meta[layer].append({
                     "sequence": seq,
                     "label": batch["region"][j],
-                    "start": feat_starts,
-                    "end": feat_ends,
+                    "start": feat_starts[j],
+                    "end": feat_ends[j],
                     "GC": batch["region_gc"][j],
                     "full_start":  batch["start"][j],
                     "full_end": batch["end"][j],
