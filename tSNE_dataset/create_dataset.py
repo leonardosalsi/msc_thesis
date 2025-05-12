@@ -12,6 +12,15 @@ FASTA_PATH = "/shared/DS/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
 SEQUENCE_LENGTH = 6000
 SAMPLES_PER_REGION = 10000
 
+def get_cg_content(seq):
+    """
+    Calculation via Brock Biology of Microorganisms 10th edition
+    @book{Madigan_Martinko_Parker_2003, place={Upper Saddle River, NJ}, title={Brock Biology of Microorganisms}, publisher={Prentice Hall/Pearson Education}, author={Madigan, Michael T. and Martinko, John M. and Parker, Jack}, year={2003}}
+    """
+    full_len = len(seq)
+    num_GC = seq.count("G") + seq.count("C")
+    return num_GC / full_len * 100
+
 def parse_bed_file(file_path):
     with open(file_path) as f:
         for line in f:

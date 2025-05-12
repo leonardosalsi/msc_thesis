@@ -3,7 +3,7 @@ import shutil
 import glob
 import json
 from datasets import load_dataset, load_from_disk, Dataset
-from config import datasets_cache_dir, generator_cache_dir
+from config import datasets_cache_dir, cache_dir
 from utils.util import check_folders
 import re
 
@@ -85,6 +85,9 @@ def get_dataset(args):
                         data = json.load(f)
                         for item in data:
                             yield {'sequence': item}
+
+            generator_cache_dir = os.path.join(cache_dir, "generator")
+            os.makedirs(generator_cache_dir, exist_ok=True)
 
             dataset = Dataset.from_generator(gen, cache_dir=generator_cache_dir)
             dataset = dataset.shuffle()

@@ -5,7 +5,8 @@ import re
 import shutil
 import json
 from datasets import Dataset, DatasetDict
-from config import generated_datasets_dir, generator_cache_dir
+from config import generated_datasets_dir, cache_dir
+
 
 def json_files_generator(folder_path):
     pattern = os.path.join(folder_path, '*.json')
@@ -51,6 +52,9 @@ if __name__ == "__main__":
         args = parse_args()
         json_files_dir = args.json_files_dir
         use_scratch = args.use_scratch
+
+        generator_cache_dir = os.path.join(cache_dir, "generator")
+        os.makedirs(generator_cache_dir, exist_ok=True)
 
         full_dataset = Dataset.from_generator(
             generator=lambda: json_files_generator(json_files_dir),

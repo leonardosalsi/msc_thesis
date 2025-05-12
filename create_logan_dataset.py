@@ -3,7 +3,7 @@ import json
 from argparse_dataclass import dataclass, ArgumentParser
 from datasets import Dataset, DatasetDict, load_dataset
 
-from config import logs_dir, datasets_cache_dir, generator_cache_dir
+from config import logs_dir, datasets_cache_dir, cache_dir
 import fasta_walker
 from utils.util import print_args
 
@@ -127,6 +127,8 @@ if __name__ == "__main__":
                         for item in data:
                             yield {'sequence': item}
 
+            generator_cache_dir = os.path.join(cache_dir, "generator")
+            os.makedirs(generator_cache_dir, exist_ok=True)
             dataset = Dataset.from_generator(gen, cache_dir=generator_cache_dir)
             dataset = dataset.shuffle()
             train_dataset = dataset.select(range(validation_size, len(dataset)))
