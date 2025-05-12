@@ -20,31 +20,35 @@ This script generates BED files for different genomic region types:
 
 These BED files are used to sample labeled sequences from the genome for downstream analyses.
 """
-GENCODE_FILE = '/shared/DS/gencode.v38.annotation.gtf'
-GENOME_FAI= 'data/Homo_sapiens.GRCh38.dna.primary_assembly.fa.fai'
+
+base_dir = os.path.dirname(os.path.abspath(__file__))
+GENCODE_FILE = os.path.join(base_dir, 'data/gencode.v38.annotation.gtf')
+GENCODE_DB = os.path.join(base_dir, 'data/gencode.v38.db')
+GENOME_FAI= os.path.join(base_dir, 'data/Homo_sapiens.GRCh38.dna.primary_assembly.fa.fai')
+
 
 def get_gencode_db():
     """
     Loads or creates a gffutils database from the GENCODE GTF file.
     This allows efficient querying of gene features (like CDS, exon, UTR).
     """
-    if not os.path.exists("data/gencode.v38.db"):
+    if not os.path.exists(GENCODE_DB):
         gffutils.create_db(
             GENCODE_FILE,
-            dbfn="gencode.v38.db",
+            dbfn=GENCODE_DB,
             force=True,
             keep_order=True,
             disable_infer_genes=True,
             disable_infer_transcripts=True
         )
-    return gffutils.FeatureDB("data/gencode.v38.db")
+    return gffutils.FeatureDB(GENCODE_DB)
 
 def create_cds_bed_file(db):
     """
     Extracts all CDS (coding sequence) regions from the GENCODE database.
     These are written to cds.bed in 0-based BED format.
     """
-    output_file = "bed_files/cds.bed"
+    output_file = os.path.join(base_dir, 'bed_files/cds.bed')
     if not os.path.exists(output_file):
         with open(output_file, "w") as out:
             for feature in db.features_of_type("CDS"):
@@ -67,8 +71,8 @@ def create_five_three_prime_bed_files(db):
         - UTRs after CDS  = 5′ UTR
         - UTRs before CDS = 3′ UTR
     """
-    output_file_five = "bed_files/five_prime_utr.bed"
-    output_file_three = "bed_files/three_prime_utr.bed"
+    output_file_five = os.path.join(base_dir, 'bed_files/five_prime_utr.bed')
+    output_file_three = os.path.join(base_dir, 'bed_files/three_prime_utr.bed')
     if not os.path.exists(output_file_five) or not os.path.exists(output_file_three):
         utr_by_tx = defaultdict(list)
         cds_by_tx = defaultdict(list)
@@ -119,7 +123,7 @@ def create_intron_bed_file(db):
     Infers introns from exon boundaries within each transcript.
     For transcripts with ≥2 exons, introns are the gaps between adjacent exons.
     """
-    output_file = "bed_files/introns.bed"
+    output_file = os.path.join(base_dir, 'bed_files/introns.bed')
     if not os.path.exists(output_file):
         with open(output_file, "w") as out:
             for transcript in db.features_of_type("transcript"):
@@ -145,7 +149,7 @@ def create_transcripts_bed(db):
     Creates a BED file containing the full span of every transcript.
     This is used for intergenic region computation (to subtract from genome space).
     """
-    output_file = "bed_files/transcripts.bed"
+    output_file = os.path.join(base_dir, 'bed_files/transcripts.bed')
     if not os.path.exists(output_file):
         with open(output_file, "w") as out:
             for tx in db.features_of_type("transcript"):
@@ -163,7 +167,7 @@ def create_intergenic_bed_file(db):
    - Parsing chromosome lengths from the genome FASTA index (.fai)
    - Subtracting transcript intervals from each chromosome span
    """
-    output_file = "bed_files/intergenic.bed"
+    output_file = os.path.join(base_dir, 'bed_files/intergenic.bed')
     if not os.path.exists(output_file):
         chrom_sizes = {}
         with open(GENOME_FAI) as fai:

@@ -13,10 +13,6 @@ def get_model(args, device):
       - Moves the model to the target device.
       - Optionally compiles the model with torch.compile and wraps the forward method to
         handle an unexpected keyword argument ('num_items_in_batch').
-
-    :param args: Arguments containing configuration flags (e.g. freeze, from_scratch, pca_embeddings, compile_model).
-    :param device: The target device.
-    :return: The modified model.
     """
     freeze = args.freeze
     train_from_scratch = args.from_scratch

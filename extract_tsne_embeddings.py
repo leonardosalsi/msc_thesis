@@ -16,6 +16,7 @@ class EmbConfig:
     model_name: str
     checkpoint: str
     pca: bool = False
+    var: bool = False
 
 def parse_args():
     parser = ArgumentParser(EmbConfig)
@@ -29,7 +30,10 @@ def extract_region_embeddings(args, device):
 
     tokenizer = get_eval_tokenizer(args, repo)
 
-    dataset = load_from_disk(os.path.join(generated_datasets_dir, 'tSNE_6000'))
+    if args.var:
+        dataset = load_from_disk(os.path.join(generated_datasets_dir, 'tSNE_6000_var'))
+    else:
+        dataset = load_from_disk(os.path.join(generated_datasets_dir, 'tSNE_6000'))
     dataset = dataset.shuffle()
 
     L = model.config.num_hidden_layers
