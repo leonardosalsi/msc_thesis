@@ -88,10 +88,10 @@ def extract_region_embeddings(args, device):
                     "label": batch["region"][j],
                     "start": feat_starts,
                     "end": feat_ends,
-                    "GC": get_cg_content(seq[feat_starts[j]:feat_ends[j] + 1]),
+                    "GC": batch["region_gc"][j],
                     "full_start":  batch["start"][j],
                     "full_end": batch["end"][j],
-                    "GC_full": get_cg_content(seq)
+                    "GC_full": batch["seq_gc"][j]
                 })
 
     ouput_dir = os.path.join(results_dir, f"tSNE_embeddings")
