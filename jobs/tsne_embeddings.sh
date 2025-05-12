@@ -7,3 +7,4 @@ if [ -z "$MODEL" ]; then
 fi
 
 sbatch --export=MODEL --job-name="extract_emb_${MODEL}" jobs/tSNE_embeddings/get_embeddings.sh
+sbatch --export=MODEL --job-name="extract_emb_${MODEL}" jobs/tSNE_embeddings/get_embeddings_var.sh
