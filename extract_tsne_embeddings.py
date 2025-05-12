@@ -99,7 +99,7 @@ def extract_region_embeddings(args, device):
     model_dir = os.path.join(ouput_dir, args.model_name)
     os.makedirs(model_dir, exist_ok=True)
     for layer, embeddings in all_embeddings.items():
-        output_path = os.path.join(model_dir, f"layer_{layer}.pkl")
+        output_path = os.path.join(model_dir, f"layer_{layer}{'_var' if args.var else ''}.pkl")
         with open(output_path, "wb") as f:
             pickle.dump({
                 "embeddings": np.vstack(embeddings),
