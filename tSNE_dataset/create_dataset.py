@@ -6,7 +6,7 @@ from tqdm import tqdm
 import pysam
 
 from config import generated_datasets_dir
-from tSNE_proj.generate_bed_files import get_files
+from tSNE_dataset.generate_bed_files import get_files
 
 FASTA_PATH = "/shared/DS/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
 SEQUENCE_LENGTH = 6000

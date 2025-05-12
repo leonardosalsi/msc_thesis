@@ -12,5 +12,5 @@ getting_started_with_logan.ipynb
 .archive
 slurm_jobs_generator
 /slurm_jobs_generator/
-/tSNE_proj/bed_files/*
-/tSNE_proj/data/*
+/tSNE_dataset/bed_files/*
+/tSNE_dataset/data/*

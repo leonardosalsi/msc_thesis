@@ -81,7 +81,9 @@ def extract_region_embeddings(args, device):
                 all_embeddings[layer].append(pooled)
                 meta[layer].append({
                     "sequence": seq,
-                    "label": batch["region"][j]
+                    "label": batch["region"][j],
+                    "start": feat_starts,
+                    "end": feat_ends,
                 })
 
     ouput_dir = os.path.join(results_dir, f"tSNE_embeddings")
