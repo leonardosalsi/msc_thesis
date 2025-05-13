@@ -90,7 +90,7 @@ def get_dataset(args):
             os.makedirs(generator_cache_dir, exist_ok=True)
 
             dataset = Dataset.from_generator(gen, cache_dir=generator_cache_dir)
-            dataset = dataset.shuffle()
+            dataset = dataset.shuffle(seed=101)
             dataset_train = dataset.select(range(validation_size, len(dataset)))
             dataset_validation = dataset.select(range(validation_size))
         else:
