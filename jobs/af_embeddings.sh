@@ -1,0 +1,9 @@
+#!/bin/bash
+cd ..
+
+if [ -z "$MODEL" ]; then
+  echo "Error: MODEL is not set"
+  exit 1
+fi
+
+sbatch --export=MODEL --job-name="extract_emb_${MODEL}" jobs/af_embeddings/get_embeddings.sh
