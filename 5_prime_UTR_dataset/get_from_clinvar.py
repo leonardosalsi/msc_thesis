@@ -17,6 +17,7 @@ def _download_from_clinvar(tempdir):
 
     filters = {
         "5utr_benign.vcf": 'INFO/CLNSIG ~ "Benign" && INFO/MC ~ "SO:0001623"',
+        "5utr_pathogenic.vcf": 'INFO/CLNSIG ~ "Pathogenic" && INFO/MC ~ "SO:0001623"',
     }
 
     output_paths = [os.path.join(tempdir, fname) for fname in filters.keys()]
@@ -36,10 +37,9 @@ def _download_from_clinvar(tempdir):
 
     return files
 
-
-
 def _parse_vcf_to_df(vcf_file):
     records = []
+    label = 1 if 'pathogenic' in vcf_file else 0
     with open(vcf_file) as f:
         for line in f:
             if line.startswith("#"):
@@ -54,7 +54,8 @@ def _parse_vcf_to_df(vcf_file):
                 "alt": alt,
                 "gene": info_dict.get("GENEINFO", "").split(":")[0],
                 "clnsig": info_dict.get("CLNSIG", ""),
-                "mc": info_dict.get("MC", "")
+                "mc": info_dict.get("MC", ""),
+                "label": label,
             }
             records.append(record)
     return pd.DataFrame(records)
@@ -93,11 +94,13 @@ def _process_sequences(args):
 
     for _, row in group.iterrows():
         pos, ref, alt = row["pos"], row["ref"], row["alt"]
+        if len(ref) != 1 or len(alt) != 1:
+            continue
         wt_seq = _fetch_sequence_sampled(seq, chrom, pos, ref, extend)
         if wt_seq:
             results.append({
                 "sequence": wt_seq,
-                "label": 0,
+                "label": row['label'],
                 "chrom": chrom,
                 "pos": pos,
                 "ref": ref,
@@ -105,7 +108,7 @@ def _process_sequences(args):
             })
     return results
 
-def get(filename, length=None):
+def get(filename, length=None, return_af=False):
     fasta_path = os.path.join(DATA_PATH, "Homo_sapiens.GRCh38.dna.primary_assembly.fa")
     files = _download_from_clinvar(DATA_PATH)
 

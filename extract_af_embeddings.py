@@ -30,7 +30,7 @@ def extract_region_embeddings(args, device):
     tokenizer = get_eval_tokenizer(args, repo)
 
 
-    dataset = load_from_disk(os.path.join(generated_datasets_dir, 'tSNE_6000'))
+    dataset = load_from_disk(os.path.join(generated_datasets_dir, '5_utr_af_6000'))
     dataset = dataset.shuffle()
 
     L = model.config.num_hidden_layers
@@ -39,6 +39,7 @@ def extract_region_embeddings(args, device):
         batch_size = 32
     else:
         batch_size = 16
+
     all_embeddings = {layer: [] for layer in layers}
     meta = {layer: [] for layer in layers}
 
@@ -48,8 +49,6 @@ def extract_region_embeddings(args, device):
     for i in tqdm(range(0, len(dataset), batch_size), desc="Extracting mean-pooled embeddings"):
         batch = dataset[i:i + batch_size]
         sequences = batch["sequence"]
-        feat_starts = batch["region_start"]
-        feat_ends = batch["region_end"]
 
         tokens = tokenizer(sequences, return_tensors="pt", padding=True, truncation=True, return_attention_mask=True,
                            add_special_tokens=False)
@@ -63,9 +62,10 @@ def extract_region_embeddings(args, device):
             embeddings = all_layer_embeddings[layer]
             for j in range(len(sequences)):
                 seq = sequences[j]
-                rel_feat_start = feat_starts[j] - batch["start"][j]
-                rel_feat_end = feat_ends[j] - batch["start"][j]
-
+                rel_pos = batch["pos"][j] - batch["start"][j]
+                window = 100
+                rel_feat_start = max(0, rel_pos - window)
+                rel_feat_end = min(len(seq), rel_pos + window + 1)
                 kmer_offsets = get_kmer_offsets(seq, kmer=6)
 
                 token_indices = [
@@ -81,16 +81,11 @@ def extract_region_embeddings(args, device):
                 pooled = selected.mean(dim=0).cpu().numpy()
                 all_embeddings[layer].append(pooled)
                 meta[layer].append({
-                    "label": batch["region"][j],
-                    "start": feat_starts[j],
-                    "end": feat_ends[j],
-                    "GC": batch["region_gc"][j],
-                    "full_start":  batch["start"][j],
-                    "full_end": batch["end"][j],
-                    "GC_full": batch["seq_gc"][j]
+                    "label": batch["label"][j],
+                    "af": batch["af"][j]
                 })
 
-    ouput_dir = os.path.join(results_dir, f"tSNE_embeddings")
+    ouput_dir = os.path.join(results_dir, f"5_utr_embeddings")
     os.makedirs(ouput_dir, exist_ok=True)
     model_dir = os.path.join(ouput_dir, args.model_name)
     os.makedirs(model_dir, exist_ok=True)

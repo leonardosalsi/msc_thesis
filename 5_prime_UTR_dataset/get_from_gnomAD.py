@@ -85,14 +85,19 @@ def _make_sequence_exact_length(extend, start, pos, end, mut_seq, seq):
         left_seq = seq[left_start-1:left_end]
         right_seq = seq[right_start-1:right_end]
         mut_seq = left_seq + mut_seq + right_seq
+        seq_start = left_start
 
     elif mut_seq_len > extend:
         diff = mut_seq_len - extend
         variant_offset = pos - start
         trim_start = min(variant_offset, diff)
         mut_seq =  mut_seq[trim_start:trim_start + extend]
+        seq_start = start + trim_start
 
-    return mut_seq
+    else:
+        seq_start = start
+
+    return mut_seq, seq_start
 
 def _get_label(AF):
     if AF >= 0.05:
@@ -104,7 +109,11 @@ def _get_label(AF):
 
 
 def _process_sequences(args):
-    chrom, utr_group, fasta_path, db_path, extend = args
+    if len(args) == 6:
+        chrom, utr_group, fasta_path, db_path, extend, return_af = args
+    else:
+        chrom, utr_group, fasta_path, db_path, extend = args
+        return_af = False
     if extend == 0:
         extend = None
     fasta_ref = pysam.FastaFile(fasta_path)
@@ -124,15 +133,15 @@ def _process_sequences(args):
                                                    query="chrom,pos,ref,alt,AF")
         for _, var in variant_info_db.iterrows():
             AF = var["AF"]
-            if AF is None or len(var["alt"]) > 900 or len(var["ref"]) > 900:
-                print(len(var["alt"]), len(var["ref"]))
+            if AF is None or len(var["alt"]) != 1 or len(var["ref"]) != 1:
                 continue
             pos, ref, alt = var["pos"], var["ref"], var["alt"]
             mut = _mutate_sequence(gt_seq, start, pos, ref, alt)
             if mut is None:
                 continue
+            seq_start = start
             if extend:
-                mut = _make_sequence_exact_length(extend, start, pos, end, mut, seq)
+                mut, seq_start = _make_sequence_exact_length(extend, start, pos, end, mut, seq)
             if mut is None:
                 continue
             label = _get_label(AF)
@@ -140,17 +149,29 @@ def _process_sequences(args):
                 continue
             if extend and len(mut) != extend:
                 continue
-            results.append({
-                'sequence': mut,
-                'label': label,
-                'chrom': chrom,
-                'pos': pos,
-                'ref': ref,
-                'alt': alt,
-            })
+            if return_af:
+                results.append({
+                    'sequence': mut,
+                    'label': label,
+                    'chrom': chrom,
+                    'pos': pos,
+                    'ref': ref,
+                    'alt': alt,
+                    'af': AF,
+                    'start': seq_start,
+                })
+            else:
+                results.append({
+                    'sequence': mut,
+                    'label': label,
+                    'chrom': chrom,
+                    'pos': pos,
+                    'ref': ref,
+                    'alt': alt,
+                })
     return results
 
-def get(filename, length=None):
+def get(filename, length=None, return_af=False):
     gtf_file = os.path.join(DATA_PATH, "Homo_sapiens.GRCh38.110.gtf")
     utr_cache_file = os.path.join(DATA_PATH, "utr5_dataframe.parquet")
     fasta_path = os.path.join(DATA_PATH, "Homo_sapiens.GRCh38.dna.primary_assembly.fa")
@@ -162,7 +183,7 @@ def get(filename, length=None):
         length = 0
 
     tasks = [
-        (chrom, group, fasta_path, DATA_PATH, length)
+        (chrom, group, fasta_path, DATA_PATH, length, return_af)
         for chrom, group in utr5_df.groupby("chrom")
     ]
 
@@ -179,6 +200,23 @@ def get(filename, length=None):
 
     print(f"Saved dataset with {len(dataset)} entries to {output_path}")
     return dataset
+
+def get_generator(length=None, return_af=False):
+    gtf_file = os.path.join(DATA_PATH, "Homo_sapiens.GRCh38.110.gtf")
+    utr_cache_file = os.path.join(DATA_PATH, "utr5_dataframe.parquet")
+    fasta_path = os.path.join(DATA_PATH, "Homo_sapiens.GRCh38.dna.primary_assembly.fa")
+
+    utr5_df = _get_utr_dataframe(gtf_file, utr_cache_file)
+
+    if length is None:
+        length = 0
+
+    for chrom, group in utr5_df.groupby("chrom"):
+        task = (chrom, group, fasta_path, DATA_PATH, length, return_af)
+        results = _process_sequences(task)
+
+        for entry in results:
+            yield entry
 
 if __name__ == "__main__":
     length = 1200

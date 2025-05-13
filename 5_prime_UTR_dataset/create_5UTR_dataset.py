@@ -35,9 +35,9 @@ Create UTR'5 Classification Dataset
 From ClinVar only get benign sequences and from gnomAD both benign and pathogenic
 """
 if __name__ == '__main__':
-    length = 1000
+    length = 6000
     full = False
-    check_data = True
+    check_data = False
 
     if not check_data:
         gnomAD_filename = f"utr5_dataset_gnomAD{f'_{length}' if length is not None else ''}.json"
@@ -126,7 +126,7 @@ if __name__ == '__main__':
 
         for e in train:
             print(e)
-        print("HERE")
+
         print(dataset)
 
 
