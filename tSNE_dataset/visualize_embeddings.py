@@ -36,7 +36,6 @@ def visualize_embeddings(model_name):
 
     for idx, (ax, fpath) in enumerate(zip(axes, files)):
         layer = int(fpath.split("layer_")[-1].split(".")[0])
-        print(layer)
         tsne_path = os.path.join(model_results, f"tsne_{layer}{'_var' if VAR else ''}.pkl")
 
         with open(os.path.join(model_results, fpath), "rb") as f:
@@ -44,9 +43,8 @@ def visualize_embeddings(model_name):
 
         embeddings = data["embeddings"]
         meta = data["meta"]
-        print(meta)
         df = pd.DataFrame(meta)
-
+        print(len(df))
         if os.path.exists(tsne_path):
             with open(tsne_path, "rb") as f:
                 tsne_results = pickle.load(f)

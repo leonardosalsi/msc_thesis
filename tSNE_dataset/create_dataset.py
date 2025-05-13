@@ -8,7 +8,7 @@ from tSNE_dataset.generate_bed_files import get_files
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 FASTA_PATH = os.path.join(base_dir, "data/Homo_sapiens.GRCh38.dna.primary_assembly.fa")
-EXTEND_TO_NORM = False
+EXTEND_TO_NORM = True
 SEQUENCE_LENGTH = 6000
 SAMPLES_PER_REGION = 10000
 MAX_SEQUENCE_LENGTH = 6000
@@ -102,18 +102,6 @@ if __name__ == "__main__":
                                 "seq_gc": get_cg_content(chunk),
                                 "region_gc": get_cg_content(chunk)
                             }
-                            print({
-                                "sequence": chunk,
-                                "label": label_id,
-                                "region": label,
-                                "chrom": chrom,
-                                "start": chunk_start,
-                                "end": chunk_end,
-                                "region_start": chunk_start,
-                                "region_end": chunk_end,
-                                "seq_gc": get_cg_content(chunk),
-                                "region_gc": get_cg_content(chunk)
-                            })
                         else:
                             reserve.append({
                                 "sequence": chunk,
@@ -141,15 +129,6 @@ if __name__ == "__main__":
                         "seq_gc": get_cg_content(seq),
                         "region_gc": get_cg_content(region)
                     }
-                    print({
-                        "sequence": seq,
-                        "label": label_id,
-                        "region": label,
-                        "chrom": chrom,
-                        "start": seq_start,
-                        "end": seq_end,
-                        "region_start": start,
-                    })
 
 
                 if sampled >= SAMPLES_PER_REGION:
@@ -168,4 +147,6 @@ if __name__ == "__main__":
             print(f"Collected {sampled} sequences for {label}")
 
     dataset = Dataset.from_generator(gen)
+    for d in dataset:
+        print(d['region'], len(d['sequence']))
     dataset.save_to_disk(os.path.join(generated_datasets_dir, f'tSNE_{SEQUENCE_LENGTH}{"_var" if not EXTEND_TO_NORM else ""}'))
