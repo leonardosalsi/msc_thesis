@@ -4,7 +4,7 @@
 #SBATCH --output=/cluster/home/salsil/msc_thesis_root/out/logan_ewc_1.txt
 #SBATCH --cpus-per-task=4
 #SBATCH --time=96:00:00
-#SBATCH --mem-per-cpu=64G
+#SBATCH --mem-per-cpu=16G
 #SBATCH --gpus=rtx_4090:5
 
 source ~/.bashrc
