@@ -112,7 +112,7 @@ class EWCTrainer(Trainer):
             logs["model_loss"] = self.model_loss
         super().log(logs)
 
-def compute_fisher(args, model, device, orig_data_loader):
+def compute_fisher(args, model, device, tokenizer, data_collator, num_tokens):
     """
     Compute diagonal Fisher Information for all model parameters on the original domain data.
     Returns a dict mapping parameter names to their Fisher values (tensor of same shape).
@@ -125,6 +125,22 @@ def compute_fisher(args, model, device, orig_data_loader):
     fisher_matrix_file = os.path.join(fisher_cache_dir, f'{logan_name}_fisher_matrix.pt')
 
     if not fisher_matrix_exists(fisher_matrix_file):
+        original_dataset = get_original_training_dataset(args)
+        original_dataset = original_dataset.select(range(200000))
+
+        def tokenize_function(examples):
+            return tokenizer(examples['sequence'], max_length=num_tokens, truncation=True, padding=True)
+
+        tokenized_dataset = original_dataset.map(tokenize_function, batched=True, num_proc=4,
+                                                 remove_columns=original_dataset.column_names)
+
+        orig_data_loader = DataLoader(
+            tokenized_dataset.with_format("torch"),
+            batch_size=args.train_size,
+            collate_fn=data_collator,
+            shuffle=False,
+        )
+
         LOGGER.log(LOGLEVEL, f"Creating fisher matrix {fisher_matrix_file}")
         model.eval()
         fisher = {name: torch.zeros_like(param, device=device) for name, param in model.named_parameters()}
@@ -150,22 +166,7 @@ def compute_fisher(args, model, device, orig_data_loader):
 def get_trainer(args, training_args, model, device, tokenizer, training_dataset, eval_dataset, data_collator, num_tokens):
     ewc_lambda = args.ewc_lambda
     if ewc_lambda and ewc_lambda > 0:
-        original_dataset = get_original_training_dataset(args)
-        original_dataset = original_dataset.select(range(200000))
-
-        def tokenize_function(examples):
-            return tokenizer(examples['sequence'], max_length=num_tokens, truncation=True, padding=True)
-
-        tokenized_dataset = original_dataset.map(tokenize_function, batched=True, num_proc=4, remove_columns=original_dataset.column_names)
-
-        orig_data_loader = DataLoader(
-            tokenized_dataset.with_format("torch"),
-            batch_size=args.train_size,
-            collate_fn=data_collator,
-            shuffle=False,
-        )
-
-        fisher_matrix = compute_fisher(args, model, device, orig_data_loader)
+        fisher_matrix = compute_fisher(args, model, device, tokenizer, data_collator, num_tokens)
         original_params = {name: param.detach().clone() for name, param in model.named_parameters()}
         trainer = EWCTrainer(
             model=model,
