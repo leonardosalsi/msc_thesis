@@ -31,6 +31,7 @@ def extract_region_embeddings(args, device):
 
 
     dataset = load_from_disk(os.path.join(generated_datasets_dir, 'tSNE_6000'))
+    print(dataset.unique("region"))
     dataset = dataset.shuffle()
 
     L = model.config.num_hidden_layers
@@ -80,7 +81,6 @@ def extract_region_embeddings(args, device):
                 selected = embeddings[j, token_indices, :]
                 pooled = selected.mean(dim=0).cpu().numpy()
                 all_embeddings[layer].append(pooled)
-                print(batch["region"][j])
                 meta[layer].append({
                     "sequence": seq,
                     "label": batch["region"][j],
