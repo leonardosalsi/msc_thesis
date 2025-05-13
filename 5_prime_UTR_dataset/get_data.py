@@ -9,16 +9,18 @@ import get_from_gnomAD
 import get_from_clinvar
 from config import datasets_cache_dir
 
+base_dir = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(base_dir, 'data')
 
-def load_or_generate(get_fn, dataset_location, filename, length=None):
-    filepath = os.path.join(dataset_location, filename)
+def load_or_generate(get_fn, filename, length=None):
+    filepath = os.path.join(DATA_PATH, filename)
     if os.path.exists(filepath):
         print(f"Loading cached dataset from: {filepath}")
         with open(filepath, "r") as f:
             return json.load(f)
     else:
         print(f"Generating dataset: {filepath}")
-        return get_fn(dataset_location, filename, length)
+        return get_fn(filename, length)
 
 def check_structure_consistency(dataset1, dataset2):
     if not dataset1 or not dataset2:
@@ -33,17 +35,16 @@ Create UTR'5 Classification Dataset
 From ClinVar only get benign sequences and from gnomAD both benign and pathogenic
 """
 if __name__ == '__main__':
-    dataset_location = "/shared/5_utr/"
     length = 1000
     full = False
-    check_data = False
+    check_data = True
 
     if not check_data:
         gnomAD_filename = f"utr5_dataset_gnomAD{f'_{length}' if length is not None else ''}.json"
-        dataset_gnomAD = load_or_generate(get_from_gnomAD.get, dataset_location, gnomAD_filename, length)
+        dataset_gnomAD = load_or_generate(get_from_gnomAD.get, gnomAD_filename, length)
 
         clinvar_filename = f"utr5_dataset_clinvar{f'_{length}' if length is not None else ''}.json"
-        dataset_clinvar = load_or_generate(get_from_clinvar.get, dataset_location, clinvar_filename, length)
+        dataset_clinvar = load_or_generate(get_from_clinvar.get, clinvar_filename, length)
 
         if check_structure_consistency(dataset_gnomAD, dataset_clinvar):
             combined_dataset = dataset_gnomAD + dataset_clinvar
@@ -63,7 +64,7 @@ if __name__ == '__main__':
                 for b in benign:
                     len_benign.append(len(b['sequence']))
 
-                with open(os.path.join(dataset_location, f"sequence_lengths{f'_{length}' if length is not None else ''}.json"),
+                with open(os.path.join(DATA_PATH, f"sequence_lengths{f'_{length}' if length is not None else ''}.json"),
                           "w") as f:
                     json.dump({"benign": len_benign, "pathogenic": len_pathogenic}, f)
 

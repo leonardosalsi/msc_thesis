@@ -6,6 +6,9 @@ from gnomad_db.database import gnomAD_DB
 import pysam
 from multiprocessing import Pool, cpu_count
 
+base_dir = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(base_dir, 'data')
+
 def _load_five_prime_utrs_from_gtf(gtf_path):
     col_names = ["seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attribute"]
 
@@ -121,7 +124,8 @@ def _process_sequences(args):
                                                    query="chrom,pos,ref,alt,AF")
         for _, var in variant_info_db.iterrows():
             AF = var["AF"]
-            if AF is None or len(var["alt"]) > 10 or len(var["ref"]) > 10:
+            if AF is None or len(var["alt"]) > 900 or len(var["ref"]) > 900:
+                print(len(var["alt"]), len(var["ref"]))
                 continue
             pos, ref, alt = var["pos"], var["ref"], var["alt"]
             mut = _mutate_sequence(gt_seq, start, pos, ref, alt)
@@ -146,10 +150,10 @@ def _process_sequences(args):
             })
     return results
 
-def get(dataset_location, filename, length=None):
-    gtf_file = os.path.join(dataset_location, "Homo_sapiens.GRCh38.110.gtf")
-    utr_cache_file = os.path.join(dataset_location, "utr5_dataframe.parquet")
-    fasta_path = os.path.join(dataset_location, "Homo_sapiens.GRCh38.dna.primary_assembly.fa")
+def get(filename, length=None):
+    gtf_file = os.path.join(DATA_PATH, "Homo_sapiens.GRCh38.110.gtf")
+    utr_cache_file = os.path.join(DATA_PATH, "utr5_dataframe.parquet")
+    fasta_path = os.path.join(DATA_PATH, "Homo_sapiens.GRCh38.dna.primary_assembly.fa")
 
     num_workers = max(1, cpu_count() - 1)
     utr5_df = _get_utr_dataframe(gtf_file, utr_cache_file)
@@ -158,7 +162,7 @@ def get(dataset_location, filename, length=None):
         length = 0
 
     tasks = [
-        (chrom, group, fasta_path, dataset_location, length)
+        (chrom, group, fasta_path, DATA_PATH, length)
         for chrom, group in utr5_df.groupby("chrom")
     ]
 
@@ -169,7 +173,7 @@ def get(dataset_location, filename, length=None):
 
     dataset = [entry for result in results for entry in result]
 
-    output_path = os.path.join(dataset_location, filename)
+    output_path = os.path.join(DATA_PATH, filename)
     with open(output_path, "w") as f:
         json.dump(dataset, f, indent=2)
 
@@ -177,9 +181,8 @@ def get(dataset_location, filename, length=None):
     return dataset
 
 if __name__ == "__main__":
-    dataset_location = "/shared/5_utr/"
     length = 1200
     gnomAD_filename = f"utr5_dataset_gnomAD{f'_{length}' if length is not None else ''}.json"
-    get(dataset_location, gnomAD_filename, length)
+    get(gnomAD_filename, length)
 
 

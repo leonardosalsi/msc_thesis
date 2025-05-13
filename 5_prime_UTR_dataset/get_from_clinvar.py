@@ -7,6 +7,9 @@ from multiprocessing import Pool, cpu_count
 import pysam
 import pandas as pd
 
+base_dir = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(base_dir, 'data')
+
 def _download_from_clinvar(tempdir):
     url = 'https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar.vcf.gz'
     vcf_gz_path = os.path.join(tempdir, 'clinvar.vcf.gz')
@@ -102,9 +105,9 @@ def _process_sequences(args):
             })
     return results
 
-def get(dataset_location, filename, length=None):
-    fasta_path = os.path.join(dataset_location, "Homo_sapiens.GRCh38.dna.primary_assembly.fa")
-    files = _download_from_clinvar(dataset_location)
+def get(filename, length=None):
+    fasta_path = os.path.join(DATA_PATH, "Homo_sapiens.GRCh38.dna.primary_assembly.fa")
+    files = _download_from_clinvar(DATA_PATH)
 
     df_all = pd.concat([_parse_vcf_to_df(f) for f in files], ignore_index=True)
     df_all.drop_duplicates(subset=["chrom", "pos", "ref", "alt"], inplace=True)
@@ -126,7 +129,7 @@ def get(dataset_location, filename, length=None):
 
     dataset = [entry for result in results for entry in result]
 
-    output_path = os.path.join(dataset_location, filename)
+    output_path = os.path.join(DATA_PATH, filename)
     with open(output_path, "w") as f:
         json.dump(dataset, f, indent=2)
 
@@ -134,7 +137,6 @@ def get(dataset_location, filename, length=None):
     return dataset
 
 if __name__ == "__main__":
-    dataset_location = "/shared/5_utr/"
     length = 1200
     clinvar_filename = f"utr5_dataset_clinvar{f'_{length}' if length is not None else ''}.json"
-    get(dataset_location, clinvar_filename, length)
+    get(clinvar_filename, length)

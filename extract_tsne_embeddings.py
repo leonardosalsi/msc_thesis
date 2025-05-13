@@ -81,7 +81,6 @@ def extract_region_embeddings(args, device):
                 pooled = selected.mean(dim=0).cpu().numpy()
                 all_embeddings[layer].append(pooled)
                 meta[layer].append({
-                    "sequence": seq,
                     "label": batch["region"][j],
                     "start": feat_starts[j],
                     "end": feat_ends[j],
