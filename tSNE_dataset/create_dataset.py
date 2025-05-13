@@ -147,6 +147,5 @@ if __name__ == "__main__":
             print(f"Collected {sampled} sequences for {label}")
 
     dataset = Dataset.from_generator(gen)
-    for d in dataset:
-        print(d['region'], len(d['sequence']))
+    print(dataset.unique("region"))
     dataset.save_to_disk(os.path.join(generated_datasets_dir, f'tSNE_{SEQUENCE_LENGTH}{"_var" if not EXTEND_TO_NORM else ""}'))

@@ -31,7 +31,6 @@ def extract_region_embeddings(args, device):
 
 
     dataset = load_from_disk(os.path.join(generated_datasets_dir, 'tSNE_6000'))
-    print(dataset.unique("region"))
     dataset = dataset.shuffle()
 
     L = model.config.num_hidden_layers
