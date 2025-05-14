@@ -37,7 +37,6 @@ def extract_region_embeddings(args, device):
 
     tokenizer = get_eval_tokenizer(args, repo)
 
-
     dataset = load_from_disk(os.path.join(generated_datasets_dir, '5_utr_af_6000'))
     dataset = dataset.shuffle()
 
@@ -47,7 +46,7 @@ def extract_region_embeddings(args, device):
         batch_size = 16
     else:
         batch_size = 8
-
+    batch_size = 4
     all_embeddings = {layer: [] for layer in layers}
     meta = {layer: [] for layer in layers}
 
@@ -75,7 +74,7 @@ def extract_region_embeddings(args, device):
             mut_embeddings = mut_all_layer_embeddings[layer]
             for j in range(len(sequences)):
                 seq = sequences[j]
-                rel_pos = batch["pos"][j] - batch["start"][j]
+                rel_pos = batch["pos"][j]
                 window = 100
                 rel_feat_start = max(0, rel_pos - window)
                 rel_feat_end = min(len(seq), rel_pos + window + 1)
