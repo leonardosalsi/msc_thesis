@@ -57,7 +57,7 @@ def extract_region_embeddings(args, device):
     for i in tqdm(range(0, len(dataset), batch_size), desc="Extracting mean-pooled embeddings"):
         batch = dataset[i:i + batch_size]
         sequences = batch["sequence"]
-        mutated_sequences = [mutate(b['sequence'], b['pos'], b['start'], b['ref'], b['alt']) for b in batch]
+        mutated_sequences = [mutate(batch['sequence'][i], batch['pos'][i], batch['ref'][i], batch['alt'][i]) for i in range(len(sequences))]
         tokens = tokenizer(sequences, return_tensors="pt", padding=True, truncation=True, return_attention_mask=True,
                            add_special_tokens=False)
         mut_tokens = tokenizer(mutated_sequences, return_tensors="pt", padding=True, truncation=True, return_attention_mask=True,
