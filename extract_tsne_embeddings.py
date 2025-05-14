@@ -105,7 +105,6 @@ def extract_region_embeddings(args, device):
 class EmbConfig:
     model_name: str
     checkpoint: str
-    pca: bool = False
     cls: bool = False
 
 if __name__ == "__main__":
