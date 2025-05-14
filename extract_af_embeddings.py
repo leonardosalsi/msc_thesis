@@ -10,6 +10,9 @@ from config import generated_datasets_dir, results_dir
 from utils.model import get_emb_model
 from utils.tokenizer import get_eval_tokenizer
 from utils.util import get_device, print_args
+from sklearn.metrics.pairwise import cosine_similarity
+import torch.nn.functional as F
+
 
 @dataclass
 class EmbConfig:
@@ -20,6 +23,11 @@ class EmbConfig:
 def parse_args():
     parser = ArgumentParser(EmbConfig)
     return parser.parse_args()
+
+def mutate(seq, pos, ref, alt):
+    if seq[pos] != ref:
+        raise ValueError(f"Expected ref base {ref}, but got {seq[pos]}")
+    return seq[:pos] + alt + seq[pos + 1:]
 
 def extract_region_embeddings(args, device):
 
@@ -49,17 +57,22 @@ def extract_region_embeddings(args, device):
     for i in tqdm(range(0, len(dataset), batch_size), desc="Extracting mean-pooled embeddings"):
         batch = dataset[i:i + batch_size]
         sequences = batch["sequence"]
-
+        mutated_sequences = [mutate(b['sequence'], b['pos'], b['start'], b['ref'], b['alt']) for b in batch]
         tokens = tokenizer(sequences, return_tensors="pt", padding=True, truncation=True, return_attention_mask=True,
                            add_special_tokens=False)
-
+        mut_tokens = tokenizer(mutated_sequences, return_tensors="pt", padding=True, truncation=True, return_attention_mask=True,
+                           add_special_tokens=False)
         with torch.no_grad():
             tokens = {k: v.to(device) for k, v in tokens.items() if isinstance(v, torch.Tensor)}
             outputs = model(**tokens, output_hidden_states=True)
+            mut_tokens = {k: v.to(device) for k, v in mut_tokens.items() if isinstance(v, torch.Tensor)}
+            mut_outputs = model(**mut_tokens, output_hidden_states=True)
 
         all_layer_embeddings = outputs.hidden_states
+        mut_all_layer_embeddings = mut_outputs.hidden_states
         for layer in layers:
             embeddings = all_layer_embeddings[layer]
+            mut_embeddings = mut_all_layer_embeddings[layer]
             for j in range(len(sequences)):
                 seq = sequences[j]
                 rel_pos = batch["pos"][j] - batch["start"][j]
@@ -77,12 +90,24 @@ def extract_region_embeddings(args, device):
                     print(f"[WARN] No valid overlapping tokens for sample {i + j}, skipping. Len: {len(all_embeddings)}")
                     continue
 
-                selected = embeddings[j, token_indices, :]
+                ref_embedding = embeddings[j].mean(dim=0).cpu()
+                mut_embedding = mut_embeddings[j].mean(dim=0).cpu()
+
+                cos_similarity = F.cosine_similarity(ref_embedding.unsqueeze(0), mut_embedding.unsqueeze(0)).item()
+                dot_product = torch.dot(ref_embedding, mut_embedding).item()
+                ref_norm = F.normalize(ref_embedding.unsqueeze(0), dim=1)
+                mut_norm = F.normalize(mut_embedding.unsqueeze(0), dim=1)
+                dot_product_norm   = torch.dot(ref_norm.squeeze(), mut_norm.squeeze()).item()
+
+                selected = mut_embeddings[j, token_indices, :]
                 pooled = selected.mean(dim=0).cpu().numpy()
                 all_embeddings[layer].append(pooled)
                 meta[layer].append({
                     "label": batch["label"][j],
-                    "af": batch["af"][j]
+                    "af": batch["af"][j],
+                    "cos_similarity": cos_similarity,
+                    "dot_product": dot_product,
+                    "dot_product_norm": dot_product_norm,
                 })
 
     ouput_dir = os.path.join(results_dir, f"5_utr_embeddings")

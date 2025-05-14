@@ -107,6 +107,68 @@ def _get_label(AF):
     else:
         return None
 
+def _process_af_sequences(args):
+    if len(args) == 6:
+        chrom, utr_group, fasta_path, db_path, extend, return_af = args
+    else:
+        chrom, utr_group, fasta_path, db_path, extend = args
+
+    if extend == 0:
+        extend = None
+    fasta_ref = pysam.FastaFile(fasta_path)
+    db = gnomAD_DB(db_path, gnomad_version="v4")
+    results = []
+
+    seq = fasta_ref.fetch(chrom).upper()
+    seq_len = len(seq)
+
+    for _, region_info in utr_group.iterrows():
+        start, end, strand = region_info["start"], region_info["end"], region_info["strand"]
+        reg_len = end - start + 1
+        if reg_len > extend:
+            continue
+
+        success = False
+        for i in range(10):
+            growth = extend - reg_len + 1
+            left_grow = random.randint(0, growth)
+            right_grow = growth - left_grow
+            gr_start = start - left_grow
+            gr_end = end + right_grow
+            if not (gr_start < 0 or gr_end >= seq_len):
+                success = True
+                break
+        if not success:
+            continue
+
+        start = gr_start
+        end = gr_end
+        gt_seq = seq[start - 1:end]
+        variant_info_db = db.get_info_for_interval(chrom=chrom, interval_start=start, interval_end=end,
+                                                   query="chrom,pos,ref,alt,AF")
+        for _, var in variant_info_db.iterrows():
+            AF = var["AF"]
+            if AF is None or len(var["alt"]) != 1 or len(var["ref"]) != 1:
+                continue
+            pos, ref, alt = var["pos"], var["ref"], var["alt"]
+            seq_start = start
+            rel_pos = pos - seq_start
+            assert gt_seq[rel_pos] == ref, f"Mismatch: got {gt_seq[rel_pos]}, expected {ref}"
+            label = _get_label(AF)
+            if label is None:
+                continue
+            results.append({
+                'sequence': gt_seq,
+                'label': label,
+                'chrom': chrom,
+                'pos': rel_pos,
+                'ref': ref,
+                'alt': alt,
+                'af': AF,
+                'start': seq_start,
+            })
+
+    return results
 
 def _process_sequences(args):
     if len(args) == 6:
@@ -207,20 +269,27 @@ def get_generator(length=None, return_af=False):
     fasta_path = os.path.join(DATA_PATH, "Homo_sapiens.GRCh38.dna.primary_assembly.fa")
 
     utr5_df = _get_utr_dataframe(gtf_file, utr_cache_file)
-
+    MAX_YIELDS = 10000
     if length is None:
         length = 0
 
-    for chrom, group in utr5_df.groupby("chrom"):
+    for i, (chrom, group) in enumerate(utr5_df.groupby("chrom")):
+        yields = 0
         task = (chrom, group, fasta_path, DATA_PATH, length, return_af)
-        results = _process_sequences(task)
+        results = _process_af_sequences(task)
 
         for entry in results:
             yield entry
+            yields += 1
+            if yields >= MAX_YIELDS:
+                break
+
+        print(f"Chrom {chrom} done. Yields: {yields}")
+
 
 if __name__ == "__main__":
-    length = 1200
-    gnomAD_filename = f"utr5_dataset_gnomAD{f'_{length}' if length is not None else ''}.json"
-    get(gnomAD_filename, length)
-
+    length = 6000
+    gen = get_generator(length, True)
+    for g in gen:
+        print(g)
 

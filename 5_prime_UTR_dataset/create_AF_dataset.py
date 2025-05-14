@@ -70,7 +70,7 @@ if __name__ == '__main__':
                 "label": label
             }
 
-        dataset = dataset.shuffle().select(range(50000)).remove_columns(["chrom", "ref", "alt", "label"])
+        dataset = dataset.shuffle().select(range(50000)).remove_columns(["chrom", "label"])
         print(dataset)
         dataset = dataset.map(label_af)
 
