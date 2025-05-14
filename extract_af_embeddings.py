@@ -46,7 +46,7 @@ def extract_region_embeddings(args, device):
         batch_size = 16
     else:
         batch_size = 8
-    batch_size = 4
+
     all_embeddings = {layer: [] for layer in layers}
     meta = {layer: [] for layer in layers}
 
