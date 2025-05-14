@@ -11,11 +11,6 @@ from utils.model import get_emb_model
 from utils.tokenizer import get_eval_tokenizer
 from utils.util import get_device, print_args
 
-@dataclass
-class EmbConfig:
-    model_name: str
-    checkpoint: str
-    pca: bool = False
 
 def parse_args():
     parser = ArgumentParser(EmbConfig)
@@ -62,23 +57,27 @@ def extract_region_embeddings(args, device):
         for layer in layers:
             embeddings = all_layer_embeddings[layer]
             for j in range(len(sequences)):
-                seq = sequences[j]
-                rel_feat_start = feat_starts[j] - batch["start"][j]
-                rel_feat_end = feat_ends[j] - batch["start"][j]
+                if args.cls:
+                    pooled = embeddings[j, 0, :].cpu().numpy()
+                else:
+                    seq = sequences[j]
+                    rel_feat_start = feat_starts[j] - batch["start"][j]
+                    rel_feat_end = feat_ends[j] - batch["start"][j]
 
-                kmer_offsets = get_kmer_offsets(seq, kmer=6)
+                    kmer_offsets = get_kmer_offsets(seq, kmer=6)
 
-                token_indices = [
-                    idx for idx, (s, e) in enumerate(kmer_offsets)
-                    if not (e <= rel_feat_start or s >= rel_feat_end) and 0 <= idx < embeddings.shape[1]
-                ]
+                    token_indices = [
+                        idx for idx, (s, e) in enumerate(kmer_offsets)
+                        if not (e <= rel_feat_start or s >= rel_feat_end) and 0 <= idx < embeddings.shape[1]
+                    ]
 
-                if not token_indices:
-                    print(f"[WARN] No valid overlapping tokens for sample {i + j}, skipping. Len: {len(all_embeddings)}")
-                    continue
+                    if not token_indices:
+                        print(f"[WARN] No valid overlapping tokens for sample {i + j}, skipping. Len: {len(all_embeddings)}")
+                        continue
 
-                selected = embeddings[j, token_indices, :]
-                pooled = selected.mean(dim=0).cpu().numpy()
+                    selected = embeddings[j, token_indices, :]
+                    pooled = selected.mean(dim=0).cpu().numpy()
+
                 all_embeddings[layer].append(pooled)
                 meta[layer].append({
                     "label": batch["region"][j],
@@ -90,7 +89,7 @@ def extract_region_embeddings(args, device):
                     "GC_full": batch["seq_gc"][j]
                 })
 
-    ouput_dir = os.path.join(results_dir, f"tSNE_embeddings")
+    ouput_dir = os.path.join(results_dir, f"tSNE_embeddings_{'cls' if args.cls else 'mean'}")
     os.makedirs(ouput_dir, exist_ok=True)
     model_dir = os.path.join(ouput_dir, args.model_name)
     os.makedirs(model_dir, exist_ok=True)
@@ -101,6 +100,13 @@ def extract_region_embeddings(args, device):
                 "embeddings": np.vstack(embeddings),
                 "meta": meta[layer]
             }, f)
+
+@dataclass
+class EmbConfig:
+    model_name: str
+    checkpoint: str
+    pca: bool = False
+    cls: bool = False
 
 if __name__ == "__main__":
     args = parse_args()

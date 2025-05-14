@@ -14,15 +14,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import torch.nn.functional as F
 
 
-@dataclass
-class EmbConfig:
-    model_name: str
-    checkpoint: str
-    pca: bool = False
 
-def parse_args():
-    parser = ArgumentParser(EmbConfig)
-    return parser.parse_args()
 
 def mutate(seq, pos, ref, alt):
     if seq[pos] != ref:
@@ -73,33 +65,45 @@ def extract_region_embeddings(args, device):
             embeddings = all_layer_embeddings[layer]
             mut_embeddings = mut_all_layer_embeddings[layer]
             for j in range(len(sequences)):
-                seq = sequences[j]
-                rel_pos = batch["pos"][j]
-                window = 100
-                rel_feat_start = max(0, rel_pos - window)
-                rel_feat_end = min(len(seq), rel_pos + window + 1)
-                kmer_offsets = get_kmer_offsets(seq, kmer=6)
+                if args.cls:
+                    ref_embedding = embeddings[j, 0, :].cpu()
+                    mut_embedding = mut_embeddings[j, 0, :].cpu()
+                    cos_similarity = F.cosine_similarity(ref_embedding.unsqueeze(0), mut_embedding.unsqueeze(0)).item()
+                    dot_product = torch.dot(ref_embedding, mut_embedding).item()
+                    ref_norm = F.normalize(ref_embedding.unsqueeze(0), dim=1)
+                    mut_norm = F.normalize(mut_embedding.unsqueeze(0), dim=1)
+                    dot_product_norm = torch.dot(ref_norm.squeeze(), mut_norm.squeeze()).item()
+                    pooled = mut_embedding.numpy()
+                else:
+                    seq = sequences[j]
+                    rel_pos = batch["pos"][j]
+                    window = 100
+                    rel_feat_start = max(0, rel_pos - window)
+                    rel_feat_end = min(len(seq), rel_pos + window + 1)
+                    kmer_offsets = get_kmer_offsets(seq, kmer=6)
 
-                token_indices = [
-                    idx for idx, (s, e) in enumerate(kmer_offsets)
-                    if not (e <= rel_feat_start or s >= rel_feat_end) and 0 <= idx < embeddings.shape[1]
-                ]
+                    token_indices = [
+                        idx for idx, (s, e) in enumerate(kmer_offsets)
+                        if not (e <= rel_feat_start or s >= rel_feat_end) and 0 <= idx < embeddings.shape[1]
+                    ]
 
-                if not token_indices:
-                    print(f"[WARN] No valid overlapping tokens for sample {i + j}, skipping. Len: {len(all_embeddings)}")
-                    continue
+                    if not token_indices:
+                        print(f"[WARN] No valid overlapping tokens for sample {i + j}, skipping. Len: {len(all_embeddings)}")
+                        continue
 
-                ref_embedding = embeddings[j].mean(dim=0).cpu()
-                mut_embedding = mut_embeddings[j].mean(dim=0).cpu()
+                    ref_selected = embeddings[j, token_indices, :]
+                    mut_selected = mut_embeddings[j, token_indices, :]
+                    ref_embedding = ref_selected.mean(dim=0).cpu()
+                    mut_embedding = mut_selected.mean(dim=0).cpu()
 
-                cos_similarity = F.cosine_similarity(ref_embedding.unsqueeze(0), mut_embedding.unsqueeze(0)).item()
-                dot_product = torch.dot(ref_embedding, mut_embedding).item()
-                ref_norm = F.normalize(ref_embedding.unsqueeze(0), dim=1)
-                mut_norm = F.normalize(mut_embedding.unsqueeze(0), dim=1)
-                dot_product_norm   = torch.dot(ref_norm.squeeze(), mut_norm.squeeze()).item()
+                    cos_similarity = F.cosine_similarity(ref_embedding.unsqueeze(0), mut_embedding.unsqueeze(0)).item()
+                    dot_product = torch.dot(ref_embedding, mut_embedding).item()
+                    ref_norm = F.normalize(ref_embedding.unsqueeze(0), dim=1)
+                    mut_norm = F.normalize(mut_embedding.unsqueeze(0), dim=1)
+                    dot_product_norm   = torch.dot(ref_norm.squeeze(), mut_norm.squeeze()).item()
+                    pooled = mut_embedding.numpy()
 
-                selected = mut_embeddings[j, token_indices, :]
-                pooled = selected.mean(dim=0).cpu().numpy()
+
                 all_embeddings[layer].append(pooled)
                 meta[layer].append({
                     "label": batch["label"][j],
@@ -109,7 +113,7 @@ def extract_region_embeddings(args, device):
                     "dot_product_norm": dot_product_norm,
                 })
 
-    ouput_dir = os.path.join(results_dir, f"5_utr_embeddings")
+    ouput_dir = os.path.join(results_dir, f"5_utr_embeddings_{'cls' if args.cls else 'mean'}")
     os.makedirs(ouput_dir, exist_ok=True)
     model_dir = os.path.join(ouput_dir, args.model_name)
     os.makedirs(model_dir, exist_ok=True)
@@ -120,6 +124,17 @@ def extract_region_embeddings(args, device):
                 "embeddings": np.vstack(embeddings),
                 "meta": meta[layer]
             }, f)
+
+@dataclass
+class EmbConfig:
+    model_name: str
+    checkpoint: str
+    pca: bool = False
+    cls: bool = False
+
+def parse_args():
+    parser = ArgumentParser(EmbConfig)
+    return parser.parse_args()
 
 if __name__ == "__main__":
     args = parse_args()

@@ -6,4 +6,5 @@ if [ -z "$MODEL" ]; then
   exit 1
 fi
 
-sbatch --export=MODEL --job-name="extract_emb_${MODEL}" jobs/tSNE_embeddings/get_embeddings.sh
+sbatch --export=MODEL --job-name="tsne_mean_${MODEL}" jobs/tSNE_embeddings/get_embeddings_mean.sh
+sbatch --export=MODEL --job-name="tsne_cls_${MODEL}" jobs/tSNE_embeddings/get_embeddings_cls.sh
