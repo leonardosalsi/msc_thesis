@@ -1,7 +1,8 @@
 import os
 import json
+from collections import Counter
 
-from datasets import Dataset, Features, DatasetDict, Value, load_from_disk
+from datasets import Dataset, Features, DatasetDict, Value, load_from_disk, concatenate_datasets
 import random
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
@@ -56,28 +57,13 @@ if __name__ == '__main__':
             dataset = load_from_disk(
                 os.path.join(datasets_cache_dir, f"5_utr_af_full{f'_{length}' if length is not None else ''}"))
 
-        def label_af(example):
-            af = example["af"]
-            if af <= 0.0001:
-                label = 1  # rare
-            elif af >= 0.05:
-                label = 0  # common
-            else:
-                label = None  # intermediate
-            return {
-                "sequence": example["sequence"],
-                "af": af,
-                "label": label
-            }
+        rare = dataset.filter(lambda x: x["label"] == 1).shuffle().select(range(7045))
+        common = dataset.filter(lambda x: x["label"] == 0)
 
-        dataset = dataset.shuffle().select(range(50000)).remove_columns(["chrom", "label"])
+        dataset = concatenate_datasets([rare, common]).shuffle(seed=42).remove_columns(["chrom"])
+        label_counts = Counter(example["label"] for example in dataset)
+        print(label_counts)
         print(dataset)
-        dataset = dataset.map(label_af)
-
-        # Filter to only labeled (i.e., remove AF in intermediate range)
-        dataset = dataset.filter(lambda x: x["label"] is not None)
-        print(dataset)
-
         plt.hist([x["af"] for x in dataset], bins=100, log=True)
         plt.title("AF distribution in sampled dataset")
         plt.xlabel("Allele Frequency (AF)")
@@ -88,10 +74,8 @@ if __name__ == '__main__':
     else:
         dataset = load_from_disk(os.path.join(generated_datasets_dir, f"5_utr_af{f'_{length}' if length is not None else ''}"))
 
-        for e in dataset:
-            print(e['af'], e['sequence'])
-
-        print(dataset)
+        label_counts = Counter(example["label"] for example in dataset)
+        print(label_counts)
 
 
 

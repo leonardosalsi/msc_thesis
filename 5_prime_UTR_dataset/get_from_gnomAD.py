@@ -99,10 +99,10 @@ def _make_sequence_exact_length(extend, start, pos, end, mut_seq, seq):
 
     return mut_seq, seq_start
 
-def _get_label(AF):
-    if AF >= 0.05:
+def _get_label(af):
+    if af >= 0.05:
         return 0
-    elif AF <= 0.0001:
+    elif af <= 0.0001:
         return 1
     else:
         return None

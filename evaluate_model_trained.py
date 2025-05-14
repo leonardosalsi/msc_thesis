@@ -52,7 +52,8 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         dataset_test = _dataset['test']
     else:
         ds_name = ""
-        if task['taskid'] >= 1 and task['taskid'] <= 18:
+        print(task)
+        if task['taskId'] >= 1 and task['taskId'] <= 18:
             ds_name = task['name']
         dataset_train = load_dataset(
             task["repo"],
@@ -194,6 +195,20 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     print(matthews_corrcoef(labels, predictions))
     return {'labels': labels, 'predictions': predictions, 'training': train_history}
 
+
+
+def get_output_dir(args):
+    if args.task_id in [28, 29]:
+        benchmark_dir = os.path.join(results_dir, f"utr5")
+    else:
+        benchmark_dir = os.path.join(results_dir, f"benchmark")
+    os.makedirs(benchmark_dir, exist_ok=True)
+    benchmark_dir = os.path.join(benchmark_dir, args.model_name)
+    os.makedirs(benchmark_dir, exist_ok=True)
+    eval_trained_dir = os.path.join(benchmark_dir, f"checkpoint-{int(int(args.checkpoint) / 2000)}B")
+    os.makedirs(eval_trained_dir, exist_ok=True)
+    return eval_trained_dir
+
 @dataclass
 class EvalConfig:
     model_name: str
@@ -207,18 +222,6 @@ class EvalConfig:
 def parse_args():
     parser = ArgumentParser(EvalConfig)
     return parser.parse_args()
-
-def get_output_dir(args):
-    if args.task_id in [28, 29]:
-        benchmark_dir = os.path.join(results_dir, f"utr5")
-    else:
-        benchmark_dir = os.path.join(results_dir, f"benchmark")
-    os.makedirs(benchmark_dir, exist_ok=True)
-    benchmark_dir = os.path.join(benchmark_dir, args.model_name)
-    os.makedirs(benchmark_dir, exist_ok=True)
-    eval_trained_dir = os.path.join(benchmark_dir, f"checkpoint-{int(int(args.checkpoint) / 2000)}B")
-    os.makedirs(eval_trained_dir, exist_ok=True)
-    return eval_trained_dir
 
 if __name__ == "__main__":
     args = parse_args()

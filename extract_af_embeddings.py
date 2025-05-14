@@ -13,9 +13,6 @@ from utils.util import get_device, print_args
 from sklearn.metrics.pairwise import cosine_similarity
 import torch.nn.functional as F
 
-
-
-
 def mutate(seq, pos, ref, alt):
     if seq[pos] != ref:
         raise ValueError(f"Expected ref base {ref}, but got {seq[pos]}")
