@@ -13,7 +13,6 @@ class EmbConfig:
     model_name: str
     checkpoint: str
     dataset_path: str
-    cls: bool = False
 
 def parse_args():
     parser = ArgumentParser(EmbConfig)
