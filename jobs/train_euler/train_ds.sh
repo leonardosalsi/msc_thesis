@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=logan_no_ewc
-#SBATCH --output=/cluster/home/salsil/msc_thesis_root/out/logan_no_ewd.txt
+#SBATCH --job-name=2kb_ewc_5
+#SBATCH --output=/cluster/home/salsil/msc_thesis_root/out/2kb_ewc_5.txt
 #SBATCH --cpus-per-task=4
 #SBATCH --time=200:00:00
 #SBATCH --mem-per-cpu=16G
@@ -19,8 +19,8 @@ export WANDB_DISABLED=true
 export TF_CPP_MIN_LOG_LEVEL=2
 
 deepspeed /cluster/home/salsil/msc_thesis_root/msc_thesis/train_model.py \
---dataset /cluster/scratch/salsil/datasets/logan_6200 --tokenizer default \
---logging-steps 100000 --save-steps 100000 --train-size 64 --eval-size 256 --max-steps 400000 \
+--dataset /cluster/scratch/salsil/datasets/logan_12200 --tokenizer default \
+--logging-steps 10 --save-steps 6000 --train-size 32 --eval-size 256 --max-steps 12000 \
 --gradient-accumulation 1 --max-workers 4 --load-from-json --ewc-lambda 5 \
 --original-dataset InstaDeepAI/multi_species_genomes --gradient-checkpointing \
 --deepspeed-config /cluster/home/salsil/msc_thesis_root/ds_config.json \

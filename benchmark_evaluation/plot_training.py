@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 from sklearn.metrics import matthews_corrcoef
 
 from benchmark_evaluation.groupings import get_task_alias, get_model_alias_for_downstream, DATATYPE, \
-    get_for_all_compare_to_litereature, get_for_all_compare, get_for_ewc_compare
+    get_for_all_compare_to_litereature, get_for_all_compare
 from config import results_dir, images_dir
 
 def evaluate_file(filepath):
@@ -230,7 +230,7 @@ def get_mean_task_rank(data):
 if __name__ == '__main__':
     savedir = os.path.join(images_dir, 'benchmark')
     os.makedirs(savedir, exist_ok=True)
-    f = get_for_ewc_compare
+    f = get_for_all_compare
     benchmark_files, filename = f(DATATYPE.BENCHMARK)
     data = prepare_data_for_visualization(benchmark_files)
     filename_base = os.path.join(savedir, filename)

@@ -252,7 +252,14 @@ def get_for_ewc_compare(type: DATATYPE):
         'overlap_logan_ewc_2',
         'overlap_logan_ewc_5',
         'overlap_logan_ewc_10',
-        'overlap_logan_ewc_25'
+        'overlap_logan_ewc_25',
+        'default_logan_no_ewc',
+        'default_logan_ewc_0_5',
+        'default_logan_ewc_1',
+        'default_logan_ewc_2',
+        'default_logan_ewc_5',
+        'default_logan_ewc_10',
+        'default_logan_ewc_25'
     ]
     filename = 'compare_ewc'
 

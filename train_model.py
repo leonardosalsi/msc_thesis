@@ -43,6 +43,8 @@ class TrainConfig:
     gradient_checkpointing: bool = False
     mapping_cache: str = None
     deepspeed_config: str = None
+    model_name: str = None
+    resume: bool = True
 
 def parse_args():
     parser = ArgumentParser(TrainConfig)
@@ -104,13 +106,15 @@ if __name__ == "__main__":
 
     model = get_model(args, device)
     model_path = os.path.join(pretrained_models_cache_dir, timestamp)
-    if os.path.isdir(model_path) and os.listdir(model_path):
-        resume_from_checkpoint = True
+    if os.path.isdir(model_path) and os.listdir(model_path) and args.resume:
+        resume_from_checkpoint = model_path
     else:
-        resume_from_checkpoint = False
+        resume_from_checkpoint = None
+
+    model_name = args.model_name if args.model_name else timestamp
 
     training_args = TrainingArguments(
-        run_name=timestamp,
+        run_name=model_name,
         report_to="none",
         output_dir=model_path,
         overwrite_output_dir=True,
@@ -133,6 +137,7 @@ if __name__ == "__main__":
         torch_compile=args.compile_model,
         label_names=['labels'],
         deepspeed=args.deepspeed_config,
+        resume_from_checkpoint=resume_from_checkpoint
     )
 
     trainer = get_trainer(
