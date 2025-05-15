@@ -192,10 +192,8 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     labels = prediction_results.label_ids
     labels = labels.tolist()
     predictions = predictions.tolist()
-    print(matthews_corrcoef(labels, predictions))
-    return {'labels': labels, 'predictions': predictions, 'training': train_history}
-
-
+    mcc = matthews_corrcoef(labels, predictions)
+    return {'MCC': mcc, 'training': train_history}
 
 def get_output_dir(args):
     if args.task_id in [28, 29]:
