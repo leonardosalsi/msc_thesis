@@ -26,9 +26,9 @@ def get_model(args, device):
             f"model_configs/config-nucleotide-transformer-v2-50m-multi-species.json",
             local_files_only=True, trust_remote_code=True
         )
-        model = EsmForMaskedLM.from_config(config)
+        model = AutoModelForMaskedLM.from_config(config)
     else:
-        model = EsmForMaskedLM.from_pretrained(
+        model = AutoModelForMaskedLM.from_pretrained(
             "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
             cache_dir=models_cache_dir,
             trust_remote_code=True,
