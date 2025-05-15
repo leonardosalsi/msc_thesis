@@ -13,7 +13,7 @@ source $HOME/gpu_env/bin/activate
 export WANDB_DISABLED=true
 export TF_CPP_MIN_LOG_LEVEL=2
 
-srun python /cluster/home/salsil/msc_thesis_root/msc_thesis/train_model.py \
+python /cluster/home/salsil/msc_thesis_root/msc_thesis/train_model.py \
 --dataset /cluster/scratch/salsil/datasets/logan_6200 --tokenizer default \
 --logging-steps 500 --train-size 10 --eval-size 32 \
 --gradient-accumulation 5 --max-workers 4 --load-from-json --ewc-lambda 2 \
