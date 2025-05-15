@@ -41,6 +41,7 @@ class TrainConfig:
     ewc_lambda: float = 0.0
     original_dataset: Optional[str] = None
     gradient_checkpointing: bool = False
+    local_rank: int = 0
 
 
 def parse_args():
