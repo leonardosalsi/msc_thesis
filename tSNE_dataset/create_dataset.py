@@ -37,6 +37,8 @@ def sample_sequence(fasta, chrom, region_start, region_end, seq_len):
             return seq, region_start, region_end
         return None
 
+    full_len = len(fasta.fetch(chrom))
+
     region_len = region_end - region_start
     if region_len < 1 or region_len > seq_len:
         return None
@@ -63,7 +65,7 @@ if __name__ == "__main__":
     bed_files = get_files()
 
     def gen():
-        fasta = pysam.FastaFile(FASTA_PATH)
+        fasta = pysam.FastaFile(FASTA_PATH).fetch()
         for label, bed_path in bed_files.items():
             print(f"Sampling from {label} regions...")
             sampled = 0
@@ -129,7 +131,6 @@ if __name__ == "__main__":
                         "seq_gc": get_cg_content(seq),
                         "region_gc": get_cg_content(region)
                     }
-
 
                 if sampled >= SAMPLES_PER_REGION:
                     break
