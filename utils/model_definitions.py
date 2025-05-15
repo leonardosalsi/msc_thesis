@@ -56,7 +56,7 @@ MODELS = [
     {'name': 'overlap_multi_species_sh_gc', 'dataset': 'multi_species', 'tokenizer': 'overlapping', 'context': '1', 'ewc': False, 'ewc_lambda': None, 'pca': False, 'pca_dim': None, 'pca_embed': None, 'sharon': '1.35-1.8', 'gc': '0.4-0.6'},
     {'name': 'overlap_multi_species_2kb_sh_gc', 'dataset': 'multi_species', 'tokenizer': 'overlapping', 'context': '2', 'ewc': False, 'ewc_lambda': None, 'pca': False, 'pca_dim': None, 'pca_embed': None, 'sharon': '1.35-1.8', 'gc': '0.4-0.6'},
     {'name': 'overlap_multi_species_pca_cls_256', 'dataset': 'multi_species', 'tokenizer': 'overlapping', 'context': '1', 'ewc': False, 'ewc_lambda': None, 'pca': True, 'pca_dim': 256, 'pca_embed': 'CLS', 'sharon': None, 'gc': None},
-    {'name': 'default_multi_species_pca_mean_256', 'dataset': 'multi_species', 'tokenizer': 'overlapping', 'context': '1', 'ewc': False, 'ewc_lambda': None, 'pca': True, 'pca_dim': 256, 'pca_embed': 'mean', 'sharon': None, 'gc': None},
+    {'name': 'overlap_multi_species_pca_mean_256', 'dataset': 'multi_species', 'tokenizer': 'overlapping', 'context': '1', 'ewc': False, 'ewc_lambda': None, 'pca': True, 'pca_dim': 256, 'pca_embed': 'mean', 'sharon': None, 'gc': None},
     {'name': 'default_logan_no_ewc', 'dataset': 'logan', 'tokenizer': 'default', 'context': '1', 'ewc': False, 'ewc_lambda': None, 'pca': False, 'pca_dim': None, 'pca_embed': None, 'sharon': None, 'gc': None},
     {'name': 'default_logan_ewc_0_5', 'dataset': 'logan', 'tokenizer': 'default', 'context': '1', 'ewc': True, 'ewc_lambda': 0.5, 'pca': False, 'pca_dim': None, 'pca_embed': None, 'sharon': None, 'gc': None},
     {'name': 'default_logan_ewc_1', 'dataset': 'logan', 'tokenizer': 'default', 'context': '1', 'ewc': True, 'ewc_lambda': 1, 'pca': False, 'pca_dim': None, 'pca_embed': None, 'sharon': None, 'gc': None},
@@ -95,3 +95,5 @@ TASK_DEFINITIONS = [
     {'name': 'gb_human_enhancers_cohn', 'alias': 'Enh. (human cohn)'},
     {'name': 'gb_human_nontata_promoters', 'alias': 'Prom. Human (no TATA)'}
 ]
+
+task_permutation = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 4, 5, 1, 3, 2, 6, 7, 8, 27, 19, 20, 21, 22, 23, 24, 25, 26]

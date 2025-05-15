@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from tqdm import tqdm
 
-from config import results_dir
+from config import results_dir, images_dir
 from utils.model_definitions import MODELS
 
 VAR = False
@@ -105,7 +105,10 @@ def visualize_embeddings(model_name):
 
 
     plt.subplots_adjust(hspace=0.02, bottom=0.04, top=0.95, left=0.12, right=0.92)
-    plt.suptitle(f"t-SNE Embeddings – {model_name}", fontsize=14)
+    plt.suptitle(f"{model_name}", fontsize=14)
+    genomics_folder = os.path.join(images_dir, 'genomic_elements')
+    os.makedirs(genomics_folder, exist_ok=True)
+    plt.savefig(os.path.join(genomics_folder, f"tsne_{model_name}.png"))
     plt.show()
 
 if __name__ == "__main__":

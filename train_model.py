@@ -41,6 +41,8 @@ class TrainConfig:
     ewc_lambda: float = 0.0
     original_dataset: Optional[str] = None
     gradient_checkpointing: bool = False
+    mapping_cache: str = None
+    deepspeed_config: str = None
 
 def parse_args():
     parser = ArgumentParser(TrainConfig)
@@ -64,11 +66,29 @@ if __name__ == "__main__":
         outputs = tokenizer(examples['sequence'], max_length=num_tokens, truncation=True)
         return outputs
 
-    tokenized_train_sequences = dataset_train.shuffle()
-    tokenized_train_sequences.set_transform(tokenize_function)
-    tokenized_validation_sequences = dataset_validation.shuffle()
-    tokenized_validation_sequences = tokenized_validation_sequences.select(range(500000))
-    tokenized_validation_sequences.set_transform(tokenize_function)
+
+    if args.mapping_cache:
+        name = 'logan' if 'logan' in args.dataset else 'multi_species'
+        tokenized_train_sequences = dataset_train.map(
+            tokenize_function,
+            batched=True,
+            num_proc=args.max_workers,
+            cache_file_name=os.path.join(args.mapping_cache, f"train_{name}.arrow"),
+            keep_in_memory=args.keep_in_memory
+        )
+        tokenized_validation_sequences = dataset_validation.select(range(500000)).map(
+            tokenize_function,
+            batched=True,
+            num_proc=args.max_workers,
+            cache_file_name=os.path.join(args.mapping_cache, f"validation_{name}.arrow"),
+            keep_in_memory=args.keep_in_memory
+        )
+    else:
+        tokenized_train_sequences = dataset_train.shuffle()
+        tokenized_train_sequences.set_transform(tokenize_function)
+        tokenized_validation_sequences = dataset_validation.shuffle()
+        tokenized_validation_sequences = tokenized_validation_sequences.select(range(500000))
+        tokenized_validation_sequences.set_transform(tokenize_function)
 
     if args.pca_dim > 0:
         data_collator = PCACollator(
@@ -112,7 +132,7 @@ if __name__ == "__main__":
         prediction_loss_only=True,
         torch_compile=args.compile_model,
         label_names=['labels'],
-        deepspeed='ds_config.json'
+        deepspeed=args.deepspeed_config,
     )
 
     trainer = get_trainer(
