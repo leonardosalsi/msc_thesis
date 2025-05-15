@@ -7,8 +7,13 @@
 #SBATCH --mem-per-cpu=16G
 #SBATCH --gpus=rtx_4090:5
 
+module load stack/2024-06 gcc/12.2.0 cuda/12.1.1
+
 source ~/.bashrc
 source $HOME/gpu_env/bin/activate
+
+export PATH=$CUDA_HOME/bin:$PATH
+export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
 
 export WANDB_DISABLED=true
 export TF_CPP_MIN_LOG_LEVEL=2
