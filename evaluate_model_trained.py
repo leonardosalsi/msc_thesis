@@ -193,7 +193,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     labels = labels.tolist()
     predictions = predictions.tolist()
     mcc = matthews_corrcoef(labels, predictions)
-    return {'MCC': mcc, 'training': train_history}
+    return mcc, train_history
 
 def get_output_dir(args):
     if args.task_id in [28, 29]:
@@ -239,11 +239,22 @@ if __name__ == "__main__":
     if os.path.exists(output_file):
         exit(0)
 
-    all_results = []
+    mccs = []
+    train_histories = []
     for i in tqdm(range(args.samples)):
-        results = finetune_model_by_task_mcc(args, device, task, timestamp)
-        all_results.append(results)
+        mcc, train_history = finetune_model_by_task_mcc(args, device, task, timestamp)
+        mccs.append(mcc)
+        train_histories.append(train_history)
+
+    mean = np.mean(mccs)
+    std = np.std(mccs)
+
+    results = {
+        "mean": mean,
+        "std": std,
+        "train_histories": train_histories
+    }
 
     with open(output_file, 'w') as f:
-        json.dump(all_results, f, indent=4)
+        json.dump(results, f, indent=4)
     logger.info(f"Results saved to {output_file}")
