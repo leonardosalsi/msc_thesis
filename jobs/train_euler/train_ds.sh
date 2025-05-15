@@ -20,6 +20,6 @@ export TF_CPP_MIN_LOG_LEVEL=2
 
 deepspeed /cluster/home/salsil/msc_thesis_root/msc_thesis/train_model.py \
 --dataset /cluster/scratch/salsil/datasets/logan_6200 --tokenizer default \
---logging-steps 100000 --save-steps 100000 --train-size 128 --eval-size 32 --max-steps 300000 \
+--logging-steps 1 --save-steps 100000 --train-size 128 --eval-size 32 --max-steps 300000 \
 --gradient-accumulation 1 --max-workers 4 --load-from-json --ewc-lambda 2 \
 --original-dataset InstaDeepAI/multi_species_genomes --gradient-checkpointing
