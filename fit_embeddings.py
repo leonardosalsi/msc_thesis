@@ -46,7 +46,7 @@ def visualize_embedding_predictions(
     ap = average_precision_score(y_true, y_pred)
 
     fig = plt.figure(figsize=figsize)
-    gs = gridspec.GridSpec(1, 4, width_ratios=[1, 1, 0.3, 1], wspace=0.05)
+    gs = gridspec.GridSpec(1, 4, width_ratios=[1, 1, 0.2, 1], wspace=0.05)
 
     ax0 = fig.add_subplot(gs[0])
     ax1 = fig.add_subplot(gs[1])
