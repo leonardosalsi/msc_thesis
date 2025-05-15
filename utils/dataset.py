@@ -97,8 +97,7 @@ def get_dataset(args):
             train_path, validation_path = check_folders(selected_dataset_path)
             dataset_train = load_from_disk(train_path, keep_in_memory=keep_in_memory)
             dataset_validation = load_from_disk(validation_path, keep_in_memory=keep_in_memory)
-    print(dataset_train)
-    print(dataset_validation)
+
     columns_to_remove = [col for col in dataset_train.column_names if col != "sequence"]
     dataset_train = dataset_train.remove_columns(columns_to_remove)
     columns_to_remove = [col for col in dataset_validation.column_names if col != "sequence"]
