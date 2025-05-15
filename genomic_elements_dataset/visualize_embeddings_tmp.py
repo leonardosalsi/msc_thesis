@@ -1,34 +1,25 @@
 import os
 import pickle
-
 import numpy as np
 import pandas as pd
-import math
-
+from sklearn.metrics import average_precision_score
 from matplotlib import patches
-from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import seaborn as sns
-from tqdm import tqdm
 
-from config import results_dir
 from utils.model_definitions import MODELS
 
-VAR = False
+DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
 
-def visualize_embeddings(model_name):
-    model_name = 'default_logan_ewc_2'
-    model_results = '/shared/data/5_utr_embeddings_cls/default_multi_species_2kb/'
-    if VAR:
-        files = sorted([f for f in os.listdir(model_results) if
-                        f.endswith(".pkl") and not f.startswith("tsne_") and 'var' in f],
-                       key=lambda f: int(f.split("layer_")[-1].split(".")[0]))
-    else:
-        files = sorted([f for f in os.listdir(model_results) if
-                        f.endswith(".pkl") and not f.startswith("tsne_") and not 'var' in f],
-                       key=lambda f: int(f.split("layer_")[-1].split(".")[0]))
-        files = [f.replace('_var', '') for f in files]
+def visualize_embeddings(model_name, embeddings_dir, tsne_dir):
+
+    try:
+        embeddings_files = sorted([os.path.join(embeddings_dir, f) for f in os.listdir(embeddings_dir) if f.endswith(".pkl") ], key=lambda f: int(f.split("layer_")[-1].split(".")[0]))
+        tsne_files = sorted([os.path.join(tsne_dir, f) for f in os.listdir(tsne_dir) if f.endswith(".pkl") ], key=lambda f: int(f.split("layer_")[-1].split(".")[0]))
+    except:
+        return
+
+    files = list(zip(embeddings_files, tsne_files))
 
     n = len(files)
     fig, axes = plt.subplots(n, 1, figsize=(6, 4 * n), sharex=True, sharey=True)
@@ -37,40 +28,37 @@ def visualize_embeddings(model_name):
     if n == 1:
         axes = [axes]
 
-    for idx, (ax, fpath) in enumerate(zip(axes, files)):
-        layer = int(fpath.split("layer_")[-1].split(".")[0])
-        tsne_path = os.path.join(model_results, f"tsne_{layer}{'_var' if VAR else ''}.pkl")
+    for idx, (ax, (emb_file, tsne_file)) in enumerate(zip(axes, files)):
 
-        with open(os.path.join(model_results, fpath), "rb") as f:
+        with open(emb_file, "rb") as f:
             data = pickle.load(f)
+
 
         embeddings = data["embeddings"]
         meta = data["meta"]
         df = pd.DataFrame(meta)
 
-        if os.path.exists(tsne_path):
-            with open(tsne_path, "rb") as f:
-                tsne_results = pickle.load(f)
-        else:
-            tsne_results = TSNE().fit_transform(embeddings)
-            with open(tsne_path, "wb") as f:
-                pickle.dump(tsne_results, f)
+        with open(tsne_file, "rb") as f:
+            tsne_results = pickle.load(f)
 
-        print(df.head())
         df["Dimension 1"] = tsne_results[:, 0]
         df["Dimension 2"] = tsne_results[:, 1]
         df["label_str"] = df["label"].map({0: "common", 1: "rare"})
-        from sklearn.metrics import average_precision_score
-        label_order = ["3UTR", "CDS", "intron", "intergenic", "5UTR"]
-        sns.scatterplot(data=df, x="Dimension 1", y="Dimension 2",
-                        hue="af", palette='viridis', s=5,
-                        ax=ax, legend=(idx == n - 1))
-        y_true = np.array([m["label"] for m in meta])
-        scores = np.array([m["dot_product_norm"] for m in meta])
-        auprc = average_precision_score(y_true, 1 - scores)  # invert if rare=1
 
-        print("AUPRC:", auprc)
-        # Annotate layer on the right side
+        sns.scatterplot(data=df, x="Dimension 1", y="Dimension 2",
+                        hue="dot_product", palette='viridis', s=5,
+                        ax=ax, legend=(idx == n - 1))
+
+        y_true = np.array([m["label"] for m in meta])
+        scores = np.array([m["dot_product"] for m in meta])
+        auprc = average_precision_score(y_true, scores - 1)  # invert if rare=1
+
+        ax.text(0.98, 0.95, f"AUPRC: {auprc:.3f}",
+                transform=ax.transAxes,
+                ha='right', va='top',
+                fontsize=10, bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
+
+        layer = int(emb_file.split("layer_")[-1].split(".")[0])
         ax.text(1.01, 0.5, f"Layer {layer + 1}", transform=ax.transAxes,
                 rotation=270, va='center', ha='left', fontsize=12)
 
@@ -117,4 +105,10 @@ def visualize_embeddings(model_name):
     plt.show()
 
 if __name__ == "__main__":
-    visualize_embeddings('')
+    emb = ['5_utr_embeddings_mean']
+
+    for e in emb:
+        for m in MODELS:
+            tsne_dir = os.path.join(DATA_PATH, 'tSNE', e, m['name'])
+            embeddings_dir = os.path.join(DATA_PATH, 'embeddings', e, m['name'])
+            visualize_embeddings(m['name'], embeddings_dir, tsne_dir)

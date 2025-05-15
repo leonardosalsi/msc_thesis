@@ -12,6 +12,7 @@ getting_started_with_logan.ipynb
 .archive
 slurm_jobs_generator
 /slurm_jobs_generator/
-/tSNE_dataset/bed_files/*
-/tSNE_dataset/data/*
+/genomic_elements_dataset/bed_files/*
+/genomic_elements_dataset/data/*
 /5_prime_UTR_dataset/data/*
+/data/*

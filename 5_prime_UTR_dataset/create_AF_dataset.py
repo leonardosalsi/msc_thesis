@@ -61,14 +61,7 @@ if __name__ == '__main__':
         common = dataset.filter(lambda x: x["label"] == 0)
 
         dataset = concatenate_datasets([rare, common]).shuffle(seed=42).remove_columns(["chrom"])
-        label_counts = Counter(example["label"] for example in dataset)
-        print(label_counts)
-        print(dataset)
-        plt.hist([x["af"] for x in dataset], bins=100, log=True)
-        plt.title("AF distribution in sampled dataset")
-        plt.xlabel("Allele Frequency (AF)")
-        plt.ylabel("Count")
-        plt.show()
+        dataset.info.dataset_name =  f"5_utr_{length}"
         af_dataset_filename = f"5_utr_af{f'_{length}' if length is not None else ''}"
         dataset.save_to_disk(os.path.join(generated_datasets_dir, af_dataset_filename))
     else:
