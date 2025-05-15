@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/%x.txt
+#SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/tsne.txt
 #SBATCH --cpus-per-task=2
 #SBATCH --time=2:00:00
 #SBATCH --mem-per-cpu=8G
