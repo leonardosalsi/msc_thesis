@@ -1,13 +1,8 @@
 import os
 import json
 from collections import Counter
-
-from datasets import Dataset, Features, DatasetDict, Value, load_from_disk, concatenate_datasets
-import random
-from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
+from datasets import Dataset, Features, Value, load_from_disk, concatenate_datasets
 import get_from_gnomAD
-import get_from_clinvar
 from config import datasets_cache_dir, generated_datasets_dir
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -32,7 +27,7 @@ if __name__ == '__main__':
     length = 6000
     return_af = True
     full = False
-    check_data = False
+    check_data = True
 
     if not check_data:
         af_dataset_filename = f"5_utr_af_full{f'_{length}' if length is not None else ''}"
