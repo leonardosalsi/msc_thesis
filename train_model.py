@@ -41,12 +41,11 @@ class TrainConfig:
     ewc_lambda: float = 0.0
     original_dataset: Optional[str] = None
     gradient_checkpointing: bool = False
-    local_rank: int = 0
-
 
 def parse_args():
     parser = ArgumentParser(TrainConfig)
-    return parser.parse_args()
+    args, unknown = parser.parse_known_args()
+    return args
 
 if __name__ == "__main__":
 
