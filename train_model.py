@@ -102,7 +102,7 @@ if __name__ == "__main__":
         load_best_model_at_end=True,
         metric_for_best_model="loss",
         dataloader_num_workers=args.max_workers,
-        gradient_checkpointing=args.gradient_checkpointing,
+        gradient_checkpointing=False,
         logging_dir=None,
         remove_unused_columns=False,
         bf16=True,

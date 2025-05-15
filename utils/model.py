@@ -35,7 +35,8 @@ def get_model(args, device):
             local_files_only=True,
         )
 
-    model.esm.encoder.gradient_checkpointing = True
+    if args.gradient_checkpointing:
+        model.esm.encoder.gradient_checkpointing = True
 
     if freeze is not None:
         n_layers_to_freeze = int(len(model.esm.encoder.layer) * freeze)
