@@ -1,8 +1,9 @@
 import os
 from safetensors.torch import load_file
-from transformers import AutoModelForMaskedLM, EsmConfig, AutoModelForSequenceClassification
+from transformers import AutoModelForMaskedLM, EsmConfig, AutoModelForSequenceClassification, EsmForMaskedLM
 from config import models_cache_dir, pretrained_models_cache_dir
 from utils.PCAModel import EsmForMaskedLMPCA, EsmForSequenceClassificationPCA
+
 import re
 
 def get_model(args, device):

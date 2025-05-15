@@ -40,6 +40,7 @@ class TrainConfig:
     load_from_json: bool = False
     ewc_lambda: float = 0.0
     original_dataset: Optional[str] = None
+    gradient_checkpointing: bool = False
 
 
 def parse_args():
@@ -101,7 +102,7 @@ if __name__ == "__main__":
         load_best_model_at_end=True,
         metric_for_best_model="loss",
         dataloader_num_workers=args.max_workers,
-        gradient_checkpointing=False,
+        gradient_checkpointing=args.gradient_checkpointing,
         logging_dir=None,
         remove_unused_columns=False,
         bf16=True,
@@ -109,7 +110,8 @@ if __name__ == "__main__":
         include_num_input_tokens_seen=True,
         prediction_loss_only=True,
         torch_compile=args.compile_model,
-        label_names=['labels']
+        label_names=['labels'],
+        deepspeed='ds_config.json'
     )
 
     trainer = get_trainer(

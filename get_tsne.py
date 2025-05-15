@@ -1,18 +1,11 @@
 import os
 import pickle
-import pandas as pd
-import math
-
 from argparse_dataclass import dataclass, ArgumentParser
-from matplotlib import patches
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
-import matplotlib.pyplot as plt
-import seaborn as sns
 from tqdm import tqdm
 
 from config import results_dir
-from utils.model_definitions import MODELS
 from utils.util import print_args
 
 VAR = False

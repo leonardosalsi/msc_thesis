@@ -1,0 +1,26 @@
+{
+  "train_batch_size": 50,
+  "train_micro_batch_size_per_gpu": 10,
+  "gradient_accumulation_steps": 5,
+  "fp16": {
+    "enabled": false
+  },
+  "bf16": {
+    "enabled": true
+  },
+  "zero_optimization": {
+    "stage": 2,
+    "offload_optimizer": {
+      "device": "none"
+    },
+    "allgather_partitions": true,
+    "reduce_scatter": true,
+    "overlap_comm": true,
+    "contiguous_gradients": true
+  },
+  "gradient_clipping": 1.0,
+  "activation_checkpointing": {
+    "partition_activations": true,
+    "contiguous_memory_optimization": true
+  }
+}
