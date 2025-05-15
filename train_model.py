@@ -56,6 +56,7 @@ if __name__ == "__main__":
     dataset_train, dataset_validation = get_dataset(args)
     tokenizer, num_tokens = get_tokenizer(args)
 
+
     def tokenize_function(examples):
         """
         Tokenizes the 'sequence' field in the examples.
