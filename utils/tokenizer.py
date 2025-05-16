@@ -58,8 +58,7 @@ def get_tokenizer(args):
     """
     selected_tokenizer = args.tokenizer
     chunk_size = args.chunk_size
-    num = math.floor(chunk_size / 1000)
-    num_tokens = num * 1000
+    num_tokens = args.num_tokens
 
     if selected_tokenizer == "default":
         tokenizer = AutoTokenizer.from_pretrained(

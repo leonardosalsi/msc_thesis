@@ -45,6 +45,7 @@ class TrainConfig:
     deepspeed_config: str = None
     model_name: str = None
     resume: bool = True
+    num_tokens: int = 1000
 
 def parse_args():
     parser = ArgumentParser(TrainConfig)

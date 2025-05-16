@@ -23,4 +23,4 @@ deepspeed /cluster/home/salsil/msc_thesis_root/msc_thesis/train_model.py \
 --logging-steps 10 --save-steps 6000 --train-size 8 --eval-size 256 --max-steps 12000 \
 --gradient-accumulation 4 --max-workers 4 --load-from-json --ewc-lambda 5 \
 --original-dataset InstaDeepAI/multi_species_genomes --gradient-checkpointing \
---deepspeed-config /cluster/home/salsil/msc_thesis_root/ds_config.json
+--deepspeed-config /cluster/home/salsil/msc_thesis_root/ds_config.json --num-tokens 2000
