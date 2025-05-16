@@ -270,6 +270,20 @@ def get_for_ewc_compare(type: DATATYPE):
     elif type == DATATYPE.UTR_CLASS:
         return _collect_utr_class_data(group), filename
 
+def get_for_best_logan_compare(type: DATATYPE):
+    group = [
+        'default_logan_ewc_5',
+        'default_multi_species'
+    ]
+    filename = 'compare_logan'
+
+    if type == DATATYPE.TRAINING_CURVES:
+        return _collect_training_data(group), filename
+    elif type == DATATYPE.BENCHMARK:
+        return _collect_benchmark_data(group), filename
+    elif type == DATATYPE.UTR_CLASS:
+        return _collect_utr_class_data(group), filename
+
 def get_for_pca_embedding_compare(type: DATATYPE):
     group = [
         'pca_cls_256_multi_species_overlap',

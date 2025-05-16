@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 from sklearn.metrics import matthews_corrcoef
 
 from benchmark_evaluation.groupings import get_task_alias, get_model_alias_for_downstream, DATATYPE, \
-    get_for_all_compare_to_litereature, get_for_all_compare, get_for_ewc_compare
+    get_for_all_compare_to_litereature, get_for_all_compare, get_for_ewc_compare, get_for_best_logan_compare
 from config import results_dir, images_dir
 
 def evaluate_file(filepath):
@@ -102,7 +102,7 @@ def visualize_mcc_per_task(data, colors, filename_base, model_names):
         fig.delaxes(axes[idx])
     plt.grid(axis='y')
     plt.tight_layout()
-    plt.savefig(os.path.join(filename_base, f'mcc_per_tasks.pdf'))
+    plt.savefig(os.path.join(filename_base, f'mcc_per_tasks.png'))
     plt.show()
 
 
@@ -146,14 +146,14 @@ def visualize_mcc_across_tasks(data, filename_base):
     ax.set_xlabel("Mean MCC", fontsize=14)
     ax.set_title("Mean MCC across Tasks", fontsize=18, pad=10, loc="center")
     ax.grid(axis='x')
-
+ 
     # Bold specific label
     for label in ax.get_yticklabels():
         if label.get_text() == "NT-MS V2 (50M)":
             label.set_fontweight("bold")
 
     plt.tight_layout()
-    plt.savefig(os.path.join(filename_base, f'mcc_across_tasks.pdf'))
+    plt.savefig(os.path.join(filename_base, f'mcc_across_tasks.png'))
     plt.show()
     return model_names, colors
 
@@ -230,7 +230,7 @@ def get_mean_task_rank(data):
 if __name__ == '__main__':
     savedir = os.path.join(images_dir, 'benchmark')
     os.makedirs(savedir, exist_ok=True)
-    f = get_for_ewc_compare
+    f = get_for_best_logan_compare
     benchmark_files, filename = f(DATATYPE.BENCHMARK)
     data = prepare_data_for_visualization(benchmark_files)
     filename_base = os.path.join(savedir, filename)
