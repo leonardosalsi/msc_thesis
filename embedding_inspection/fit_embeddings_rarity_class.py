@@ -29,6 +29,10 @@ def visualize_embedding_predictions(
         title='Embedding Visualization',
         random_state=101,
 ):
+    class_dir = os.path.join(images_dir, 'class_by_rarity')
+    figure_path = os.path.join(class_dir, f"{model_name}.png")
+    if os.path.exists(figure_path):
+        return
 
     if method == "tsne":
         reducer = TSNE(n_components=2, random_state=random_state)
@@ -178,9 +182,9 @@ def visualize_embedding_predictions(
 
     plt.suptitle(title, fontsize=16)
     fig.subplots_adjust(left=0.06, right=0.96, top=0.92, bottom=0.08)
-    class_dir = os.path.join(images_dir, 'class_by_rarity')
+
     os.makedirs(class_dir, exist_ok=True)
-    plt.savefig(os.path.join(class_dir, f"{model_name}.png"))
+    plt.savefig(figure_path)
     plt.show()
 
 if __name__ == "__main__":

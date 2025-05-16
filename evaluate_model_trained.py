@@ -13,7 +13,7 @@ from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
 from config import  datasets_cache_dir, results_dir, logs_dir
 from datasets.utils.logging import disable_progress_bar, set_verbosity
-from utils.model import get_eval_model
+from utils.model import get_classification_model
 from utils.tokenizer import get_eval_tokenizer
 from utils.util import print_args, get_device
 import numpy as np
@@ -73,7 +73,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
 
     """Load model and move to device"""
 
-    model, repo = get_eval_model(args, task['num_labels'], device)
+    model, repo = get_classification_model(args, device, task['num_labels'])
 
     """Employ LoRA """
     modules_to_save = None

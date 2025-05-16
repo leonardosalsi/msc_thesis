@@ -1,6 +1,6 @@
 import os
 from safetensors.torch import load_file
-from transformers import AutoModelForMaskedLM, EsmConfig, AutoModelForSequenceClassification, EsmForMaskedLM
+from transformers import AutoModelForMaskedLM, EsmConfig, AutoModelForSequenceClassification
 from config import models_cache_dir, pretrained_models_cache_dir
 from utils.PCAModel import EsmForMaskedLMPCA, EsmForSequenceClassificationPCA
 
@@ -52,7 +52,7 @@ def get_model(args, device):
 
     return model
 
-def get_eval_model(args, num_labels, device):
+def get_classification_model(args, device, num_labels=2, regression=False):
     repo = None
     if 'untrained' in args.model_name:
         match = re.search(r'\d+', args.model_name)
@@ -75,24 +75,44 @@ def get_eval_model(args, num_labels, device):
         if repo is None:
             raise ValueError(f"No model existing with {args.model_name}")
 
-        model = AutoModelForSequenceClassification.from_pretrained(
-            repo,
-            cache_dir=models_cache_dir,
-            num_labels=num_labels,
-            trust_remote_code=True,
-            local_files_only=True
-        )
+        if regression:
+            model = AutoModelForSequenceClassification.from_pretrained(
+                repo,
+                cache_dir=models_cache_dir,
+                num_labels=1,
+                trust_remote_code=True,
+                local_files_only=True,
+                problem_type="regression"
+            )
+        else:
+            model = AutoModelForSequenceClassification.from_pretrained(
+                repo,
+                cache_dir=models_cache_dir,
+                num_labels=num_labels,
+                trust_remote_code=True,
+                local_files_only=True,
+            )
 
     else:
         model_dir = os.path.join(pretrained_models_cache_dir, f"{args.model_name}", f"checkpoint-{args.checkpoint}")
         if args.pca:
-            base_model = AutoModelForMaskedLM.from_pretrained(
-                model_dir,
-                cache_dir=models_cache_dir,
-                num_labels=num_labels,
-                trust_remote_code=True,
-                local_files_only=True
-            )
+            if regression:
+                base_model = AutoModelForSequenceClassification.from_pretrained(
+                    model_dir,
+                    cache_dir=models_cache_dir,
+                    num_labels=1,
+                    trust_remote_code=True,
+                    local_files_only=True,
+                    problem_type="regression"
+                )
+            else:
+                base_model = AutoModelForSequenceClassification.from_pretrained(
+                    model_dir,
+                    cache_dir=models_cache_dir,
+                    num_labels=num_labels,
+                    trust_remote_code=True,
+                    local_files_only=True,
+                )
 
             pca_model = EsmForMaskedLMPCA(
                 config=base_model.config,
@@ -115,13 +135,23 @@ def get_eval_model(args, num_labels, device):
 
             model = EsmForSequenceClassificationPCA(pca_model=pca_model, num_labels=num_labels)
         else:
-            model = AutoModelForSequenceClassification.from_pretrained(
-                model_dir,
-                cache_dir=models_cache_dir,
-                num_labels=num_labels,
-                trust_remote_code=True,
-                local_files_only=True
-            )
+            if regression:
+                model = AutoModelForSequenceClassification.from_pretrained(
+                    model_dir,
+                    cache_dir=models_cache_dir,
+                    num_labels=1,
+                    trust_remote_code=True,
+                    local_files_only=True,
+                    problem_type="regression"
+                )
+            else:
+                model = AutoModelForSequenceClassification.from_pretrained(
+                    model_dir,
+                    cache_dir=models_cache_dir,
+                    num_labels=num_labels,
+                    trust_remote_code=True,
+                    local_files_only=True,
+                )
 
     model.to(device)
 
@@ -175,3 +205,78 @@ def get_emb_model(args, device):
     model.to(device)
 
     return model, repo, num_params
+
+def get_regresson_model(args, num_labels, device):
+    repo = None
+    if 'untrained' in args.model_name:
+        match = re.search(r'\d+', args.model_name)
+        if match:
+            number = int(match.group())
+            if number == 100:
+                repo = 'InstaDeepAI/nucleotide-transformer-v2-100m-multi-species'
+            elif number == 250:
+                repo = 'InstaDeepAI/nucleotide-transformer-v2-250m-multi-species'
+            elif number == 500:
+                if 'tg' in args.model_name:
+                    repo = 'InstaDeepAI/nucleotide-transformer-500m-1000g'
+                elif 'human' in args.model_name:
+                    repo = 'InstaDeepAI/nucleotide-transformer-500m-human-ref'
+                else:
+                    repo = 'InstaDeepAI/nucleotide-transformer-v2-500m-multi-species'
+        else:
+            repo = 'InstaDeepAI/nucleotide-transformer-v2-50m-multi-species'
+
+        if repo is None:
+            raise ValueError(f"No model existing with {args.model_name}")
+
+        model = AutoModelFor.from_pretrained(
+            repo,
+            cache_dir=models_cache_dir,
+            num_labels=num_labels,
+            trust_remote_code=True,
+            local_files_only=True
+        )
+
+    else:
+        model_dir = os.path.join(pretrained_models_cache_dir, f"{args.model_name}", f"checkpoint-{args.checkpoint}")
+        if args.pca:
+            base_model = AutoModelForMaskedLM.from_pretrained(
+                model_dir,
+                cache_dir=models_cache_dir,
+                num_labels=num_labels,
+                trust_remote_code=True,
+                local_files_only=True
+            )
+
+            pca_model = EsmForMaskedLMPCA(
+                config=base_model.config,
+                base_model=base_model,
+                pca_dim=args.pca_dims,
+                aux_loss_weight=0.1,
+                temperature=0.1,
+                pca_embeddings=args.pca_embeddings,
+                gradient_accumulation_steps=50,
+                contrastive=False
+            )
+
+            state_dict = load_file(f"{model_dir}/model.safetensors")
+            missing_keys, unexpected_keys = pca_model.load_state_dict(state_dict, strict=True)
+
+            if len(missing_keys) > 0:
+                print("Missing keys:", missing_keys)
+            if len(unexpected_keys) > 0:
+                print("Unexpected keys:", unexpected_keys)
+
+            model = EsmForSequenceClassificationPCA(pca_model=pca_model, num_labels=num_labels)
+        else:
+            model = AutoModelForSequenceClassification.from_pretrained(
+                model_dir,
+                cache_dir=models_cache_dir,
+                num_labels=num_labels,
+                trust_remote_code=True,
+                local_files_only=True
+            )
+
+    model.to(device)
+
+    return model, repo

@@ -12,6 +12,12 @@ from utils.model_definitions import MODELS
 COLORMAP = 'viridis'
 
 def visualize_embeddings(model_name):
+    class_dir = os.path.join(images_dir, 'class_by_region')
+    figure_path = os.path.join(class_dir, f"{model_name}.png")
+
+    if os.path.exists(figure_path):
+        return
+
     embedding_dir = os.path.join(results_dir, 'embeddings', 'genomic_elements_6000', model_name)
     tsne_dir = os.path.join(results_dir, 'tSNE', 'genomic_elements_6000', model_name)
 
@@ -181,9 +187,9 @@ def visualize_embeddings(model_name):
 
     plt.subplots_adjust(hspace=0.02, bottom=0.04, top=0.93, left=0.05, right=0.98)
     plt.suptitle(f"Genomic Region Determination - {model_name}", fontsize=16)
-    class_dir = os.path.join(images_dir, 'class_by_region')
+
     os.makedirs(class_dir, exist_ok=True)
-    plt.savefig(os.path.join(class_dir, f"{model_name}.png"))
+    plt.savefig(figure_path)
     plt.show()
 
 if __name__ == "__main__":
