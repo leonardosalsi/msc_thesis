@@ -13,28 +13,24 @@ from tqdm import tqdm
 from config import results_dir, images_dir
 from utils.model_definitions import MODELS
 
-VAR = False
-
 def visualize_embeddings(model_name):
-    model_results = os.path.join(results_dir, 'tSNE_embeddings', model_name)
-    if VAR:
-        files = sorted([f for f in os.listdir(model_results) if
-                        f.endswith(".pkl") and not f.startswith("tsne_") and 'var' in f],
-                       key=lambda f: int(f.split("layer_")[-1].split(".")[0]))
-    else:
-        files = sorted([f for f in os.listdir(model_results) if
-                        f.endswith(".pkl") and not f.startswith("tsne_") and not 'var' in f],
-                       key=lambda f: int(f.split("layer_")[-1].split(".")[0]))
-        files = [f.replace('_var', '') for f in files]
+    embedding_dir = os.path.join(results_dir, 'embeddings', 'genomic_elements_6000', model_name)
+    tsne_dir = os.path.join(results_dir, 'tSNE', 'genomic_elements_6000', model_name)
 
-    n = len(files)
+    embedding_files = sorted([os.path.join(embedding_dir, f) for f in os.listdir(embedding_dir) if f.endswith(".pkl") and f.startswith("layer") ],
+                   key=lambda f: int(f.split("layer_")[-1].split(".")[0]))
+    tsne_files = sorted([os.path.join(tsne_dir, f) for f in os.listdir(tsne_dir) if
+                              f.endswith(".pkl") and f.startswith("layer")],
+                             key=lambda f: int(f.split("layer_")[-1].split(".")[0]))
+
+    assert len(embedding_files) == len(tsne_files)
+    n = len(embedding_files)
+
     fig, axes = plt.subplots(n, 1, figsize=(6, 4 * n), sharex=True, sharey=True)
     fig.suptitle(f"{model_name}", fontsize=16)
 
-    if n == 1:
-        axes = [axes]
 
-    for idx, (ax, fpath) in enumerate(zip(axes, files)):
+    for idx, (ax, fpath) in enumerate(zip(axes, embedding_files)):
         layer = int(fpath.split("layer_")[-1].split(".")[0])
         tsne_path = os.path.join(model_results, f"tsne_{layer}{'_var' if VAR else ''}.pkl")
 
