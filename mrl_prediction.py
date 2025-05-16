@@ -50,6 +50,7 @@ if __name__ == "__main__":
             truncation=True,
             padding="max_length",
             max_length=100,
+
         )
         tokens["labels"] = example["label"]
         return tokens
@@ -68,6 +69,7 @@ if __name__ == "__main__":
         output_dir=f"mrl_{timestamp}",
         eval_strategy="epoch",
         save_strategy="epoch",
+        metric_for_best_model="eval_loss",
         per_device_train_batch_size=32,
         per_device_eval_batch_size=64,
         num_train_epochs=5,
@@ -86,7 +88,7 @@ if __name__ == "__main__":
         bias="none",
         target_modules=[
             "query", "key", "value"
-        ]
+        ],
     )
 
     model = get_peft_model(model, peft_config)
