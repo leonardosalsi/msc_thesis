@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     training_args = TrainingArguments(
         output_dir=f"mrl_{timestamp}",
-        evaluation_strategy="epoch",
+        eval_strategy="epoch",
         save_strategy="epoch",
         per_device_train_batch_size=32,
         per_device_eval_batch_size=64,
