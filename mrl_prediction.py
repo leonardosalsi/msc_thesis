@@ -38,8 +38,10 @@ if __name__ == "__main__":
     dataset = load_from_disk(os.path.join(generated_datasets_dir, 'mrl_prediction'), keep_in_memory=args.keep_in_memory)
 
     train_set = dataset['train'].shuffle()
-    test_fixed = dataset['test_fixed'].shuffle()
-    test_var = dataset['test_var'].shuffle()
+    test_random_fixed = dataset['test_random_fixed'].shuffle()
+    test_random_var = dataset['test_random_var'].shuffle()
+    test_human_fixed = dataset['test_human_fixed'].shuffle()
+    test_human_var = dataset['test_human_var'].shuffle()
 
     model, repo = get_classification_model(args, device, regression=True)
     tokenizer = get_eval_tokenizer(args, repo)
@@ -62,16 +64,19 @@ if __name__ == "__main__":
 
     tokenized_train = train_dataset.map(tokenize_function, batched=True)
     tokenized_eval = eval_dataset.map(tokenize_function, batched=True)
-    tokenized_test_fixed = test_fixed.map(tokenize_function, batched=True)
-    tokenized_test_var = test_var.map(tokenize_function, batched=True)
+
+    tokenized_test_random_fixed = test_random_fixed.map(tokenize_function, batched=True)
+    tokenized_test_random_var = test_random_var.map(tokenize_function, batched=True)
+    tokenized_test_human_fixed = test_human_fixed.map(tokenize_function, batched=True)
+    tokenized_test_human_var = test_human_var.map(tokenize_function, batched=True)
 
     training_args = TrainingArguments(
         output_dir=f"mrl_{timestamp}",
         eval_strategy="epoch",
         save_strategy="epoch",
         metric_for_best_model="eval_loss",
-        per_device_train_batch_size=128,
-        per_device_eval_batch_size=256,
+        per_device_train_batch_size=1024,
+        per_device_eval_batch_size=2048,
         load_best_model_at_end=True,
         greater_is_better=False,
         num_train_epochs=5,
@@ -87,7 +92,7 @@ if __name__ == "__main__":
         r=16,
         lora_alpha=32,
         lora_dropout=0.1,
-        bias="lora_only",
+        bias="none",
         target_modules=[
             "query", "key", "value"
         ],
@@ -106,30 +111,51 @@ if __name__ == "__main__":
 
     _ = trainer.train()
 
-    preds_var = trainer.predict(tokenized_test_var)
-    y_pred_var = preds_var.predictions.reshape(-1)
-    y_true_var = preds_var.label_ids
+    preds_random_fixed = trainer.predict(tokenized_test_random_fixed)
+    y_pred_random_fixed = preds_random_fixed.predictions.reshape(-1)
+    y_true_random_fixed = preds_random_fixed.label_ids
 
-    preds_fixed = trainer.predict(tokenized_test_fixed)
-    y_pred_fixed = preds_fixed.predictions.reshape(-1)
-    y_true_fixed = preds_fixed.label_ids
+    preds_random_var = trainer.predict(tokenized_test_random_var)
+    y_pred_random_var = preds_random_var.predictions.reshape(-1)
+    y_true_random_var = preds_random_var.label_ids
+
+    preds_human_fixed = trainer.predict(tokenized_test_human_fixed)
+    y_pred_human_fixed = preds_human_fixed.predictions.reshape(-1)
+    y_true_human_fixed = preds_human_fixed.label_ids
+
+    preds_human_var = trainer.predict(tokenized_test_human_var)
+    y_pred_human_var = preds_human_var.predictions.reshape(-1)
+    y_true_human_var = preds_human_var.label_ids
 
     pred_folder = os.path.join(results_dir, 'mrl_predictions')
     os.makedirs(pred_folder, exist_ok=True)
     file_name = os.path.join(pred_folder, f"{args.model_name}.pkl")
 
-    print("==> Variable length test set:")
-    print("Pearson R:", pearsonr(y_pred_var, y_true_var)[0])
-    print("R² Score:", r2_score(y_true_var, y_pred_var))
+    print("[RANDOM] Fixed length test set:")
+    print("Pearson R:", pearsonr(y_pred_random_fixed, y_true_random_fixed)[0])
+    print("R² Score:", r2_score(y_true_random_fixed, y_pred_random_fixed))
+    print()
+    print("[RANDOM] Variable length test set:")
+    print("Pearson R:", pearsonr(y_pred_random_var, y_true_random_var)[0])
+    print("R² Score:", r2_score(y_true_random_var, y_pred_random_var))
+    print()
+    print("[HUMAN] Fixed length test set:")
+    print("Pearson R:", pearsonr(y_pred_human_fixed, y_true_human_fixed)[0])
+    print("R² Score:", r2_score(y_true_human_fixed, y_pred_human_fixed))
+    print()
+    print("[HUMAN] Variable length test set:")
+    print("Pearson R:", pearsonr(y_pred_human_var, y_true_human_var)[0])
+    print("R² Score:", r2_score(y_true_human_var, y_pred_human_var))
 
-    print("\n==> Fixed length test set:")
-    print("Pearson R:", pearsonr(y_pred_fixed, y_true_fixed)[0])
-    print("R² Score:", r2_score(y_true_fixed, y_pred_fixed))
 
     with open(file_name, "wb") as f:
         pickle.dump({
-            "y_pred_var": y_pred_var,
-            "y_true_var": y_true_var,
-            "y_pred_fixed": y_pred_fixed,
-            "y_true_fixed": y_true_fixed
+            "y_pred_random_fixed": y_pred_random_fixed,
+            "y_true_random_fixed": y_true_random_fixed,
+            "y_pred_random_var": y_pred_random_var,
+            "y_true_random_var": y_true_random_var,
+            "y_pred_human_fixed": y_pred_human_fixed,
+            "y_true_human_fixed": y_true_human_fixed,
+            "y_pred_human_var": y_pred_human_var,
+            "y_true_human_var": y_true_human_var,
         }, f)
