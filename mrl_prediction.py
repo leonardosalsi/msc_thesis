@@ -72,7 +72,9 @@ if __name__ == "__main__":
         metric_for_best_model="eval_loss",
         per_device_train_batch_size=32,
         per_device_eval_batch_size=64,
-        num_train_epochs=5,
+        load_best_model_at_end=True,
+        greater_is_better=False,
+        num_train_epochs=2,
         learning_rate=2e-4,
         logging_dir=logs_dir,
         save_total_limit=2,
@@ -82,8 +84,8 @@ if __name__ == "__main__":
 
     peft_config = LoraConfig(
         task_type=TaskType.SEQ_CLS,  # or FEATURE_EXTRACTION
-        r=8,
-        lora_alpha=16,
+        r=16,
+        lora_alpha=32,
         lora_dropout=0.1,
         bias="none",
         target_modules=[
