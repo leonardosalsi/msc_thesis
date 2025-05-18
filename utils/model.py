@@ -97,7 +97,7 @@ def get_classification_model(args, device, num_labels=2, regression=False):
         model_dir = os.path.join(pretrained_models_cache_dir, f"{args.model_name}", f"checkpoint-{args.checkpoint}")
         if args.pca:
             if regression:
-                base_model = AutoModelForSequenceClassification.from_pretrained(
+                base_model = AutoModelForMaskedLM.from_pretrained(
                     model_dir,
                     cache_dir=models_cache_dir,
                     num_labels=1,
@@ -106,7 +106,7 @@ def get_classification_model(args, device, num_labels=2, regression=False):
                     problem_type="regression"
                 )
             else:
-                base_model = AutoModelForSequenceClassification.from_pretrained(
+                base_model = AutoModelForMaskedLM.from_pretrained(
                     model_dir,
                     cache_dir=models_cache_dir,
                     num_labels=num_labels,

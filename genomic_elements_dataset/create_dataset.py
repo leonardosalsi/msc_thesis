@@ -142,5 +142,5 @@ if __name__ == "__main__":
             print(f"Collected {sampled} sequences for {label}")
 
     dataset = Dataset.from_generator(gen)
-    dataset.info.dataset_name = f'genomic_elements_{SEQUENCE_LENGTH}'
-    dataset.save_to_disk(os.path.join(generated_datasets_dir, f'genomic_elements_{SEQUENCE_LENGTH}'))
+    dataset.info.dataset_name = f'genomic_elements'
+    dataset.save_to_disk(os.path.join(generated_datasets_dir, f'genomic_elements'))
