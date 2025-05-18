@@ -137,7 +137,6 @@ if __name__ == "__main__":
         prediction_loss_only=True,
         torch_compile=args.compile_model,
         label_names=['labels'],
-        deepspeed=args.deepspeed_config,
         resume_from_checkpoint=resume_from_checkpoint
     )
 
