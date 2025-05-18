@@ -233,7 +233,9 @@ def get_for_all_compare(type: DATATYPE):
 def get_for_context_length_compare(type: DATATYPE):
     group = [
         'overlap_multi_species',
-        'overlap_multi_species_2kb'
+        'overlap_multi_species_2kb',
+        'default_logan_ewc_5',
+        'default_logan_ewc_5_2kb'
     ]
     filename = 'compare_context_length'
 

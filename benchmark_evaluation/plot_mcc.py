@@ -8,23 +8,28 @@ from matplotlib import pyplot as plt
 from sklearn.metrics import matthews_corrcoef
 
 from benchmark_evaluation.groupings import get_task_alias, get_model_alias_for_downstream, DATATYPE, \
-    get_for_all_compare_to_litereature, get_for_all_compare, get_for_ewc_compare, get_for_best_logan_compare
+    get_for_all_compare_to_litereature, get_for_all_compare, get_for_ewc_compare, get_for_best_logan_compare, \
+    get_for_context_length_compare
 from config import results_dir, images_dir
 
 def evaluate_file(filepath):
     with open(filepath, "r") as f:
         data = json.load(f)
-    labels = list(map(lambda x: x['labels'], data))
-    predictions = list(map(lambda x: x['predictions'], data))
-    assert len(labels) == len(predictions)
-    scores = []
+    try:
+        labels = list(map(lambda x: x['labels'], data))
+        predictions = list(map(lambda x: x['predictions'], data))
+        assert len(labels) == len(predictions)
+        scores = []
 
-    for label, prediction in zip(labels, predictions):
-        score = matthews_corrcoef(label, prediction)
-        scores.append(score)
+        for label, prediction in zip(labels, predictions):
+            score = matthews_corrcoef(label, prediction)
+            scores.append(score)
 
-    mean = np.mean(scores)
-    std = np.std(scores)
+        mean = np.mean(scores)
+        std = np.std(scores)
+    except:
+        mean = data['mean']
+        std = data['std']
     return mean, std
 
 def visualize_mcc_per_task(data, colors, filename_base, model_names):
@@ -230,7 +235,7 @@ def get_mean_task_rank(data):
 if __name__ == '__main__':
     savedir = os.path.join(images_dir, 'benchmark')
     os.makedirs(savedir, exist_ok=True)
-    f = get_for_best_logan_compare
+    f = get_for_context_length_compare
     benchmark_files, filename = f(DATATYPE.BENCHMARK)
     data = prepare_data_for_visualization(benchmark_files)
     filename_base = os.path.join(savedir, filename)

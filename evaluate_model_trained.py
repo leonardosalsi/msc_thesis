@@ -189,10 +189,9 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
 
     prediction_results = trainer.predict(tokenized_test_sequences, ignore_keys=ignore_keys)
     predictions = np.argmax(prediction_results.predictions, axis=-1)
-    labels = prediction_results.label_ids
-    labels = labels.tolist()
-    predictions = predictions.tolist()
+
     if args.samples == 1:
+        labels = np.array(prediction_results.label_ids)
         rng = np.random.default_rng(random_seed)
         num_lables = len(labels)
         mcc = []
@@ -201,6 +200,9 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
             mcc_bootstrapped = matthews_corrcoef(labels[indices], predictions[indices])
             mcc.append(mcc_bootstrapped)
     else:
+        labels = prediction_results.label_ids
+        labels = labels.tolist()
+        predictions = predictions.tolist()
         mcc = matthews_corrcoef(labels, predictions)
     return mcc, train_history
 

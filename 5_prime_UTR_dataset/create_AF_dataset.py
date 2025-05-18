@@ -29,8 +29,8 @@ if __name__ == '__main__':
     full = False
     check_data = True
 
-    full_af_dataset_filename = f"5_utr_af_full{f'_{length}' if length is not None else ''}"
-    af_dataset_filename = f"5_utr_af{f'_{length}' if length is not None else ''}"
+    full_af_dataset_filename = f"5_utr_af_prediction_full"
+    af_dataset_filename = f"5_utr_af_prediction"
 
     if not check_data:
         if not os.path.exists(os.path.join(datasets_cache_dir, full_af_dataset_filename)):

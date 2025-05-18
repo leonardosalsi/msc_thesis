@@ -30,7 +30,6 @@ TASKS = [
     {'taskId': 26,'repo': "katarinagresova/Genomic_Benchmarks_human_enhancers_cohn", 'name': "gb_human_enhancers_cohn", 'sequence_feature': 'seq', 'label_feature': 'label', 'num_labels': 2},
     {'taskId': 27,'repo': "katarinagresova/Genomic_Benchmarks_human_nontata_promoters", 'name': "gb_human_nontata_promoters", 'sequence_feature': 'seq', 'label_feature': 'label', 'num_labels': 2},
     {'taskId': 28,'repo': os.path.join(datasets_cache_dir, '5_utr_classification'), 'name': "utr5_ben_pat", 'sequence_feature': 'sequence', 'label_feature': 'label', 'num_labels': 2},
-    {'taskId': 29,'repo': os.path.join(datasets_cache_dir, '5_utr_classification_fixed_1000'), 'name': "utr5_ben_pat_fixed", 'sequence_feature': 'sequence', 'label_feature': 'label', 'num_labels': 2}
 ]
 
 MODELS = [

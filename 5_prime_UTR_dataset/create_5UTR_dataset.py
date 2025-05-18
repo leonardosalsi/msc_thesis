@@ -15,13 +15,13 @@ DATA_PATH = os.path.join(base_dir, 'data')
 Create UTR'5 Classification Dataset
 """
 if __name__ == '__main__':
-    length = 6000
+    length = 2000
     full = False
     check_data = False
     include_likely = False
 
-    full_class_dataset_filename = f"5_utr_dataset_class_full{f'_{length}' if length is not None else ''}"
-    class_dataset_filename = f"5_utr_dataset_class{f'_{length}' if length is not None else ''}"
+    full_class_dataset_filename = f"5_utr_classification_full"
+    class_dataset_filename = f"5_utr_classification"
     if not check_data:
 
         if not os.path.exists(os.path.join(datasets_cache_dir, full_class_dataset_filename)):
@@ -44,10 +44,20 @@ if __name__ == '__main__':
 
         pathogenic = dataset.filter(lambda x: x["label"] == 1)
         benign = dataset.filter(lambda x: x["label"] == 0)
-        exit()
-        dataset = concatenate_datasets([pathogenic, benign]).shuffle(seed=42).remove_columns(["chrom"])
-        dataset.info.dataset_name = f"5_utr_class_{length}"
 
+        pat_split = pathogenic.train_test_split(test_size=0.10)
+        ben_split = benign.train_test_split(test_size=0.10)
+
+        pat_train, pat_test = pat_split["train"], pat_split["test"]
+        ben_train, ben_test = ben_split["train"], ben_split["test"]
+
+        train = concatenate_datasets([pat_train, ben_train]).shuffle().remove_columns(["chrom"])
+        test = concatenate_datasets([pat_test, ben_test]).shuffle().remove_columns(["chrom"])
+
+        dataset = DatasetDict({
+            "train": train,
+            "test": test
+        })
         dataset.save_to_disk(os.path.join(generated_datasets_dir, class_dataset_filename))
     else:
         dataset = load_from_disk(os.path.join(datasets_cache_dir, class_dataset_filename))
