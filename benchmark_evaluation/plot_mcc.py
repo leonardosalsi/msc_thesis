@@ -235,7 +235,7 @@ def get_mean_task_rank(data):
 if __name__ == '__main__':
     savedir = os.path.join(images_dir, 'benchmark')
     os.makedirs(savedir, exist_ok=True)
-    f = get_for_context_length_compare
+    f = get_for_all_compare_to_litereature
     benchmark_files, filename = f(DATATYPE.BENCHMARK)
     data = prepare_data_for_visualization(benchmark_files)
     filename_base = os.path.join(savedir, filename)

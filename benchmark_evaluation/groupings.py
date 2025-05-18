@@ -175,6 +175,7 @@ def get_for_all_compare_to_litereature(type: DATATYPE):
             'default_logan_ewc_5',
             'default_logan_ewc_10',
             'default_logan_ewc_25',
+            'default_logan_ewc_5_2kb'
     ]
     filename = 'compare_all_literature'
 

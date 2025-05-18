@@ -199,6 +199,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
             indices = rng.choice(num_lables, num_lables, replace=True)
             mcc_bootstrapped = matthews_corrcoef(labels[indices], predictions[indices])
             mcc.append(mcc_bootstrapped)
+        mcc = np.mean(mcc)
     else:
         labels = prediction_results.label_ids
         labels = labels.tolist()
