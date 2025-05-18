@@ -190,22 +190,24 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     prediction_results = trainer.predict(tokenized_test_sequences, ignore_keys=ignore_keys)
     predictions = np.argmax(prediction_results.predictions, axis=-1)
 
-    if args.samples == 1:
-        labels = np.array(prediction_results.label_ids)
+
+    labels = prediction_results.label_ids
+    labels = labels.tolist()
+    predictions = predictions.tolist()
+    mcc = matthews_corrcoef(labels, predictions)
+
+    mcc_bootstrap = []
+    if args.n_bootstrap is not None:
+        labels = np.array(labels)
+        predictions = np.array(predictions)
         rng = np.random.default_rng(random_seed)
-        num_lables = len(labels)
-        mcc = []
+        num_labels = len(labels)
+        mcc_bootstrap = []
         for _ in range(args.n_bootstrap):
-            indices = rng.choice(num_lables, num_lables, replace=True)
-            mcc_bootstrapped = matthews_corrcoef(labels[indices], predictions[indices])
-            mcc.append(mcc_bootstrapped)
-        mcc = np.mean(mcc)
-    else:
-        labels = prediction_results.label_ids
-        labels = labels.tolist()
-        predictions = predictions.tolist()
-        mcc = matthews_corrcoef(labels, predictions)
-    return mcc, train_history
+            indices = rng.choice(num_labels, num_labels, replace=True)
+            mcc_bootstrap.append(matthews_corrcoef(labels[indices], predictions[indices]))
+
+    return mcc, mcc_bootstrap, train_history
 
 def get_output_dir(args):
     if args.task_id in [28]:
@@ -227,7 +229,7 @@ class EvalConfig:
     checkpoint: str
     task_id: int
     samples: int = 1
-    n_bootstrap: int = 1000
+    n_bootstrap: Optional[int] = None
     pca: bool = False
     pca_embeddings: Optional[str] = None
     pca_dims: Optional[int] = None
@@ -255,13 +257,14 @@ if __name__ == "__main__":
         exit(0)
 
     mccs = []
+    bootstraps = []
     train_histories = []
     for i in tqdm(range(args.samples)):
-        mcc, train_history = finetune_model_by_task_mcc(args, device, task, timestamp)
-        if args.samples == 1:
-            mccs = mcc
-        else:
-            mccs.append(mcc)
+        mcc, bootstrap, train_history = finetune_model_by_task_mcc(args, device, task, timestamp)
+
+        mccs.append(mcc)
+        if len(bootstrap) != 0:
+            bootstraps.append(bootstrap)
 
         train_histories.append(train_history)
 
@@ -269,10 +272,14 @@ if __name__ == "__main__":
     std = np.std(mccs)
 
     results = {
-        "mean": mean,
-        "std": std,
+        "mean": float(np.mean(mccs)),
+        "std": float(np.std(mccs)),
         "train_histories": train_histories
     }
+
+    if len(bootstraps) != 0:
+        results["bootstrap_mean"] = float(np.mean(bootstraps))
+        results["bootstrap_ci"] = [np.percentile(b, [2.5, 97.5]).tolist() for b in bootstraps]
 
     with open(output_file, 'w') as f:
         json.dump(results, f, indent=4)
