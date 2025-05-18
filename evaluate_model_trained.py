@@ -46,7 +46,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
 
     """Load dataset splits"""
     """5'UTR-Tasks are generated locally and must be loaded from disk"""
-    if task['taskId'] in [28, 29]:
+    if task['taskId'] in [28]:
         _dataset = load_from_disk(task["repo"])
         dataset_train = _dataset['train']
         dataset_test = _dataset['test']
@@ -142,7 +142,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     gradient_accumulation_steps = 2
     ignore_keys = None
 
-    if task["taskId"] in [23, 29]:
+    if task["taskId"] in [23, 28]:
         eval_batch_size = 8
 
     if args.pca:
@@ -207,7 +207,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     return mcc, train_history
 
 def get_output_dir(args):
-    if args.task_id in [28, 29]:
+    if args.task_id in [28]:
         benchmark_dir = os.path.join(results_dir, f"utr5")
     else:
         benchmark_dir = os.path.join(results_dir, f"benchmark")
