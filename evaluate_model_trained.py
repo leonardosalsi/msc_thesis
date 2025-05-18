@@ -19,7 +19,7 @@ from utils.util import print_args, get_device
 import numpy as np
 from peft import LoraConfig, TaskType, get_peft_model
 import psutil
-  
+
 def check_memory_usage():
     process = psutil.Process()
     memory_info = process.memory_info()
@@ -192,7 +192,16 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     labels = prediction_results.label_ids
     labels = labels.tolist()
     predictions = predictions.tolist()
-    mcc = matthews_corrcoef(labels, predictions)
+    if args.samples == 1:
+        rng = np.random.default_rng(random_seed)
+        num_lables = len(labels)
+        mcc = []
+        for _ in range(args.n_bootstrap):
+            indices = rng.choice(num_lables, num_lables, replace=True)
+            mcc_bootstrapped = matthews_corrcoef(labels[indices], predictions[indices])
+            mcc.append(mcc_bootstrapped)
+    else:
+        mcc = matthews_corrcoef(labels, predictions)
     return mcc, train_history
 
 def get_output_dir(args):
@@ -200,6 +209,8 @@ def get_output_dir(args):
         benchmark_dir = os.path.join(results_dir, f"utr5")
     else:
         benchmark_dir = os.path.join(results_dir, f"benchmark")
+    if args.samples == 1:
+        benchmark_dir += "_bootstrap"
     os.makedirs(benchmark_dir, exist_ok=True)
     benchmark_dir = os.path.join(benchmark_dir, args.model_name)
     os.makedirs(benchmark_dir, exist_ok=True)
@@ -213,6 +224,7 @@ class EvalConfig:
     checkpoint: str
     task_id: int
     samples: int = 1
+    n_bootstrap: int = 1000
     pca: bool = False
     pca_embeddings: Optional[str] = None
     pca_dims: Optional[int] = None
@@ -243,7 +255,11 @@ if __name__ == "__main__":
     train_histories = []
     for i in tqdm(range(args.samples)):
         mcc, train_history = finetune_model_by_task_mcc(args, device, task, timestamp)
-        mccs.append(mcc)
+        if args.samples == 1:
+            mccs = mcc
+        else:
+            mccs.append(mcc)
+
         train_histories.append(train_history)
 
     mean = np.mean(mccs)

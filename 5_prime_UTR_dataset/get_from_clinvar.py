@@ -115,14 +115,6 @@ def _process_sequences(args):
             continue
         mut_seq = _fetch_sequence_sampled(seq, chrom, pos, ref, alt, extend)
         if mut_seq:
-            pprint({
-                "sequence": mut_seq,
-                "label": row['label'],
-                "chrom": chrom,
-                "pos": pos,
-                "ref": ref,
-                "alt": alt,
-            })
             results.append({
                 "sequence": mut_seq,
                 "label": row['label'],
