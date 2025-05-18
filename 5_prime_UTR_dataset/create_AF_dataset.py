@@ -21,7 +21,7 @@ def load_or_generate(get_fn, filename, length=None, return_af=False):
 
 """
 Create UTR'5 Classification Dataset
-From ClinVar only get benign sequences and from gnomAD both benign and pathogenic
+From gnomAD get allele frequencies of SNV
 """
 if __name__ == '__main__':
     length = 6000
@@ -29,10 +29,11 @@ if __name__ == '__main__':
     full = False
     check_data = True
 
-    if not check_data:
-        af_dataset_filename = f"5_utr_af_full{f'_{length}' if length is not None else ''}"
+    full_af_dataset_filename = f"5_utr_af_full{f'_{length}' if length is not None else ''}"
+    af_dataset_filename = f"5_utr_af{f'_{length}' if length is not None else ''}"
 
-        if not os.path.exists(os.path.join(datasets_cache_dir, af_dataset_filename)):
+    if not check_data:
+        if not os.path.exists(os.path.join(datasets_cache_dir, full_af_dataset_filename)):
             def generator_fn():
                 return get_from_gnomAD.get_generator(length, return_af)
 
@@ -47,7 +48,7 @@ if __name__ == '__main__':
                 "start": Value("int64"),
             }))
 
-            dataset.save_to_disk(os.path.join(datasets_cache_dir, af_dataset_filename))
+            dataset.save_to_disk(os.path.join(datasets_cache_dir, full_af_dataset_filename))
         else:
             dataset = load_from_disk(
                 os.path.join(datasets_cache_dir, f"5_utr_af_full{f'_{length}' if length is not None else ''}"))
@@ -57,11 +58,10 @@ if __name__ == '__main__':
 
         dataset = concatenate_datasets([rare, common]).shuffle(seed=42).remove_columns(["chrom"])
         dataset.info.dataset_name =  f"5_utr_{length}"
-        af_dataset_filename = f"5_utr_af{f'_{length}' if length is not None else ''}"
+
         dataset.save_to_disk(os.path.join(generated_datasets_dir, af_dataset_filename))
     else:
-        dataset = load_from_disk(os.path.join(generated_datasets_dir, f"5_utr_af{f'_{length}' if length is not None else ''}"))
-
+        dataset = load_from_disk(os.path.join(generated_datasets_dir, af_dataset_filename))
         label_counts = Counter(example["label"] for example in dataset)
         print(label_counts)
 

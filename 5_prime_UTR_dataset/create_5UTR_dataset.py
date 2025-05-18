@@ -1,133 +1,58 @@
 import os
 import json
+from collections import Counter
 
-from datasets import Dataset, Features, DatasetDict, Value, load_from_disk
+from datasets import Dataset, Features, DatasetDict, Value, load_from_disk, concatenate_datasets
 import random
 from sklearn.model_selection import train_test_split
-
-import get_from_gnomAD
 import get_from_clinvar
-from config import datasets_cache_dir
+from config import datasets_cache_dir, generated_datasets_dir
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(base_dir, 'data')
 
-def load_or_generate(get_fn, filename, length=None):
-    filepath = os.path.join(DATA_PATH, filename)
-    if os.path.exists(filepath):
-        print(f"Loading cached dataset from: {filepath}")
-        with open(filepath, "r") as f:
-            return json.load(f)
-    else:
-        print(f"Generating dataset: {filepath}")
-        return get_fn(filename, length)
-
-def check_structure_consistency(dataset1, dataset2):
-    if not dataset1 or not dataset2:
-        return False
-    keys1 = set(dataset1[0].keys())
-    keys2 = set(dataset2[0].keys())
-    return keys1 == keys2
-
-
 """
 Create UTR'5 Classification Dataset
-From ClinVar only get benign sequences and from gnomAD both benign and pathogenic
 """
 if __name__ == '__main__':
     length = 6000
     full = False
     check_data = False
+    include_likely = False
 
+    full_class_dataset_filename = f"5_utr_dataset_class_full{f'_{length}' if length is not None else ''}"
+    class_dataset_filename = f"5_utr_dataset_class{f'_{length}' if length is not None else ''}"
     if not check_data:
-        gnomAD_filename = f"utr5_dataset_gnomAD{f'_{length}' if length is not None else ''}.json"
-        dataset_gnomAD = load_or_generate(get_from_gnomAD.get, gnomAD_filename, length)
 
-        clinvar_filename = f"utr5_dataset_clinvar{f'_{length}' if length is not None else ''}.json"
-        dataset_clinvar = load_or_generate(get_from_clinvar.get, clinvar_filename, length)
+        if not os.path.exists(os.path.join(datasets_cache_dir, full_class_dataset_filename)):
+            def generator_fn():
+                return get_from_clinvar.get_generator(length, include_likely)
 
-        if check_structure_consistency(dataset_gnomAD, dataset_clinvar):
-            combined_dataset = dataset_gnomAD + dataset_clinvar
-
-            benign = [d for d in combined_dataset if d["label"] == 0]
-            pathogenic = [d for d in combined_dataset if d["label"] == 1]
-
-            """
-            Get length distribution
-            """
-            if length is None:
-                len_benign = []
-                len_pathogenic = []
-
-                for p in pathogenic:
-                    len_pathogenic.append(len(p['sequence']))
-                for b in benign:
-                    len_benign.append(len(b['sequence']))
-
-                with open(os.path.join(DATA_PATH, f"sequence_lengths{f'_{length}' if length is not None else ''}.json"),
-                          "w") as f:
-                    json.dump({"benign": len_benign, "pathogenic": len_pathogenic}, f)
-
-
-            """
-            Downstream Tasks have comparatively small datasets, downsize results
-            """
-            random.shuffle(benign)
-            random.shuffle(pathogenic)
-
-            if not full:
-                perc = 0.5
-                full_size = 30000
-
-                size_benign = int(full_size * perc)
-                size_pathogenic = full_size - size_benign
-
-                benign = benign[:size_benign]
-                pathogenic = pathogenic[:size_pathogenic]
-
-            print(f"Total: {len(combined_dataset)}, Benign: {len(benign)}, Pathogenic: {len(pathogenic)}")
-
-            benign_train, benign_test = train_test_split(benign, test_size=0.10)
-            pathogenic_train, pathogenic_test = train_test_split(pathogenic, test_size=0.10)
-
-            train_data = benign_train + pathogenic_train
-            test_data = benign_test + pathogenic_test
-
-            random.shuffle(train_data)
-            random.shuffle(test_data)
-
-            features = Features({
+            dataset = Dataset.from_generator(lambda: generator_fn(), features=Features({
                 "sequence": Value("string"),
                 "label": Value("int64"),
                 "chrom": Value("string"),
                 "pos": Value("int64"),
                 "ref": Value("string"),
                 "alt": Value("string"),
-            })
+            }))
 
-            def gen(data):
-                for entry in data:
-                    yield entry
+            dataset.save_to_disk(os.path.join(datasets_cache_dir, full_class_dataset_filename))
+        else:
+            dataset = load_from_disk(
+                os.path.join(datasets_cache_dir, full_class_dataset_filename))
 
+        pathogenic = dataset.filter(lambda x: x["label"] == 1)
+        benign = dataset.filter(lambda x: x["label"] == 0)
+        exit()
+        dataset = concatenate_datasets([pathogenic, benign]).shuffle(seed=42).remove_columns(["chrom"])
+        dataset.info.dataset_name = f"5_utr_class_{length}"
 
-            train_dataset = Dataset.from_generator(lambda: gen(train_data), features=features)
-            test_dataset = Dataset.from_generator(lambda: gen(test_data), features=features)
-
-            dataset = DatasetDict({
-                "train": train_dataset,
-                "test": test_dataset
-            })
-
-            dataset.save_to_disk(os.path.join(datasets_cache_dir, f"5_utr_classification{f'_fixed_{length}' if length is not None else ''}{'_full' if full else ''}"))
+        dataset.save_to_disk(os.path.join(generated_datasets_dir, class_dataset_filename))
     else:
-        dataset = load_from_disk(os.path.join(datasets_cache_dir, f"5_utr_classification{f'_fixed_{length}' if length is not None else ''}{'_full' if full else ''}"))
-        train = dataset["train"]
-        test = dataset["test"]
-
-        for e in train:
-            print(e)
-
-        print(dataset)
+        dataset = load_from_disk(os.path.join(datasets_cache_dir, class_dataset_filename))
+        label_counts = Counter(example["label"] for example in dataset)
+        print(label_counts)
 
 
 

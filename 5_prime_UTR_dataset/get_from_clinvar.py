@@ -3,6 +3,7 @@ import os
 import subprocess
 import random
 from multiprocessing import Pool, cpu_count
+from pprint import pprint
 
 import pysam
 import pandas as pd
@@ -61,26 +62,42 @@ def _parse_vcf_to_df(vcf_file):
     return pd.DataFrame(records)
 
 
-def _fetch_sequence_sampled(seq, chrom, pos, ref, extend, flank_min=200):
+def _fetch_sequence_sampled(seq, chrom, pos, ref, alt, extend, flank_min=200):
+    ref_len = len(ref)
+    ref_ext = seq[pos - 1: pos - 1 + ref_len]
+    assert ref_ext == ref, f"EXT Mismatch: got {ref_ext}, expected {ref}"
+
+    mut_len = len(alt)
+    mut = seq[:pos - 1] + alt + seq[pos:]
+
     if extend is None:
         extend = random.randint(600, 900)
-    variant_rel_pos = random.randint(flank_min, extend - flank_min - len(ref))
-    start = pos - variant_rel_pos
-    end = start + extend - 1
 
-    if start < 1:
+    if mut_len > extend:
         return None
 
-    try:
-        gt_seq = seq[start - 1:end]
-    except Exception as e:
-        print(f"[FASTA error] {chrom}:{start}-{end} – {e}")
+    success = False
+    for i in range(10):
+        growth = extend - mut_len + 1
+        left_grow = random.randint(0, growth)
+        right_grow = growth - left_grow
+        gr_start = pos - left_grow
+        gr_end = pos + right_grow
+        if not (gr_start < 0 or gr_end >= len(seq)):
+            success = True
+            break
+    if not success:
         return None
 
-    return gt_seq
+    start = gr_start
+    end = gr_end
+    mut = mut[start:end]
+
+    return mut
 
 def _process_sequences(args):
-    chrom, group, fasta_path, extend = args
+    chrom, group, fasta_path, extend, include_likely = args
+
     if extend == 0:
         extend = None
     fasta_ref = pysam.FastaFile(fasta_path)
@@ -94,12 +111,20 @@ def _process_sequences(args):
 
     for _, row in group.iterrows():
         pos, ref, alt = row["pos"], row["ref"], row["alt"]
-        if len(ref) != 1 or len(alt) != 1:
+        if 'Likely' in row['clnsig'] and not include_likely:
             continue
-        wt_seq = _fetch_sequence_sampled(seq, chrom, pos, ref, extend)
-        if wt_seq:
+        mut_seq = _fetch_sequence_sampled(seq, chrom, pos, ref, alt, extend)
+        if mut_seq:
+            pprint({
+                "sequence": mut_seq,
+                "label": row['label'],
+                "chrom": chrom,
+                "pos": pos,
+                "ref": ref,
+                "alt": alt,
+            })
             results.append({
-                "sequence": wt_seq,
+                "sequence": mut_seq,
                 "label": row['label'],
                 "chrom": chrom,
                 "pos": pos,
@@ -108,38 +133,28 @@ def _process_sequences(args):
             })
     return results
 
-def get(filename, length=None, return_af=False):
+def get_generator(length=None, include_likely=False):
     fasta_path = os.path.join(DATA_PATH, "Homo_sapiens.GRCh38.dna.primary_assembly.fa")
     files = _download_from_clinvar(DATA_PATH)
-
     df_all = pd.concat([_parse_vcf_to_df(f) for f in files], ignore_index=True)
     df_all.drop_duplicates(subset=["chrom", "pos", "ref", "alt"], inplace=True)
 
-    num_workers = max(1, cpu_count() - 1)
+    MAX_YIELDS = 10000
+    for i, (chrom, group) in enumerate(df_all.groupby("chrom")):
+        yields = 0
+        task = (chrom, group, fasta_path, length, include_likely)
+        results = _process_sequences(task)
 
-    tasks = [
-        (chrom, group, fasta_path, length)
-        for chrom, group in df_all.groupby("chrom")
-    ]
+        for entry in results:
+            yield entry
+            yields += 1
+            if yields >= MAX_YIELDS:
+                break
 
-    print(f"Processing {len(tasks)} chromosomes across {cpu_count()} cores...")
-
-    if length is None:
-        length = 0
-
-    with Pool(num_workers) as pool:
-        results = pool.map(_process_sequences, tasks)
-
-    dataset = [entry for result in results for entry in result]
-
-    output_path = os.path.join(DATA_PATH, filename)
-    with open(output_path, "w") as f:
-        json.dump(dataset, f, indent=2)
-
-    print(f"Saved dataset with {len(dataset)} entries to {output_path}")
-    return dataset
 
 if __name__ == "__main__":
-    length = 1200
-    clinvar_filename = f"utr5_dataset_clinvar{f'_{length}' if length is not None else ''}.json"
-    get(clinvar_filename, length)
+    length = 2000
+    include_likely = False
+    gen = get_generator(length, include_likely)
+    for g in gen:
+        print(g)

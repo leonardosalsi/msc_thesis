@@ -53,52 +53,6 @@ def _mutate_sequence(seq, start, pos, ref, alt):
     local_pos = pos - start
     return seq[:local_pos] + alt + seq[local_pos + len(ref):]
 
-def _make_sequence_exact_length(extend, start, pos, end, mut_seq, seq):
-    mut_seq_len = len(mut_seq)
-    max_len = len(seq)
-    if mut_seq_len < extend:
-        right_start = end + 1
-        to_add = extend - mut_seq_len
-        left_len = random.randint(0, to_add)
-        right_len = to_add - left_len
-
-        left_start = start - left_len - 1
-        left_end = start - 1
-        right_end = start + mut_seq_len - 1 + right_len - 1
-
-        if right_end > max_len:
-            overflow = right_end - max_len
-            right_len -= overflow
-            left_len += overflow
-            right_end = max_len
-            left_start = start - left_len - 1
-            left_end = start - 1
-
-        if left_start < 1:
-            underflow = 1 - left_start
-            left_len -= underflow
-            right_len += underflow
-            left_start = 1
-            left_end = start - 1
-            right_end = start + mut_seq_len - 1 + right_len - 1
-
-        left_seq = seq[left_start-1:left_end]
-        right_seq = seq[right_start-1:right_end]
-        mut_seq = left_seq + mut_seq + right_seq
-        seq_start = left_start
-
-    elif mut_seq_len > extend:
-        diff = mut_seq_len - extend
-        variant_offset = pos - start
-        trim_start = min(variant_offset, diff)
-        mut_seq =  mut_seq[trim_start:trim_start + extend]
-        seq_start = start + trim_start
-
-    else:
-        seq_start = start
-
-    return mut_seq, seq_start
-
 def _get_label(af):
     if af >= 0.05:
         return 0
@@ -107,7 +61,7 @@ def _get_label(af):
     else:
         return None
 
-def _process_af_sequences(args):
+def _process_sequences(args):
     if len(args) == 6:
         chrom, utr_group, fasta_path, db_path, extend, return_af = args
     else:
@@ -170,99 +124,6 @@ def _process_af_sequences(args):
 
     return results
 
-def _process_sequences(args):
-    if len(args) == 6:
-        chrom, utr_group, fasta_path, db_path, extend, return_af = args
-    else:
-        chrom, utr_group, fasta_path, db_path, extend = args
-        return_af = False
-    if extend == 0:
-        extend = None
-    fasta_ref = pysam.FastaFile(fasta_path)
-    db = gnomAD_DB(db_path, gnomad_version="v4")
-    results = []
-
-    try:
-        seq = fasta_ref.fetch(chrom).upper()
-    except:
-        return []
-
-    for _, region_info in utr_group.iterrows():
-        start, end, strand = region_info["start"], region_info["end"], region_info["strand"]
-        gt_seq = seq[start - 1:end]
-
-        variant_info_db = db.get_info_for_interval(chrom=chrom, interval_start=start, interval_end=end,
-                                                   query="chrom,pos,ref,alt,AF")
-        for _, var in variant_info_db.iterrows():
-            AF = var["AF"]
-            if AF is None or len(var["alt"]) != 1 or len(var["ref"]) != 1:
-                continue
-            pos, ref, alt = var["pos"], var["ref"], var["alt"]
-            mut = _mutate_sequence(gt_seq, start, pos, ref, alt)
-            if mut is None:
-                continue
-            seq_start = start
-            if extend:
-                mut, seq_start = _make_sequence_exact_length(extend, start, pos, end, mut, seq)
-            if mut is None:
-                continue
-            label = _get_label(AF)
-            if label is None:
-                continue
-            if extend and len(mut) != extend:
-                continue
-            if return_af:
-                results.append({
-                    'sequence': mut,
-                    'label': label,
-                    'chrom': chrom,
-                    'pos': pos,
-                    'ref': ref,
-                    'alt': alt,
-                    'af': AF,
-                    'start': seq_start,
-                })
-            else:
-                results.append({
-                    'sequence': mut,
-                    'label': label,
-                    'chrom': chrom,
-                    'pos': pos,
-                    'ref': ref,
-                    'alt': alt,
-                })
-    return results
-
-def get(filename, length=None, return_af=False):
-    gtf_file = os.path.join(DATA_PATH, "Homo_sapiens.GRCh38.110.gtf")
-    utr_cache_file = os.path.join(DATA_PATH, "utr5_dataframe.parquet")
-    fasta_path = os.path.join(DATA_PATH, "Homo_sapiens.GRCh38.dna.primary_assembly.fa")
-
-    num_workers = max(1, cpu_count() - 1)
-    utr5_df = _get_utr_dataframe(gtf_file, utr_cache_file)
-
-    if length is None:
-        length = 0
-
-    tasks = [
-        (chrom, group, fasta_path, DATA_PATH, length, return_af)
-        for chrom, group in utr5_df.groupby("chrom")
-    ]
-
-    print(f"Processing {len(tasks)} chromosomes across {num_workers} workers")
-
-    with Pool(num_workers) as pool:
-        results = pool.map(_process_sequences, tasks)
-
-    dataset = [entry for result in results for entry in result]
-
-    output_path = os.path.join(DATA_PATH, filename)
-    with open(output_path, "w") as f:
-        json.dump(dataset, f, indent=2)
-
-    print(f"Saved dataset with {len(dataset)} entries to {output_path}")
-    return dataset
-
 def get_generator(length=None, return_af=False):
     gtf_file = os.path.join(DATA_PATH, "Homo_sapiens.GRCh38.110.gtf")
     utr_cache_file = os.path.join(DATA_PATH, "utr5_dataframe.parquet")
@@ -276,7 +137,7 @@ def get_generator(length=None, return_af=False):
     for i, (chrom, group) in enumerate(utr5_df.groupby("chrom")):
         yields = 0
         task = (chrom, group, fasta_path, DATA_PATH, length, return_af)
-        results = _process_af_sequences(task)
+        results = _process_sequences(task)
 
         for entry in results:
             yield entry

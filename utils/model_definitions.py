@@ -64,6 +64,7 @@ MODELS = [
     {'name': 'default_logan_ewc_5', 'dataset': 'logan', 'tokenizer': 'default', 'context': '1', 'ewc': True, 'ewc_lambda': 5, 'pca': False, 'pca_dim': None, 'pca_embed': None, 'sharon': None, 'gc': None},
     {'name': 'default_logan_ewc_10', 'dataset': 'logan', 'tokenizer': 'default', 'context': '1', 'ewc': True, 'ewc_lambda': 10, 'pca': False, 'pca_dim': None, 'pca_embed': None, 'sharon': None, 'gc': None},
     {'name': 'default_logan_ewc_25', 'dataset': 'logan', 'tokenizer': 'default', 'context': '1', 'ewc': True, 'ewc_lambda': 25, 'pca': False, 'pca_dim': None, 'pca_embed': None, 'sharon': None, 'gc': None},
+    {'name': 'default_logan_ewc_25_2kb', 'dataset': 'logan', 'tokenizer': 'default', 'context': '2', 'ewc': True, 'ewc_lambda': 5, 'pca': False, 'pca_dim': None, 'pca_embed': None, 'sharon': None, 'gc': None},
 ]
 
 TASK_DEFINITIONS = [
