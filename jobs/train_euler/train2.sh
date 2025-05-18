@@ -17,6 +17,6 @@ export HF_DATASETS_CACHE=/cluster/scratch/salsil/hf_cache
 accelerate launch --num_processes 5 --num_machines 1 --mixed_precision no --dynamo_backend inductor /cluster/home/salsil/msc_thesis_root/msc_thesis/train_model.py \
 --dataset /cluster/scratch/salsil/datasets/logan_6200 --tokenizer default \
 --logging-steps 500 --train-size 5 --eval-size 32 \
---gradient-accumulation 10 --max-workers 4 --load-from-json --ewc-lambda 5 \
+--gradient-accumulation 20 --max-workers 4 --load-from-json --ewc-lambda 5 \
 --original-dataset InstaDeepAI/multi_species_genomes --model-name default_logan_ewc_25_pca_cls_256 \
 --pca-dim 256 --pca-embeddings cls
