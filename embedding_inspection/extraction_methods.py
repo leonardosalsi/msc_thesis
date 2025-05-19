@@ -91,7 +91,7 @@ def extract_region_embeddings_5_prime_UTR(args, device, dataset):
     for i in tqdm(range(0, len(dataset), batch_size), desc="Extracting mean-pooled embeddings"):
         batch = dataset[i:i + batch_size]
         sequences = batch["sequence"]
-        set = batch["set"]
+        split_set = batch["set"]
         mutated_sequences = [mutate(batch['sequence'][i], batch['pos'][i], batch['ref'][i], batch['alt'][i]) for i in range(len(sequences))]
         tokens = tokenizer(sequences, return_tensors="pt", padding=True, truncation=True, return_attention_mask=True,
                            add_special_tokens=False)
@@ -146,7 +146,7 @@ def extract_region_embeddings_5_prime_UTR(args, device, dataset):
                     "dot_product_norm": dot_product_norm,
                 })
 
-                if set[j] == "train":
+                if split_set[j] == "train":
                     train_embeddings[layer].append(pooled)
                     train_meta[layer].append({
                         "label": batch["label"][j],
