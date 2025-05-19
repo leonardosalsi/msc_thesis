@@ -26,8 +26,9 @@ def load_pkl(pkl_path):
     meta_df = pd.DataFrame(data["meta"])
     train_embeddings = data["train_embeddings"]
     train_meta_df = pd.DataFrame(data["train_meta"])
+    test_embeddings = data["test_embeddings"]
     test_meta_df = pd.DataFrame(data["test_meta"])
-    return embeddings, meta_df, train_embeddings, train_meta_df, test_meta_df
+    return embeddings, meta_df, train_embeddings, train_meta_df, test_embeddings, test_meta_df
 
 def visualize_embedding_predictions(
         model_name,
@@ -52,11 +53,15 @@ def visualize_embedding_predictions(
 
     for i, file in enumerate(file_list):
         layer_num = int(file.split("layer_")[-1].split(".")[0])
-        embeddings, meta_df, train_embeddings, train_meta_df, test_meta_df = load_pkl(file)
+        embeddings, meta_df, train_embeddings, train_meta_df, test_embeddings, test_meta_df = load_pkl(file)
 
         scaler = StandardScaler()
-        X_2d = reducer.fit_transform(embeddings)
-        X_scaled = scaler.fit_transform(embeddings)
+
+        embeddings_scaled = scaler.fit_transform(embeddings)
+        train_embeddings_scaled = scaler.fit_transform(train_embeddings)
+        test_embeddings_scaled = scaler.fit_transform(test_embeddings)
+
+        X_2d = reducer.fit_transform(embeddings_scaled)
 
         y_true = meta_df["label"]
         train_y_true = train_meta_df["label"]
@@ -66,18 +71,18 @@ def visualize_embedding_predictions(
         ap_zero_shot = average_precision_score(y_true, 1  - meta_df["cos_similarity"])
 
         model = MLPClassifier(hidden_layer_sizes=(64, 32), activation='relu', max_iter=300)
-        model.fit(train_embeddings, train_y_true)
+        model.fit(train_embeddings_scaled, train_y_true)
 
-        y_prob_class = model.predict_proba(embeddings)[:, 1]
+        y_prob_class = model.predict_proba(test_embeddings_scaled)[:, 1]
 
-        precision_class, recall_class, _ = precision_recall_curve(y_true, y_prob_class)
-        ap_class = average_precision_score(y_true, y_prob_class)
+        precision_class, recall_class, _ = precision_recall_curve(test_y_true, y_prob_class)
+        ap_class = average_precision_score(test_y_true, y_prob_class)
 
         best_f1 = 0
         best_thresh = 0
         for t in np.linspace(0.0, 1.0, 101):
             y_pred = (y_prob_class >= t).astype(int)
-            f1 = f1_score(y_true, y_pred)
+            f1 = f1_score(test_y_true, y_pred)
             if f1 > best_f1:
                 best_f1 = f1
                 best_thresh = t
