@@ -11,7 +11,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
-from sklearn.model_selection import cross_val_predict, StratifiedKFold
+from sklearn.model_selection import cross_val_predict
 from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
 
@@ -24,7 +24,9 @@ def load_pkl(pkl_path):
         data = pickle.load(f)
     embeddings = data["embeddings"]
     meta_df = pd.DataFrame(data["meta"])
-    return embeddings, meta_df
+    train_embeddings = data["train_embeddings"]
+    train_meta_df = pd.DataFrame(data["train_meta"])
+    return embeddings, meta_df, train_embeddings, train_meta_df
 
 
 def visualize_embedding_predictions(
@@ -50,7 +52,7 @@ def visualize_embedding_predictions(
 
     for i, file in enumerate(file_list):
         layer_num = int(file.split("layer_")[-1].split(".")[0])
-        embeddings, meta_df = load_pkl(file)
+        embeddings, meta_df, train_embeddings, train_meta_df = load_pkl(file)
 
         scaler = StandardScaler()
         X_2d = reducer.fit_transform(embeddings)
@@ -61,9 +63,10 @@ def visualize_embedding_predictions(
         ap_zero_shot = average_precision_score(y_true, 1  - meta_df["cos_similarity"])
 
         model = MLPClassifier(hidden_layer_sizes=(64, 32), activation='relu', max_iter=300)
-        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-        y_prob_class = cross_val_predict(model, X_scaled, y_true, cv=cv, method="predict_proba")[:, 1]
-        print(y_prob_class)
+        model.fit(embeddings, y_true)
+
+        y_prob_class = model.predict_proba(embeddings)[:, 1]
+
         precision_class, recall_class, _ = precision_recall_curve(y_true, y_prob_class)
         ap_class = average_precision_score(y_true, y_prob_class)
 
@@ -94,8 +97,8 @@ def visualize_embedding_predictions(
 
         if i == 0:
             legend_elements = [
-                Line2D([0], [0], marker='o', color='w', label='Rare', markerfacecolor=cmap(0.3), markersize=6),
-                Line2D([0], [0], marker='o', color='w', label='Common', markerfacecolor=cmap(0.7), markersize=6)
+                Line2D([0], [0], marker='o', color='w', label='Rare', markerfacecolor=cmap(1), markersize=6),
+                Line2D([0], [0], marker='o', color='w', label='Common', markerfacecolor=cmap(0), markersize=6)
             ]
 
             ax_true.legend(
@@ -143,8 +146,8 @@ def visualize_embedding_predictions(
         PR Curve
         """
         auprc_cmap = plt.cm.get_cmap(COLORMAP)
-        ax_auprc.plot(recall_zero_shot, precision_zero_shot, color=auprc_cmap(0.4), lw=2, label=f"AUPRC Zero-Shot= {ap_zero_shot:.3f}")
-        ax_auprc.plot(recall_class, precision_class, color=auprc_cmap(0.6), lw=2, label=f"AUPRC Classfication= {ap_class:.3f}")
+        ax_auprc.plot(recall_zero_shot, precision_zero_shot, color=auprc_cmap(0.1), lw=2, label=f"AUPRC Zero-Shot= {ap_zero_shot:.3f}")
+        ax_auprc.plot(recall_class, precision_class, color=auprc_cmap(0.1), lw=2, label=f"AUPRC Classfication= {ap_class:.3f}")
 
         if i == 0:
             ax_auprc.set_title("Precision-Recall Curve")

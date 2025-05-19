@@ -62,7 +62,7 @@ def extract_region_embeddings_genomic_elements(args, device, dataset):
                     "GC_full": batch["seq_gc"][j]
                 })
 
-    return all_embeddings, [], meta
+    return all_embeddings, [], meta, [], []
 
 def extract_region_embeddings_5_prime_UTR(args, device, dataset):
 
@@ -87,6 +87,7 @@ def extract_region_embeddings_5_prime_UTR(args, device, dataset):
     train_embeddings = {layer: [] for layer in layers}
     meta = {layer: [] for layer in layers}
     train_meta = {layer: [] for layer in layers}
+    test_meta = {layer: [] for layer in layers}
 
     for i in tqdm(range(0, len(dataset), batch_size), desc="Extracting mean-pooled embeddings"):
         batch = dataset[i:i + batch_size]
@@ -153,5 +154,11 @@ def extract_region_embeddings_5_prime_UTR(args, device, dataset):
                         "af": batch["af"][j],
                         "cos_similarity": cos_similarity,
                     })
+                else:
+                    test_meta[layer].append({
+                        "label": batch["label"][j],
+                        "af": batch["af"][j],
+                        "cos_similarity": cos_similarity,
+                    })
 
-    return all_embeddings, train_embeddings, meta
+    return all_embeddings, train_embeddings, meta, train_meta, test_meta
