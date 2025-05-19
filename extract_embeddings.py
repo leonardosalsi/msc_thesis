@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     dataset = dataset.shuffle()
 
-    all_embeddings, train_embeddings, meta, train_meta, test_meta = extraction_function(args, device, dataset)
+    all_embeddings, meta, train_embeddings, train_meta, test_embeddings, test_meta = extraction_function(args, device, dataset)
     embeddings_dir = os.path.join(results_dir, 'embeddings')
     os.makedirs(embeddings_dir, exist_ok=True)
     dataset_emb_dir = os.path.join(embeddings_dir, dataset.info.dataset_name)
@@ -49,6 +49,7 @@ if __name__ == "__main__":
                     "meta": meta[layer],
                     "train_embeddings": np.vstack(train_embeddings[layer]),
                     "train_meta": train_meta[layer],
+                    "test_embeddings": np.vstack(test_embeddings[layer]),
                     "test_meta": test_meta[layer],
                 }, f)
         else:

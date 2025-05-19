@@ -26,8 +26,8 @@ def load_pkl(pkl_path):
     meta_df = pd.DataFrame(data["meta"])
     train_embeddings = data["train_embeddings"]
     train_meta_df = pd.DataFrame(data["train_meta"])
-    return embeddings, meta_df, train_embeddings, train_meta_df
-
+    test_meta_df = pd.DataFrame(data["test_meta"])
+    return embeddings, meta_df, train_embeddings, train_meta_df, test_meta_df
 
 def visualize_embedding_predictions(
         model_name,
@@ -52,18 +52,21 @@ def visualize_embedding_predictions(
 
     for i, file in enumerate(file_list):
         layer_num = int(file.split("layer_")[-1].split(".")[0])
-        embeddings, meta_df, train_embeddings, train_meta_df = load_pkl(file)
+        embeddings, meta_df, train_embeddings, train_meta_df, test_meta_df = load_pkl(file)
 
         scaler = StandardScaler()
         X_2d = reducer.fit_transform(embeddings)
         X_scaled = scaler.fit_transform(embeddings)
 
         y_true = meta_df["label"]
+        train_y_true = train_meta_df["label"]
+        test_y_true = test_meta_df["label"]
+
         precision_zero_shot, recall_zero_shot, _ = precision_recall_curve(y_true, 1  - meta_df["cos_similarity"])
         ap_zero_shot = average_precision_score(y_true, 1  - meta_df["cos_similarity"])
 
         model = MLPClassifier(hidden_layer_sizes=(64, 32), activation='relu', max_iter=300)
-        model.fit(embeddings, y_true)
+        model.fit(train_embeddings, train_y_true)
 
         y_prob_class = model.predict_proba(embeddings)[:, 1]
 
