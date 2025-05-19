@@ -95,7 +95,7 @@ if __name__ == '__main__':
         common_test = common_test.add_column("set", ["test"] * len(common_test))
 
         dataset = concatenate_datasets([rare_train, rare_test, common_train, common_test]).shuffle(seed=42).remove_columns(["chrom"])
-        dataset.info.dataset_name =  f"5_utr_{length}"
+        dataset.info.dataset_name =  f"5_utr_af_prediction"
 
         dataset.save_to_disk(os.path.join(generated_datasets_dir, af_dataset_filename))
     else:

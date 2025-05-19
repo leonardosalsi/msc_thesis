@@ -58,6 +58,7 @@ if __name__ == '__main__':
             "train": train,
             "test": test
         })
+
         dataset.save_to_disk(os.path.join(generated_datasets_dir, class_dataset_filename))
     else:
         dataset = load_from_disk(os.path.join(datasets_cache_dir, class_dataset_filename))
