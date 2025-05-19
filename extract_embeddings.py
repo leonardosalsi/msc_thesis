@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     dataset = dataset.shuffle()
 
-    all_embeddings, meta = extraction_function(args, device, dataset)
+    all_embeddings, train_embeddings, meta = extraction_function(args, device, dataset)
     embeddings_dir = os.path.join(results_dir, 'embeddings')
     os.makedirs(embeddings_dir, exist_ok=True)
     dataset_emb_dir = os.path.join(embeddings_dir, dataset.info.dataset_name)
@@ -42,8 +42,19 @@ if __name__ == "__main__":
     os.makedirs(model_dir, exist_ok=True)
     for layer, embeddings in all_embeddings.items():
         output_path = os.path.join(model_dir, f"layer_{layer}.pkl")
-        with open(output_path, "wb") as f:
-            pickle.dump({
-                "embeddings": np.vstack(embeddings),
-                "meta": meta[layer]
-            }, f)
+        if len(train_embeddings > 0):
+            t_embeddings = train_embeddings[layer]
+            t_meta = meta[layer]
+            with open(output_path, "wb") as f:
+                pickle.dump({
+                    "embeddings": np.vstack(embeddings),
+                    "meta": meta[layer],
+                    "train_embeddings": np.vstack(t_embeddings),
+                    "train_meta": t_meta
+                }, f)
+        else:
+            with open(output_path, "wb") as f:
+                pickle.dump({
+                    "embeddings": np.vstack(embeddings),
+                    "meta": meta[layer]
+                }, f)

@@ -62,7 +62,7 @@ def extract_region_embeddings_genomic_elements(args, device, dataset):
                     "GC_full": batch["seq_gc"][j]
                 })
 
-    return all_embeddings, meta
+    return all_embeddings, [], meta
 
 def extract_region_embeddings_5_prime_UTR(args, device, dataset):
 
@@ -84,11 +84,14 @@ def extract_region_embeddings_5_prime_UTR(args, device, dataset):
         batch_size = 8
 
     all_embeddings = {layer: [] for layer in layers}
+    train_embeddings = {layer: [] for layer in layers}
     meta = {layer: [] for layer in layers}
+    train_meta = {layer: [] for layer in layers}
 
     for i in tqdm(range(0, len(dataset), batch_size), desc="Extracting mean-pooled embeddings"):
         batch = dataset[i:i + batch_size]
         sequences = batch["sequence"]
+        set = batch["set"]
         mutated_sequences = [mutate(batch['sequence'][i], batch['pos'][i], batch['ref'][i], batch['alt'][i]) for i in range(len(sequences))]
         tokens = tokenizer(sequences, return_tensors="pt", padding=True, truncation=True, return_attention_mask=True,
                            add_special_tokens=False)
@@ -143,4 +146,12 @@ def extract_region_embeddings_5_prime_UTR(args, device, dataset):
                     "dot_product_norm": dot_product_norm,
                 })
 
-    return all_embeddings, meta
+                if set[j] == "train":
+                    train_embeddings[layer].append(pooled)
+                    train_meta[layer].append({
+                        "label": batch["label"][j],
+                        "af": batch["af"][j],
+                        "cos_similarity": cos_similarity,
+                    })
+
+    return all_embeddings, train_embeddings, meta

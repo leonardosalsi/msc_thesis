@@ -1,14 +1,19 @@
 import os
+
+import numpy as np
 from matplotlib import gridspec, patches
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.metrics import average_precision_score, precision_recall_curve
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.metrics import f1_score
 import pickle
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
+from sklearn.model_selection import cross_val_predict, StratifiedKFold
+from sklearn.preprocessing import StandardScaler
+from sklearn.neural_network import MLPClassifier
 
 from config import images_dir
 
@@ -31,8 +36,6 @@ def visualize_embedding_predictions(
 ):
     class_dir = os.path.join(images_dir, 'class_by_rarity')
     figure_path = os.path.join(class_dir, f"{model_name}.png")
-    if os.path.exists(figure_path):
-        return
 
     if method == "tsne":
         reducer = TSNE(n_components=2, random_state=random_state)
@@ -41,9 +44,9 @@ def visualize_embedding_predictions(
     else:
         raise ValueError("method must be 'tsne' or 'pca'")
 
-    figsize=(25, 5 * len(file_list))
+    figsize=(15, 5 * len(file_list))
     fig = plt.figure(figsize=figsize)
-    gs = gridspec.GridSpec(len(file_list), 5, width_ratios=[1, 1, 1, 0.2, 1], wspace=0.05, hspace=0.05)
+    gs = gridspec.GridSpec(len(file_list), 3, width_ratios=[1, 1, 1], wspace=0.05, hspace=0.05)
 
     for i, file in enumerate(file_list):
         layer_num = int(file.split("layer_")[-1].split(".")[0])
@@ -54,28 +57,33 @@ def visualize_embedding_predictions(
         X_scaled = scaler.fit_transform(embeddings)
 
         y_true = meta_df["label"]
+        precision_zero_shot, recall_zero_shot, _ = precision_recall_curve(y_true, 1  - meta_df["cos_similarity"])
+        ap_zero_shot = average_precision_score(y_true, 1  - meta_df["cos_similarity"])
 
-        model_class = LogisticRegression(max_iter=1000)
-        model_class.fit(X_scaled, meta_df["label"])
+        model = MLPClassifier(hidden_layer_sizes=(64, 32), activation='relu', max_iter=300)
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+        y_prob_class = cross_val_predict(model, X_scaled, y_true, cv=cv, method="predict_proba")[:, 1]
+        print(y_prob_class)
+        precision_class, recall_class, _ = precision_recall_curve(y_true, y_prob_class)
+        ap_class = average_precision_score(y_true, y_prob_class)
 
-        y_prob_class = model_class.predict_proba(X_scaled)[:, 1]
-        y_pred_class = (y_prob_class >= 0.5).astype(int)
-        precision_class, recall_class, _ = precision_recall_curve(y_true, y_pred_class)
-        ap_class = average_precision_score(y_true, y_pred_class)
+        best_f1 = 0
+        best_thresh = 0
+        for t in np.linspace(0.0, 1.0, 101):
+            y_pred = (y_prob_class >= t).astype(int)
+            f1 = f1_score(y_true, y_pred)
+            if f1 > best_f1:
+                best_f1 = f1
+                best_thresh = t
+        print("BEST THRESH: ", best_thresh)
 
-        model_prob = Ridge()
-        model_prob.fit(X_scaled, meta_df["dot_product_norm"] - 1)
-        y_pred_prob = model_prob.predict(X_scaled)
-        y_pred_prob_norm = MinMaxScaler().fit_transform(y_pred_prob.reshape(-1, 1)).flatten()
-        precision_prob, recall_prob, _ = precision_recall_curve(y_true, y_pred_prob)
-        ap_prob = average_precision_score(y_true, y_pred_prob)
+        y_pred_class = (y_prob_class >= best_thresh).astype(int)
+
+
 
         ax_true = fig.add_subplot(gs[i,0])
         ax_class = fig.add_subplot(gs[i,1])
-        ax_prob = fig.add_subplot(gs[i, 2])
-        spacer = fig.add_subplot(gs[i,3])
-        ax_auprc = fig.add_subplot(gs[i,4])
-        spacer.axis("off")
+        ax_auprc = fig.add_subplot(gs[i,2])
 
         """
         Ground Truth
@@ -86,8 +94,8 @@ def visualize_embedding_predictions(
 
         if i == 0:
             legend_elements = [
-                Line2D([0], [0], marker='o', color='w', label='Rare', markerfacecolor=cmap(1), markersize=6),
-                Line2D([0], [0], marker='o', color='w', label='Common', markerfacecolor=cmap(0), markersize=6)
+                Line2D([0], [0], marker='o', color='w', label='Rare', markerfacecolor=cmap(0.3), markersize=6),
+                Line2D([0], [0], marker='o', color='w', label='Common', markerfacecolor=cmap(0.7), markersize=6)
             ]
 
             ax_true.legend(
@@ -129,31 +137,15 @@ def visualize_embedding_predictions(
         Probability by Regression
         """
 
-        scatter1 = ax_prob.scatter(X_2d[:, 0], X_2d[:, 1], c=y_pred_prob_norm, cmap=COLORMAP, s=10)
-        cax = inset_axes(ax_prob,
-                         width="5%",
-                         height="100%",
-                         loc='lower left',
-                         bbox_to_anchor=(1.01, 0.0, 1, 1),
-                         bbox_transform=ax_prob.transAxes,
-                         borderpad=0)
 
-        plt.colorbar(scatter1, cax=cax, label=None)
-        ax_prob.set_ylabel("")
-        ax_prob.set_yticks([])
-        if i == 0:
-            ax_prob.set_title("t-SNE Colored by Regression")
-        if i < len(file_list) - 1:
-            ax_prob.set_xticks([])
-        if i == len(file_list) - 1:
-            ax_prob.set_xlabel("Dimension 1")
 
         """
         PR Curve
         """
         auprc_cmap = plt.cm.get_cmap(COLORMAP)
-        ax_auprc.plot(recall_class, precision_class, color=auprc_cmap(0.1), lw=2, label=f"AUPRC Classfication= {ap_class:.3f}")
-        ax_auprc.plot(recall_prob, precision_prob, color=auprc_cmap(0.9), lw=2, label=f"AUPRC Regression= {ap_prob:.3f}")
+        ax_auprc.plot(recall_zero_shot, precision_zero_shot, color=auprc_cmap(0.4), lw=2, label=f"AUPRC Zero-Shot= {ap_zero_shot:.3f}")
+        ax_auprc.plot(recall_class, precision_class, color=auprc_cmap(0.6), lw=2, label=f"AUPRC Classfication= {ap_class:.3f}")
+
         if i == 0:
             ax_auprc.set_title("Precision-Recall Curve")
         if i < len(file_list) - 1:
@@ -186,20 +178,19 @@ def visualize_embedding_predictions(
     os.makedirs(class_dir, exist_ok=True)
     plt.savefig(figure_path)
     plt.show()
+    exit()
 
 if __name__ == "__main__":
     embeddings_folder = '/shared/data/embeddings/5_utr_6000'
-    model_names = os.listdir(embeddings_folder)
+    model_name = 'overlap_logan_ewc_5'
+    model_folder = os.path.join(embeddings_folder, model_name)
+    files = sorted([os.path.join(model_folder, f) for f in os.listdir(model_folder)
+                    if f.endswith(".pkl") and f.startswith("layer_")],
+                   key=lambda f: int(f.split("layer_")[-1].split(".")[0]))
 
-    for model_name in model_names:
-        model_folder = os.path.join(embeddings_folder, model_name)
-        files = sorted([os.path.join(model_folder, f) for f in os.listdir(model_folder)
-                        if f.endswith(".pkl") and f.startswith("layer_")],
-                       key=lambda f: int(f.split("layer_")[-1].split(".")[0]))
-
-        visualize_embedding_predictions(
-            model_name=model_name,
-            file_list=files,
-            method='tsne',
-            title=f"5'UTR SNV Rarity Classification - {model_name}"
-        )
+    visualize_embedding_predictions(
+        model_name=model_name,
+        file_list=files,
+        method='tsne',
+        title=f"5'UTR SNV Rarity Classification - {model_name}"
+    )

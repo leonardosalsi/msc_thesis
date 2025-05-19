@@ -18,6 +18,29 @@ def load_or_generate(get_fn, filename, length=None, return_af=False):
         print(f"Generating dataset: {filepath}")
         return get_from_gnomAD.get_generator(length, return_af)
 
+"""
+@article{RAYCHAUDHURI201157,
+title = {Mapping Rare and Common Causal Alleles for Complex Human Diseases},
+journal = {Cell},
+volume = {147},
+number = {1},
+pages = {57-69},
+year = {2011},
+issn = {0092-8674},
+doi = {https://doi.org/10.1016/j.cell.2011.09.011},
+url = {https://www.sciencedirect.com/science/article/pii/S0092867411010695},
+author = {Soumya Raychaudhuri},
+abstract = {Advances in genotyping and sequencing technologies have revolutionized the genetics of complex disease by locating rare and common variants that influence an individual's risk for diseases, such as diabetes, cancers, and psychiatric disorders. However, to capitalize on these data for prevention and therapies requires the identification of causal alleles and a mechanistic understanding for how these variants contribute to the disease. After discussing the strategies currently used to map variants for complex diseases, this Primer explores how variants may be prioritized for follow-up functional studies and the challenges and approaches for assessing the contributions of rare and common variants to disease phenotypes.}
+}
+"""
+def _get_label(af):
+    if af >= 0.05:
+        return 0  # common
+    elif 0.00001 <= af < 0.01:
+        return 1  # rare
+    else:
+        return None
+
 
 """
 Create UTR'5 Classification Dataset
@@ -27,7 +50,7 @@ if __name__ == '__main__':
     length = 6000
     return_af = True
     full = False
-    check_data = True
+    check_data = False
 
     full_af_dataset_filename = f"5_utr_af_prediction_full"
     af_dataset_filename = f"5_utr_af_prediction"
@@ -36,7 +59,6 @@ if __name__ == '__main__':
         if not os.path.exists(os.path.join(datasets_cache_dir, full_af_dataset_filename)):
             def generator_fn():
                 return get_from_gnomAD.get_generator(length, return_af)
-
             dataset = Dataset.from_generator(lambda: generator_fn(), features=Features({
                 "sequence": Value("string"),
                 "label": Value("int64"),
@@ -51,12 +73,28 @@ if __name__ == '__main__':
             dataset.save_to_disk(os.path.join(datasets_cache_dir, full_af_dataset_filename))
         else:
             dataset = load_from_disk(
-                os.path.join(datasets_cache_dir, f"5_utr_af_full{f'_{length}' if length is not None else ''}"))
+                os.path.join(datasets_cache_dir, full_af_dataset_filename))
+
+        dataset = dataset.map(lambda x: {"label": _get_label(x["af"])})
+        dataset = dataset.filter(lambda x: x["label"] != None)
 
         rare = dataset.filter(lambda x: x["label"] == 1).shuffle().select(range(7045))
         common = dataset.filter(lambda x: x["label"] == 0)
 
-        dataset = concatenate_datasets([rare, common]).shuffle(seed=42).remove_columns(["chrom"])
+        rare_split = rare.train_test_split(test_size=0.20)
+        common_split = common.train_test_split(test_size=0.20)
+
+        rare_train = rare_split["train"]
+        rare_test = rare_split["test"]
+        common_train = common_split["train"]
+        common_test = common_split["test"]
+
+        rare_train = rare_train.add_column("set", ["train"] * len(rare_train))
+        rare_test = rare_test.add_column("set", ["test"] * len(rare_test))
+        common_train = common_train.add_column("set", ["train"] * len(common_train))
+        common_test = common_test.add_column("set", ["test"] * len(common_test))
+
+        dataset = concatenate_datasets([rare_train, rare_test, common_train, common_test]).shuffle(seed=42).remove_columns(["chrom"])
         dataset.info.dataset_name =  f"5_utr_{length}"
 
         dataset.save_to_disk(os.path.join(generated_datasets_dir, af_dataset_filename))

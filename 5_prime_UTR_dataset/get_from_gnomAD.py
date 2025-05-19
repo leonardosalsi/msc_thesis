@@ -130,7 +130,7 @@ def get_generator(length=None, return_af=False):
     fasta_path = os.path.join(DATA_PATH, "Homo_sapiens.GRCh38.dna.primary_assembly.fa")
 
     utr5_df = _get_utr_dataframe(gtf_file, utr_cache_file)
-    MAX_YIELDS = 10000
+    MAX_YIELDS = 1000
     if length is None:
         length = 0
 

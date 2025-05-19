@@ -111,7 +111,7 @@ def visualize_mcc_per_task(data, colors, filename_base, model_names):
     plt.show()
 
 
-def visualize_mcc_across_tasks(data, filename_base):
+def visualize_mcc_across_tasks(data, filename_base, data_class):
     model_mcc = {}
     for task_name, model_results in data.items():
         for model_name, scores in model_results.items():
@@ -146,10 +146,17 @@ def visualize_mcc_across_tasks(data, filename_base):
         )
 
     ax.set_yticks(np.arange(len(model_names)))
-    ax.set_yticklabels(model_names, fontsize=12)
+    ax.set_yticklabels(model_names, fontsize=10)
     ax.set_xlim(0, 1)
     ax.set_xlabel("Mean MCC", fontsize=14)
-    ax.set_title("Mean MCC across Tasks", fontsize=18, pad=10, loc="center")
+
+    title = ""
+    if data_class == DATATYPE.UTR_CLASS:
+        title = "MCC for 5'UTR Benign/Pathogenic Classification"
+    elif data_class == DATATYPE.BENCHMARK:
+        title = "Mean MCC across Tasks"
+
+    ax.set_title(title, fontsize=18, pad=10, loc="center")
     ax.grid(axis='x')
  
     # Bold specific label
@@ -233,15 +240,19 @@ def get_mean_task_rank(data):
             f.write(f"{i + 1}: {p[0]} [Mean rank {p[1]}]\n")
 
 if __name__ == '__main__':
+    compare_group = get_for_all_compare_to_litereature
+    data_class = DATATYPE.UTR_CLASS
+
     savedir = os.path.join(images_dir, 'benchmark')
     os.makedirs(savedir, exist_ok=True)
     f = get_for_all_compare_to_litereature
-    benchmark_files, filename = f(DATATYPE.BENCHMARK)
+    benchmark_files, filename = compare_group(data_class)
     data = prepare_data_for_visualization(benchmark_files)
     filename_base = os.path.join(savedir, filename)
     os.makedirs(filename_base, exist_ok=True)
     #get_mean_task_rank(data)
-    model_names, colors = visualize_mcc_across_tasks(data, filename_base)
-    visualize_mcc_per_task(data, colors, filename_base, model_names)
+    model_names, colors = visualize_mcc_across_tasks(data, filename_base, data_class)
+    if data_class == DATATYPE.BENCHMARK:
+        visualize_mcc_per_task(data, colors, filename_base, model_names)
 
 
