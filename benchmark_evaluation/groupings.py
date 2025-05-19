@@ -175,7 +175,11 @@ def get_for_all_compare_to_litereature(type: DATATYPE):
             'default_logan_ewc_5',
             'default_logan_ewc_10',
             'default_logan_ewc_25',
-            'default_logan_ewc_5_2kb'
+            'default_logan_ewc_5_2kb',
+            'overlap_logan_ewc_5_pca_cls_256',
+            'overlap_logan_ewc_5_pca_mean_256',
+            'default_logan_ewc_5_pca_cls_256',
+            'default_logan_ewc_5_pca_mean_256'
     ]
     filename = 'compare_all_literature'
 
