@@ -1,14 +1,14 @@
 import json
 import os
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
 from config import pretrained_models_cache_dir, logs_dir
 from utils.dataset import get_dataset
 from utils.model import get_model
 from utils.tokenizer import get_tokenizer
 from utils.trainer import get_trainer
 from utils.PCACollator import PCACollator
-from utils.util import get_device, print_args
+from utils.util import get_device, print_args, shannon_entropy, gc_content
 from argparse_dataclass import ArgumentParser
 from transformers import (
     TrainingArguments,
@@ -45,7 +45,9 @@ class TrainConfig:
     deepspeed_config: str = None
     model_name: str = None
     resume: bool = True
-    num_tokens: int = 1000
+    num_tokens: int = 1000,
+    shannon: Optional[List[float]] = None
+    gc: Optional[List[float]] = None
 
 def parse_args():
     parser = ArgumentParser(TrainConfig)
@@ -60,6 +62,18 @@ if __name__ == "__main__":
     device = get_device()
     dataset_train, dataset_validation = get_dataset(args)
     tokenizer, num_tokens = get_tokenizer(args)
+
+    if args.shannon:
+        sh_low = args.shannon[0]
+        sh_high = args.shannon[1]
+        dataset_train = dataset_train.filter(lambda x: sh_low <= shannon_entropy(x['sequence']) <= sh_high, num_proc=args.max_workers)
+        dataset_validation = dataset_validation.filter(lambda x: sh_low <= shannon_entropy(x['sequence']) <= sh_high, num_proc=args.max_workers)
+
+    if args.gc:
+        gc_low = args.gc[0]
+        gc_high = args.gc[1]
+        dataset_train = dataset_train.filter(lambda x: gc_low <= gc_content(x['sequence']) <= gc_high, num_proc=args.max_workers)
+        dataset_validation = dataset_validation.filter(lambda x: gc_low <= gc_content(x['sequence']) <= gc_high, num_proc=args.max_workers)
 
 
     def tokenize_function(examples):

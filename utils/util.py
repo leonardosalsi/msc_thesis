@@ -1,6 +1,9 @@
 import datetime
+import math
 import os
 import sys
+from collections import Counter
+
 import torch
 import logging as pyLogging
 
@@ -89,3 +92,42 @@ def get_task_by_id(taskId):
         if task['taskId'] == taskId:
             return task
     return None
+
+
+def shannon_entropy(sequence: str) -> float:
+    """Compute the Shannon entropy of a DNA sequence (A, T, C, G only).
+    @article{Carcassi_2021,
+   title={Variability as a better characterization of Shannon entropy},
+   volume={42},
+   ISSN={1361-6404},
+   url={http://dx.doi.org/10.1088/1361-6404/abe361},
+   DOI={10.1088/1361-6404/abe361},
+   number={4},
+   journal={European Journal of Physics},
+   publisher={IOP Publishing},
+   author={Carcassi, Gabriele and Aidala, Christine A and Barbour, Julian},
+   year={2021},
+   month=may, pages={045102} }
+    """
+    if not sequence:
+        return 0.0
+
+    length = len(sequence)
+    if length == 0:
+        return 0.0
+
+    freqs = Counter(base for base in sequence if base in "ATCG")
+    probs = [count / length for count in freqs.values()]
+    entropy = -sum(p * math.log2(p) for p in probs if p > 0)
+    return entropy
+
+def gc_content(sequence: str) -> float:
+    """
+    Calculation via Brock Biology of Microorganisms 10th edition
+    @book{Madigan_Martinko_Parker_2003, place={Upper Saddle River, NJ}, title={Brock Biology of Microorganisms}, publisher={Prentice Hall/Pearson Education}, author={Madigan, Michael T. and Martinko, John M. and Parker, Jack}, year={2003}}
+    """
+    if not sequence:
+        return 0.0
+    full_len = len(sequence)
+    num_GC = sequence.count("G") + sequence.count("C")
+    return num_GC / full_len * 100
