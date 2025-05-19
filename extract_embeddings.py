@@ -42,7 +42,7 @@ if __name__ == "__main__":
     os.makedirs(model_dir, exist_ok=True)
     for layer, embeddings in all_embeddings.items():
         output_path = os.path.join(model_dir, f"layer_{layer}.pkl")
-        if len(train_embeddings > 0):
+        if len(train_embeddings) > 0:
             t_embeddings = train_embeddings[layer]
             t_meta = meta[layer]
             with open(output_path, "wb") as f:
