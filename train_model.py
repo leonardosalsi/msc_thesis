@@ -46,8 +46,10 @@ class TrainConfig:
     model_name: str = None
     resume: bool = True
     num_tokens: int = 1000,
-    shannon: Optional[List[float]] = None
-    gc: Optional[List[float]] = None
+    shannon_low: Optional[float] = None
+    shannon_high: Optional[float] = None
+    gc_low: Optional[float] = None
+    gc_high: Optional[float] = None
 
 def parse_args():
     parser = ArgumentParser(TrainConfig)
@@ -63,15 +65,15 @@ if __name__ == "__main__":
     dataset_train, dataset_validation = get_dataset(args)
     tokenizer, num_tokens = get_tokenizer(args)
 
-    if args.shannon:
-        sh_low = args.shannon[0]
-        sh_high = args.shannon[1]
+    if args.shannon_low and args.shannon_high:
+        sh_low = args.shannon_low
+        sh_high = args.shannon_high
         dataset_train = dataset_train.filter(lambda x: sh_low <= shannon_entropy(x['sequence']) <= sh_high, num_proc=args.max_workers)
         dataset_validation = dataset_validation.filter(lambda x: sh_low <= shannon_entropy(x['sequence']) <= sh_high, num_proc=args.max_workers)
 
-    if args.gc:
-        gc_low = args.gc[0]
-        gc_high = args.gc[1]
+    if args.gc_low and args.gc_high:
+        gc_low = args.gc_low
+        gc_high = args.gc_high
         dataset_train = dataset_train.filter(lambda x: gc_low <= gc_content(x['sequence']) <= gc_high, num_proc=args.max_workers)
         dataset_validation = dataset_validation.filter(lambda x: gc_low <= gc_content(x['sequence']) <= gc_high, num_proc=args.max_workers)
 
