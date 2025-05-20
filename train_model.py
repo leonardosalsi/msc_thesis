@@ -70,16 +70,10 @@ if __name__ == "__main__":
         sh_high = args.shannon_high
         dataset_train = dataset_train.filter(lambda x: sh_low <= shannon_entropy(x['sequence']) <= sh_high, num_proc=args.max_workers)
 
-    print(dataset_train)
-    print(dataset_validation)
-
     if args.gc_low and args.gc_high:
         gc_low = args.gc_low
         gc_high = args.gc_high
         dataset_train = dataset_train.filter(lambda x: gc_low <= gc_content(x['sequence']) <= gc_high, num_proc=args.max_workers)
-
-    print(dataset_train)
-    print(dataset_validation)
 
     def tokenize_function(examples):
         """
@@ -88,7 +82,7 @@ if __name__ == "__main__":
         outputs = tokenizer(examples['sequence'], max_length=num_tokens, truncation=True)
         return outputs
 
-
+    val_size = range(min(50000, len(dataset_validation)))
     if args.mapping_cache:
         name = 'logan' if 'logan' in args.dataset else 'multi_species'
         tokenized_train_sequences = dataset_train.map(
@@ -98,7 +92,8 @@ if __name__ == "__main__":
             cache_file_name=os.path.join(args.mapping_cache, f"train_{name}.arrow"),
             keep_in_memory=args.keep_in_memory
         )
-        tokenized_validation_sequences = dataset_validation.select(range(50000)).map(
+
+        tokenized_validation_sequences = dataset_validation.select(val_size).map(
             tokenize_function,
             batched=True,
             num_proc=args.max_workers,
@@ -109,7 +104,7 @@ if __name__ == "__main__":
         tokenized_train_sequences = dataset_train.shuffle()
         tokenized_train_sequences.set_transform(tokenize_function)
         tokenized_validation_sequences = dataset_validation.shuffle()
-        tokenized_validation_sequences = tokenized_validation_sequences.select(range(50000))
+        tokenized_validation_sequences = tokenized_validation_sequences.select(val_size)
         tokenized_validation_sequences.set_transform(tokenize_function)
 
     if args.pca_dim > 0:

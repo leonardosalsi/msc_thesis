@@ -109,16 +109,20 @@ def shannon_entropy(sequence: str) -> float:
    year={2021},
    month=may, pages={045102} }
     """
+    print("HJERE")
+    print(sequence)
     if not sequence:
         return 0.0
 
-    length = len(sequence)
-    if length == 0:
+    freqs = Counter(base for base in sequence if base in "ATCG")
+    informative_len = sum(freqs.values())
+    print(freqs)
+    if informative_len == 0:
         return 0.0
 
-    freqs = Counter(base for base in sequence if base in "ATCG")
-    probs = [count / length for count in freqs.values()]
+    probs = [count / informative_len for count in freqs.values()]
     entropy = -sum(p * math.log2(p) for p in probs if p > 0)
+    print(entropy)
     return entropy
 
 def gc_content(sequence: str) -> float:

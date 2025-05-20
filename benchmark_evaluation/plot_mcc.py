@@ -9,7 +9,7 @@ from sklearn.metrics import matthews_corrcoef
 
 from benchmark_evaluation.groupings import get_task_alias, get_model_alias_for_downstream, DATATYPE, \
     get_for_all_compare_to_litereature, get_for_all_compare, get_for_ewc_compare, get_for_best_logan_compare, \
-    get_for_context_length_compare
+    get_for_context_length_compare, get_for_reference_compare
 from config import results_dir, images_dir
 
 def evaluate_file(filepath):
@@ -38,8 +38,8 @@ def visualize_mcc_per_task(data, colors, filename_base, model_names):
     print(f"Number of tasks: {num_tasks}")
     cols = 3
     rows = math.ceil(num_tasks / cols)
-
-    fig, axes = plt.subplots(rows, cols, figsize=(len(model_names) * 2, rows * 5), constrained_layout=True)
+    width = max(len(model_names) * 2, 16)
+    fig, axes = plt.subplots(rows, cols, figsize=(width, rows * 5), constrained_layout=True)
     axes = axes.flatten()
 
     for idx, (task_name, model_results) in enumerate(data.items()):
@@ -240,12 +240,11 @@ def get_mean_task_rank(data):
             f.write(f"{i + 1}: {p[0]} [Mean rank {p[1]}]\n")
 
 if __name__ == '__main__':
-    compare_group = get_for_all_compare_to_litereature
+    compare_group = get_for_reference_compare
     data_class = DATATYPE.BENCHMARK
 
     savedir = os.path.join(images_dir, 'benchmark')
     os.makedirs(savedir, exist_ok=True)
-    f = get_for_all_compare_to_litereature
     benchmark_files, filename = compare_group(data_class)
     data = prepare_data_for_visualization(benchmark_files)
     filename_base = os.path.join(savedir, filename)

@@ -5,8 +5,8 @@ from enum import Enum
 from utils.model_definitions import TASK_DEFINITIONS, MODELS
 
 PRETRAINED_MODEL_DIR = '/shared/pretrained_models'
-BENCHMARK_DIR = '/shared/data/benchmark_bootstrap'
-UTR_CLASS_DIR = '/shared/data/utr5_bootstrap'
+BENCHMARK_DIR = '/shared/data/benchmark'
+UTR_CLASS_DIR = '/shared/data/utr5'
 
 class DATATYPE(Enum):
     TRAINING_CURVES = 1
@@ -298,6 +298,23 @@ def get_for_best_logan_compare(type: DATATYPE):
         return _collect_benchmark_data(group), filename
     elif type == DATATYPE.UTR_CLASS:
         return _collect_utr_class_data(group), filename
+
+def get_for_reference_compare(type: DATATYPE):
+    group = [
+        'ref_multi_species_untrained_500_human',
+        'ref_multi_species_untrained_500_tg',
+        'default_multi_species_untrained_500_tg',
+        'default_multi_species_untrained_500_human'
+    ]
+    filename = 'compare_logan'
+
+    if type == DATATYPE.TRAINING_CURVES:
+        raise Exception("No training curves for reference comparison.")
+    elif type == DATATYPE.BENCHMARK:
+        return _collect_benchmark_data(group, True), filename
+    elif type == DATATYPE.UTR_CLASS:
+        raise Exception("No UTR class results for reference comparison.")
+
 
 def get_for_pca_embedding_compare(type: DATATYPE):
     group = [

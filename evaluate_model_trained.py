@@ -214,8 +214,6 @@ def get_output_dir(args):
         benchmark_dir = os.path.join(results_dir, f"utr5")
     else:
         benchmark_dir = os.path.join(results_dir, f"benchmark")
-    if args.n_bootstrap is not None:
-        benchmark_dir += "_bootstrap"
     os.makedirs(benchmark_dir, exist_ok=True)
     benchmark_dir = os.path.join(benchmark_dir, args.model_name)
     os.makedirs(benchmark_dir, exist_ok=True)
