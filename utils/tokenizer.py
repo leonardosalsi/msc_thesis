@@ -5,15 +5,16 @@ import random
 from typing import List
 from transformers import EsmTokenizer
 
-"""
-Fully override the parent tokenization method, ignoring the parent's logic.
-We do our own logic to produce overlapping 6-mers from the entire string.
-Same as described in the paper, we sample a number from 0 to total_generated_tokens - num_tokens and
-start tokenizing from there until we have num_tokens tokens.
-When a N is encountered, it is tokenized alone, i.e., never with other nucleotides.
-It returns num_count tokens inclusing the special tokens.
-"""
+
 class OverlappingTokenizer(EsmTokenizer):
+    """
+    Fully override the parent tokenization method, ignoring the parent's logic.
+    We do our own logic to produce overlapping 6-mers from the entire string.
+    Same as described in the paper, we sample a number from 0 to total_generated_tokens - num_tokens and
+    start tokenizing from there until we have num_tokens tokens.
+    When an N is encountered, it is tokenized alone, i.e., never with other nucleotides.
+    It returns num_count tokens including the special tokens.
+    """
     def __init__(self, num_tokens, **kwargs):
         super().__init__(**kwargs)
         self.num_tokens = num_tokens - 2

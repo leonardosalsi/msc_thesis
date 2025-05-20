@@ -45,7 +45,7 @@ class TrainConfig:
     deepspeed_config: str = None
     model_name: str = None
     resume: bool = True
-    num_tokens: int = 1000,
+    num_tokens: int = 1000
     shannon_low: Optional[float] = None
     shannon_high: Optional[float] = None
     gc_low: Optional[float] = None
