@@ -70,6 +70,9 @@ if __name__ == "__main__":
         sh_high = args.shannon_high
         dataset_train = dataset_train.filter(lambda x: sh_low <= shannon_entropy(x['sequence']) <= sh_high, num_proc=args.max_workers)
 
+    print(dataset_train)
+    print(dataset_validation)
+
     if args.gc_low and args.gc_high:
         gc_low = args.gc_low
         gc_high = args.gc_high
