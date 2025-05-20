@@ -69,14 +69,14 @@ if __name__ == "__main__":
         sh_low = args.shannon_low
         sh_high = args.shannon_high
         dataset_train = dataset_train.filter(lambda x: sh_low <= shannon_entropy(x['sequence']) <= sh_high, num_proc=args.max_workers)
-        dataset_validation = dataset_validation.filter(lambda x: sh_low <= shannon_entropy(x['sequence']) <= sh_high, num_proc=args.max_workers)
 
     if args.gc_low and args.gc_high:
         gc_low = args.gc_low
         gc_high = args.gc_high
         dataset_train = dataset_train.filter(lambda x: gc_low <= gc_content(x['sequence']) <= gc_high, num_proc=args.max_workers)
-        dataset_validation = dataset_validation.filter(lambda x: gc_low <= gc_content(x['sequence']) <= gc_high, num_proc=args.max_workers)
 
+    print(dataset_train)
+    print(dataset_validation)
 
     def tokenize_function(examples):
         """
@@ -106,7 +106,7 @@ if __name__ == "__main__":
         tokenized_train_sequences = dataset_train.shuffle()
         tokenized_train_sequences.set_transform(tokenize_function)
         tokenized_validation_sequences = dataset_validation.shuffle()
-        tokenized_validation_sequences = tokenized_validation_sequences.select(range(min(len(tokenized_validation_sequences), 50000)))
+        tokenized_validation_sequences = tokenized_validation_sequences.select(range(50000))
         tokenized_validation_sequences.set_transform(tokenize_function)
 
     if args.pca_dim > 0:
