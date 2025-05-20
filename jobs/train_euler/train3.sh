@@ -19,5 +19,5 @@ accelerate launch --num_processes 5 --num_machines 1 --mixed_precision no --dyna
 --logging-steps 500 --train-size 10 --eval-size 32 \
 --gradient-accumulation 20 --max-workers 4 --load-from-json --ewc-lambda 5 \
 --original-dataset InstaDeepAI/multi_species_genomes --model-name overlap_logan_ewc_5_sh_gc \
---shannon 1.35 1.8 \
---gc 0.4 0.6
+--shannon 1.35,1.8 \
+--gc 0.4,0.6

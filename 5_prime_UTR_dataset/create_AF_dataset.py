@@ -35,9 +35,9 @@ abstract = {Advances in genotyping and sequencing technologies have revolutioniz
 """
 def _get_label(af):
     if af >= 0.05:
-        return 0  # common
+        return 0
     elif 0.00001 <= af < 0.01:
-        return 1  # rare
+        return 1
     else:
         return None
 
