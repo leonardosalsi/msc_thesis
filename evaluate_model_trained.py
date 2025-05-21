@@ -197,7 +197,8 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     predictions = predictions.tolist()
     mcc = matthews_corrcoef(labels, predictions)
 
-    mcc_bootstrap = []
+    mcc_bootstrap_mean = None
+    mcc_bootstrap_std = None
     if args.n_bootstrap is not None:
         labels = np.array(labels)
         predictions = np.array(predictions)
@@ -207,8 +208,10 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         for _ in range(args.n_bootstrap):
             indices = rng.choice(num_labels, num_labels, replace=True)
             mcc_bootstrap.append(matthews_corrcoef(labels[indices], predictions[indices]))
+        mcc_bootstrap_mean = np.mean(mcc_bootstrap)
+        mcc_bootstrap_std = np.std(mcc_bootstrap)
 
-    return mcc, mcc_bootstrap, train_history
+    return mcc, train_history, mcc_bootstrap_mean, mcc_bootstrap_std
 
 def get_output_dir(args):
     if args.task_id in [28]:
@@ -256,14 +259,16 @@ if __name__ == "__main__":
         exit(0)
 
     mccs = []
-    bootstraps = []
+    bootstraps_means = []
+    bootstraps_stds = []
     train_histories = []
     for i in tqdm(range(args.samples)):
-        mcc, bootstrap, train_history = finetune_model_by_task_mcc(args, device, task, timestamp)
+        mcc, train_history, mcc_bootstrap_mean, mcc_bootstrap_std = finetune_model_by_task_mcc(args, device, task, timestamp)
 
         mccs.append(mcc)
-        if len(bootstrap) != 0:
-            bootstraps.append(bootstrap)
+        if mcc_bootstrap_mean:
+            bootstraps_means.append(mcc_bootstrap_mean)
+            bootstraps_stds.append(mcc_bootstrap_std)
 
         train_histories.append(train_history)
 
@@ -276,9 +281,9 @@ if __name__ == "__main__":
         "train_histories": train_histories
     }
 
-    if len(bootstraps) != 0:
-        results["bootstrap_mean"] = float(np.mean(bootstraps))
-        results["bootstrap_ci"] = [np.percentile(b, [2.5, 97.5]).tolist() for b in bootstraps]
+    if len(bootstraps_means) != 0:
+        results["bootstrap_means"] = bootstraps_means
+        results["bootstrap_stds"] = bootstraps_stds
 
     with open(output_file, 'w') as f:
         json.dump(results, f, indent=4)
