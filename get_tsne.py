@@ -10,7 +10,6 @@ from utils.util import print_args
 VAR = False
 
 def visualize_embeddings(model_name, embeddings_type, files):
-    print(files)
     embeddings_out_folder = os.path.join(results_dir, 'tSNE', embeddings_type)
     os.makedirs(embeddings_out_folder, exist_ok=True)
     model_results = os.path.join(embeddings_out_folder, model_name)

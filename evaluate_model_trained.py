@@ -143,6 +143,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     ignore_keys = None
 
     if task["taskId"] in [23, 28]:
+        batch_size = 2
         eval_batch_size = 8
 
     if args.pca:
