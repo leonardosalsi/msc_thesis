@@ -13,7 +13,7 @@ from tqdm import tqdm
 from transformers import TrainingArguments, Trainer, logging
 from sklearn.metrics import matthews_corrcoef
 from sklearn.model_selection import train_test_split
-from config import  datasets_cache_dir, results_dir, logs_dir
+from config import datasets_cache_dir, results_dir, logs_dir, cache_dir
 from datasets.utils.logging import disable_progress_bar, set_verbosity
 from utils.model import get_classification_model
 from utils.tokenizer import get_eval_tokenizer
@@ -152,6 +152,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
 
     training_args = TrainingArguments(
         run_name=f"{task}_{timestamp}_{model}",
+        output_dir=os.path.join(cache_dir, 'eval_models', f"{args.task_id}_{args.model_name}_{timestamp}"),
         remove_unused_columns=False,
         report_to="none",
         eval_strategy="steps",
@@ -166,7 +167,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         metric_for_best_model="mcc_score",
         label_names=["labels"],
         dataloader_drop_last=True,
-        max_steps= 1,
+        max_steps= 10000,
         logging_dir=logs_dir,
         disable_tqdm=True
     )
