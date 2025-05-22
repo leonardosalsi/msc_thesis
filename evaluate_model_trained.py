@@ -156,7 +156,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         report_to="none",
         eval_strategy="steps",
         save_strategy="steps",
-        learning_rate=5e-4,
+        learning_rate=3e-3,
         per_device_train_batch_size= args.train_size,
         gradient_accumulation_steps= args.gradient_accumulation,
         per_device_eval_batch_size= args.eval_size,
