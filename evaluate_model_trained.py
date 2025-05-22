@@ -161,7 +161,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         gradient_accumulation_steps= args.gradient_accumulation,
         per_device_eval_batch_size= args.eval_size,
         num_train_epochs= 2,
-        logging_steps= 100,
+        logging_steps= 500,
         load_best_model_at_end=True,
         metric_for_best_model="mcc_score",
         label_names=["labels"],
