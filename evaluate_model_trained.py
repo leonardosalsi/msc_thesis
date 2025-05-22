@@ -155,7 +155,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         remove_unused_columns=False,
         report_to="none",
         eval_strategy="steps",
-        save_strategy="no",
+        save_strategy="steps",
         learning_rate=5e-4,
         per_device_train_batch_size= args.train_size,
         gradient_accumulation_steps= args.gradient_accumulation,
