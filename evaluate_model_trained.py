@@ -81,14 +81,18 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     modules_to_save = None
     if args.pca:
         modules_to_save = ["pca_proj", "layernorm"]
+
     peft_config = IA3Config(
         task_type=TaskType.SEQ_CLS,
         inference_mode=False,
         #lora_alpha=32,
         #lora_dropout=0.1,
-        target_modules=["query", "value"],
+        target_modules=["query", "value","intermediate.dense", "output.dense"],
+        feedforward_modules=["intermediate.dense", "output.dense"],
         modules_to_save=modules_to_save
     )
+
+
 
     lora_classifier = get_peft_model(model, peft_config)
     lora_classifier.to(device)
