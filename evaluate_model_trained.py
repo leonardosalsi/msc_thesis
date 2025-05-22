@@ -107,7 +107,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     test_labels = dataset_test[label_feature]
 
     """Generate validation splits"""
-    train_sequences, validation_sequences, train_labels, validation_labels = train_test_split(train_sequences, train_labels, test_size=0.05)
+    train_sequences, validation_sequences, train_labels, validation_labels = train_test_split(train_sequences, train_labels, test_size=0.1)
 
     """Load model overrides"""
     tokenizer = get_eval_tokenizer(args, repo)
