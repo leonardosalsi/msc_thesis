@@ -162,7 +162,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         per_device_eval_batch_size= args.eval_size,
         num_train_epochs= 2,
         logging_steps= 100,
-        load_best_model_at_end=False,
+        load_best_model_at_end=True,
         metric_for_best_model="mcc_score",
         label_names=["labels"],
         dataloader_drop_last=True,
