@@ -1,0 +1,25 @@
+{
+  "auto_mapping": null,
+  "base_model_name_or_path": "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species",
+  "exclude_modules": null,
+  "fan_in_fan_out": false,
+  "feedforward_modules": [
+    "intermediate.dense",
+    "output.dense"
+  ],
+  "inference_mode": true,
+  "init_ia3_weights": true,
+  "modules_to_save": [
+    "classifier",
+    "score"
+  ],
+  "peft_type": "IA3",
+  "revision": null,
+  "target_modules": [
+    "value",
+    "query",
+    "intermediate.dense",
+    "output.dense"
+  ],
+  "task_type": "SEQ_CLS"
+}

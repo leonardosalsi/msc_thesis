@@ -151,7 +151,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         ignore_keys = ["hidden_states", "attentions", "auxiliary_loss", "model_loss", "pca_embedding"]
 
     training_args = TrainingArguments(
-        run_name=timestamp,
+        run_name=f"{task}_{timestamp}_{model}",
         remove_unused_columns=False,
         report_to="none",
         eval_strategy="steps",
@@ -161,12 +161,12 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         gradient_accumulation_steps= args.gradient_accumulation,
         per_device_eval_batch_size= args.eval_size,
         num_train_epochs= 2,
-        logging_steps= 500,
+        logging_steps= 1,
         load_best_model_at_end=True,
         metric_for_best_model="mcc_score",
         label_names=["labels"],
         dataloader_drop_last=True,
-        max_steps= 10000,
+        max_steps= 1,
         logging_dir=logs_dir,
         disable_tqdm=True
     )
