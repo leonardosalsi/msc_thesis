@@ -109,8 +109,6 @@ def shannon_entropy(sequence: str) -> float:
    year={2021},
    month=may, pages={045102} }
     """
-    print("HJERE")
-    print(sequence)
     if not sequence:
         return 0.0
 

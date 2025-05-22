@@ -6,8 +6,8 @@
 #SBATCH --mem-per-cpu=4G
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
-
-source ~/.bashrc
+#SBATCH --gres=gpu:1
+#SBATCH -x gpu-biomed-[05,21,25,27,26]
 conda activate gpu_env
 which python
 

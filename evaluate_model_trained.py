@@ -93,7 +93,6 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     )
 
 
-
     lora_classifier = get_peft_model(model, peft_config)
     lora_classifier.to(device)
 
@@ -142,19 +141,13 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     )
 
     """Configure trainer"""
-    batch_size = 4
-    eval_batch_size = 16
-    gradient_accumulation_steps = 2
     ignore_keys = None
 
-    if task["taskId"] in [23, 28]:
+    """if task["taskId"] in [23, 28]:
         batch_size = 2
-        eval_batch_size = 8
+        eval_batch_size = 8"""
 
     if args.pca:
-        batch_size = int(batch_size / 2)
-        eval_batch_size = int(eval_batch_size / 4)
-        gradient_accumulation_steps = int(gradient_accumulation_steps * 2)
         ignore_keys = ["hidden_states", "attentions", "auxiliary_loss", "model_loss", "pca_embedding"]
 
     training_args = TrainingArguments(
@@ -164,9 +157,9 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         eval_strategy="steps",
         save_strategy="no",
         learning_rate=5e-4,
-        per_device_train_batch_size= batch_size,
-        gradient_accumulation_steps= gradient_accumulation_steps,
-        per_device_eval_batch_size= eval_batch_size,
+        per_device_train_batch_size= args.train_size,
+        gradient_accumulation_steps= args.gradient_accumulation,
+        per_device_eval_batch_size= args.eval_size,
         num_train_epochs= 2,
         logging_steps= 100,
         load_best_model_at_end=False,
@@ -237,6 +230,9 @@ class EvalConfig:
     checkpoint: str
     task_id: int
     samples: int = 1
+    train_size: int = 5
+    eval_size: int = 5
+    gradient_accumulation: int = 2
     n_bootstrap: Optional[int] = None
     pca: bool = False
     pca_embeddings: Optional[str] = None
