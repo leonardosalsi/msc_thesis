@@ -7,25 +7,10 @@ import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.metrics import matthews_corrcoef
 
-from benchmark_evaluation.groupings import get_task_alias, get_model_alias_for_downstream, DATATYPE, \
-    get_for_all_compare_to_litereature, get_for_all_compare
+from downstream_evaluation.groupings import get_task_alias, get_model_alias_for_downstream, DATATYPE, \
+    get_for_all_compare_to_litereature, get_for_all_compare, get_for_ewc_compare, get_for_best_logan_compare, \
+    get_for_context_length_compare, get_for_reference_compare
 from config import results_dir, images_dir
-
-def evaluate_file(filepath):
-    with open(filepath, "r") as f:
-        data = json.load(f)
-    labels = list(map(lambda x: x['labels'], data))
-    predictions = list(map(lambda x: x['predictions'], data))
-    assert len(labels) == len(predictions)
-    scores = []
-
-    for label, prediction in zip(labels, predictions):
-        score = matthews_corrcoef(label, prediction)
-        scores.append(score)
-
-    mean = np.mean(scores)
-    std = np.std(scores)
-    return mean, std
 
 def visualize_mcc_per_task(data, colors, filename_base, model_names):
     num_tasks = len(data)
@@ -33,8 +18,8 @@ def visualize_mcc_per_task(data, colors, filename_base, model_names):
     print(f"Number of tasks: {num_tasks}")
     cols = 3
     rows = math.ceil(num_tasks / cols)
-
-    fig, axes = plt.subplots(rows, cols, figsize=(len(model_names) * 2, rows * 5), constrained_layout=True)
+    width = max(len(model_names) * 2, 16)
+    fig, axes = plt.subplots(rows, cols, figsize=(width, rows * 5), constrained_layout=True)
     axes = axes.flatten()
 
     for idx, (task_name, model_results) in enumerate(data.items()):
@@ -102,11 +87,11 @@ def visualize_mcc_per_task(data, colors, filename_base, model_names):
         fig.delaxes(axes[idx])
     plt.grid(axis='y')
     plt.tight_layout()
-    plt.savefig(os.path.join(filename_base, f'mcc_per_tasks.pdf'))
+    plt.savefig(os.path.join(filename_base, f'mcc_per_tasks.png'))
     plt.show()
 
 
-def visualize_mcc_across_tasks(data, filename_base):
+def visualize_mcc_across_tasks(data, filename_base, data_class):
     model_mcc = {}
     for task_name, model_results in data.items():
         for model_name, scores in model_results.items():
@@ -132,7 +117,7 @@ def visualize_mcc_across_tasks(data, filename_base):
         ax.text(
             value + 0.02,
             bar.get_y() + bar.get_height() / 2,
-            f"{value:.3f}",
+            f"{value:.5f}",
             va="center",
             ha="left",
             fontsize=8,
@@ -141,31 +126,62 @@ def visualize_mcc_across_tasks(data, filename_base):
         )
 
     ax.set_yticks(np.arange(len(model_names)))
-    ax.set_yticklabels(model_names, fontsize=12)
+    ax.set_yticklabels(model_names, fontsize=10)
     ax.set_xlim(0, 1)
     ax.set_xlabel("Mean MCC", fontsize=14)
-    ax.set_title("Mean MCC across Tasks", fontsize=18, pad=10, loc="center")
-    ax.grid(axis='x')
 
+    title = ""
+    if data_class == DATATYPE.UTR_CLASS:
+        title = "MCC for 5'UTR Benign/Pathogenic Classification"
+    elif data_class == DATATYPE.BENCHMARK:
+        title = "Mean MCC across Tasks"
+
+    ax.set_title(title, fontsize=18, pad=10, loc="center")
+    ax.grid(axis='x')
+ 
     # Bold specific label
     for label in ax.get_yticklabels():
         if label.get_text() == "NT-MS V2 (50M)":
             label.set_fontweight("bold")
 
     plt.tight_layout()
-    plt.savefig(os.path.join(filename_base, f'mcc_across_tasks.pdf'))
+    plt.savefig(os.path.join(filename_base, f'mcc_across_tasks.png'))
     plt.show()
     return model_names, colors
 
-def prepare_data_for_visualization(file_lists):
+def evaluate_file(filepath, bootstrapped):
+    with open(filepath, "r") as f:
+        data = json.load(f)
+
+    if bootstrapped:
+        """
+        Calculate Law of Total Variance (LOTV) for bootstrap results.
+        """
+        try:
+            b_mean = np.array(data['bootstrap_means'])
+            b_std = np.array(data['bootstrap_stds'])
+            mean = float(np.mean(b_mean))
+            std = float(np.sqrt(np.mean(b_std ** 2 + (b_mean - mean) ** 2)))
+            return mean, std
+        except KeyError:
+            mean = data['mean']
+            std = data['std']
+            return mean, std
+    else:
+        mean = data['mean']
+        std = data['std']
+        return mean, std
+
+def prepare_data_for_visualization(file_lists, bootstrapped=False):
     data = {}
     for model_name, file_list in file_lists.items():
         for file in file_list:
             task = file.split("/")[-1].replace('.json', '')
             if not task in data:
                 data[task] = {}
-            mean, std = evaluate_file(file)
+            mean, std = evaluate_file(file, bootstrapped)
             data[task][model_name] = {'mean': mean, 'std': std}
+            print(model_name, task,     mean, std)
     return data
 
 def get_ranking(data):
@@ -228,15 +244,19 @@ def get_mean_task_rank(data):
             f.write(f"{i + 1}: {p[0]} [Mean rank {p[1]}]\n")
 
 if __name__ == '__main__':
+    compare_group = get_for_all_compare_to_litereature
+    data_class = DATATYPE.BENCHMARK
+    bootstrapped = True
+
     savedir = os.path.join(images_dir, 'benchmark')
     os.makedirs(savedir, exist_ok=True)
-    f = get_for_all_compare
-    benchmark_files, filename = f(DATATYPE.BENCHMARK)
-    data = prepare_data_for_visualization(benchmark_files)
+    benchmark_files, filename = compare_group(data_class)
+    data = prepare_data_for_visualization(benchmark_files, bootstrapped)
     filename_base = os.path.join(savedir, filename)
     os.makedirs(filename_base, exist_ok=True)
     #get_mean_task_rank(data)
-    model_names, colors = visualize_mcc_across_tasks(data, filename_base)
-    visualize_mcc_per_task(data, colors, filename_base, model_names)
+    model_names, colors = visualize_mcc_across_tasks(data, filename_base, data_class)
+    if data_class == DATATYPE.BENCHMARK:
+        visualize_mcc_per_task(data, colors, filename_base, model_names)
 
 

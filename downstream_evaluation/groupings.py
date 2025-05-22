@@ -5,8 +5,8 @@ from enum import Enum
 from utils.model_definitions import TASK_DEFINITIONS, MODELS
 
 PRETRAINED_MODEL_DIR = '/shared/pretrained_models'
-BENCHMARK_DIR = '/shared/data/benchmark'
-UTR_CLASS_DIR = '/shared/data/utr5'
+BENCHMARK_DIR = '/shared/data/downstream'
+UTR_CLASS_DIR = '/shared/data/class_5utr'
 
 class DATATYPE(Enum):
     TRAINING_CURVES = 1

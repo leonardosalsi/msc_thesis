@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt, gridspec
 from scipy.stats import pearsonr
 from sklearn.metrics import matthews_corrcoef
 
-from benchmark_evaluation.groupings import get_task_alias, get_model_alias_for_downstream, DATATYPE, \
+from downstream_evaluation.groupings import get_task_alias, get_model_alias_for_downstream, DATATYPE, \
     get_for_all_compare_to_litereature, get_for_all_compare, get_for_ewc_compare, get_for_best_logan_compare, \
     get_for_context_length_compare, get_for_reference_compare
 from config import results_dir, images_dir
@@ -95,34 +95,39 @@ def get_result_vectors(data):
         }
     }
 
-def evaluate_file(filepath):
+def evaluate_file(filepath, bootstrapped):
     with open(filepath, "r") as f:
         data = json.load(f)
-    try:
-        labels = list(map(lambda x: x['labels'], data))
-        predictions = list(map(lambda x: x['predictions'], data))
-        assert len(labels) == len(predictions)
-        scores = []
 
-        for label, prediction in zip(labels, predictions):
-            score = matthews_corrcoef(label, prediction)
-            scores.append(score)
-
-        mean = np.mean(scores)
-        std = np.std(scores)
-    except:
+    if bootstrapped:
+        """
+        Calculate Law of Total Variance (LOTV) for bootstrap results.
+        """
+        try:
+            b_mean = np.array(data['bootstrap_means'])
+            b_std = np.array(data['bootstrap_stds'])
+            mean = float(np.mean(b_mean))
+            std = float(np.sqrt(np.mean(b_std ** 2 + (b_mean - mean) ** 2)))
+            return mean, std
+        except KeyError:
+            mean = data['mean']
+            std = data['std']
+            return mean, std
+    else:
         mean = data['mean']
         std = data['std']
-    return mean, std
+        return mean, std
 
-def prepare_data_for_visualization(file_lists):
+
+
+def prepare_data_for_visualization(file_lists, bootstrapped=False):
     data = {}
     for model_name, file_list in file_lists.items():
         for file in file_list:
             task = file.split("/")[-1].replace('.json', '')
             if not task in data:
                 data[task] = {}
-            mean, std = evaluate_file(file)
+            mean, std = evaluate_file(file, bootstrapped)
             data[task][model_name] = {'mean': mean, 'std': std}
     return data
 
@@ -130,10 +135,12 @@ def prepare_data_for_visualization(file_lists):
 if __name__ == '__main__':
     compare_group = get_for_reference_compare
     data_class = DATATYPE.BENCHMARK
+    bootstrapped = True
+
     savedir = os.path.join(images_dir, 'benchmark')
     os.makedirs(savedir, exist_ok=True)
     benchmark_files, filename = compare_group(data_class)
-    data = prepare_data_for_visualization(benchmark_files)
+    data = prepare_data_for_visualization(benchmark_files, bootstrapped)
     data = get_result_vectors(data)
     plot_benchmark_validity(data, savedir)
 

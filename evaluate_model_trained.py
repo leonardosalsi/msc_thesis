@@ -2,6 +2,8 @@ import os
 import random
 from dataclasses import dataclass
 from typing import Optional
+
+import peft.tuners.ia3
 import torch
 import json
 from utils.util import LOGLEVEL, init_logger, get_task_by_id
@@ -17,7 +19,7 @@ from utils.model import get_classification_model
 from utils.tokenizer import get_eval_tokenizer
 from utils.util import print_args, get_device
 import numpy as np
-from peft import LoraConfig, TaskType, get_peft_model
+from peft import LoraConfig, TaskType, get_peft_model, IA3Config
 import psutil
 
 def check_memory_usage():
@@ -79,11 +81,11 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
     modules_to_save = None
     if args.pca:
         modules_to_save = ["pca_proj", "layernorm"]
-    peft_config = LoraConfig(
+    peft_config = IA3Config(
         task_type=TaskType.SEQ_CLS,
         inference_mode=False,
-        lora_alpha=32,
-        lora_dropout=0.1,
+        #lora_alpha=32,
+        #lora_dropout=0.1,
         target_modules=["query", "value"],
         modules_to_save=modules_to_save
     )
@@ -158,7 +160,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         eval_strategy="steps",
         save_strategy="no",
         learning_rate=5e-4,
-        per_device_train_batch_size=batch_size,
+        per_device_train_batch_size= batch_size,
         gradient_accumulation_steps= gradient_accumulation_steps,
         per_device_eval_batch_size= eval_batch_size,
         num_train_epochs= 2,
@@ -167,7 +169,7 @@ def finetune_model_by_task_mcc(args, device, task, timestamp):
         metric_for_best_model="mcc_score",
         label_names=["labels"],
         dataloader_drop_last=True,
-        max_steps= 1000,
+        max_steps= 10000,
         logging_dir=logs_dir,
         disable_tqdm=True
     )
@@ -272,12 +274,12 @@ if __name__ == "__main__":
 
         train_histories.append(train_history)
 
-    mean = np.mean(mccs)
-    std = np.std(mccs)
+    mean = float(np.mean(mccs))
+    std = float(np.std(mccs))
 
     results = {
-        "mean": float(np.mean(mccs)),
-        "std": float(np.std(mccs)),
+        "mean": mean,
+        "std": std,
         "train_histories": train_histories
     }
 
