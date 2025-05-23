@@ -6,9 +6,9 @@
 #SBATCH --mem-per-cpu=4G
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
-#SBATCH --gres=gpu:1
 #SBATCH -x gpu-biomed-[05,21,25,27,26]
-conda activate gpu_env
+
+source ~/.bashrc
 which python
 
 HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \
