@@ -33,6 +33,7 @@ class OverlappingTokenizer(EsmTokenizer):
                         tokens.append(t)
                 else:
                     tokens.append("N")
+                    i += k - 1
             i += 1
         length = len(tokens)
         end_idx = length - self.num_tokens
