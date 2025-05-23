@@ -122,29 +122,3 @@ def get_eval_tokenizer(args, repo=None):
     )
 
     return tokenizer
-
-if __name__ == "__main__":
-    text = 'AACTGTCCNAGTGNCTTATATNTR'
-    splits = text.split('N')
-    pprint(splits)
-    k = 6
-    tokens = []
-    for s_idx, s in enumerate(splits):
-        if len(s) < k:
-            for base in s:
-                tokens.append(base)
-        else:
-            i = 0
-            while i < (len(s) - k + 1):
-                tokens.append(s[i:i+k])
-                i += 1
-        if (s_idx < len(splits) - 1):
-            tokens.append('N')
-    length = len(tokens)
-    end_idx = length - 1000
-    if end_idx <= 0:
-        idx = 0
-    else:
-        idx = random.randint(0, end_idx)
-    tokens = tokens[idx:idx+1000]
-    pprint(tokens)
