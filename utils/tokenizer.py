@@ -4,7 +4,7 @@ from config import models_cache_dir
 import random
 from typing import List
 from transformers import EsmTokenizer
-
+from pprint import pprint
 
 class OverlappingTokenizer(EsmTokenizer):
     """
@@ -22,19 +22,18 @@ class OverlappingTokenizer(EsmTokenizer):
     def tokenize(self, text: str, **kwargs) -> List[str]:
         k = 6
         tokens = []
-        i = 0
-        while i < (len(text) - k + 1):
-            token = text[i:i+k]
-            if 'N' not in token:
-                tokens.append(text[i: i + k])
+        splits = text.split('N')
+        for s_idx, s in enumerate(splits):
+            if len(s) < k:
+                for base in s:
+                    tokens.append(base)
             else:
-                if i == (len(text) - k):
-                    for t in token:
-                        tokens.append(t)
-                else:
-                    tokens.append("N")
-                    i += k - 1
-            i += 1
+                i = 0
+                while i < (len(s) - k + 1):
+                    tokens.append(s[i:i + k])
+                    i += 1
+            if (s_idx < len(splits) - 1):
+                tokens.append('N')
         length = len(tokens)
         end_idx = length - self.num_tokens
         if end_idx <= 0:
@@ -123,3 +122,29 @@ def get_eval_tokenizer(args, repo=None):
     )
 
     return tokenizer
+
+if __name__ == "__main__":
+    text = 'AACTGTCCNAGTGNCTTATATNTR'
+    splits = text.split('N')
+    pprint(splits)
+    k = 6
+    tokens = []
+    for s_idx, s in enumerate(splits):
+        if len(s) < k:
+            for base in s:
+                tokens.append(base)
+        else:
+            i = 0
+            while i < (len(s) - k + 1):
+                tokens.append(s[i:i+k])
+                i += 1
+        if (s_idx < len(splits) - 1):
+            tokens.append('N')
+    length = len(tokens)
+    end_idx = length - 1000
+    if end_idx <= 0:
+        idx = 0
+    else:
+        idx = random.randint(0, end_idx)
+    tokens = tokens[idx:idx+1000]
+    pprint(tokens)
