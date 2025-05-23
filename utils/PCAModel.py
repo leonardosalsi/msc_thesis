@@ -22,7 +22,7 @@ class EsmForMaskedLMPCA(PreTrainedModel):
         config,
         base_model,
         pca_dim,
-        aux_loss_weight=0.1,
+        aux_loss_weight=0.5,
         temperature=0.1,
         pca_embeddings="mean",
         gradient_accumulation_steps=1,
