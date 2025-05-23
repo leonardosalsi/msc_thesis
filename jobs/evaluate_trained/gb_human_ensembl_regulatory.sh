@@ -9,6 +9,7 @@
 #SBATCH -x gpu-biomed-[05,21,25,27,26]
 
 source ~/.bashrc
+conda activate gpu_env
 which python
 
 HF_DATASETS_OFFLINE=1 HF_HUB_OFFLINE=1 \
