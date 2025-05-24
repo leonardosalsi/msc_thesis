@@ -130,6 +130,6 @@ def gc_content(sequence: str) -> float:
     """
     if not sequence:
         return 0.0
-    full_len = len(sequence)
+    full_len = sequence.count("A") + sequence.count("C") + sequence.count("T") + sequence.count("G")
     num_GC = sequence.count("G") + sequence.count("C")
     return num_GC / full_len * 100
