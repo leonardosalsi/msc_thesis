@@ -5,8 +5,8 @@ from enum import Enum
 from utils.model_definitions import TASK_DEFINITIONS, MODELS
 
 PRETRAINED_MODEL_DIR = '/shared/pretrained_models'
-BENCHMARK_DIR = '/shared/data/downstream_lora'
-UTR_CLASS_DIR = '/shared/data/class_5utr_lora'
+BENCHMARK_DIR = '/shared/data/downstream'
+UTR_CLASS_DIR = '/shared/data/class_5utr'
 
 class DATATYPE(Enum):
     TRAINING_CURVES = 1
@@ -120,12 +120,12 @@ def _collect_training_data(group):
 
 def get_for_baseline_compare(type: DATATYPE):
     group = [
-        'default_multi_species_untrained',
-        'default_multi_species_untrained_100',
-        'default_multi_species_untrained_250',
-        'default_multi_species_untrained_500',
-        'default_multi_species_untrained_500_tg',
-        'default_multi_species_untrained_500_human'
+        'default_multi_species_no_cont',
+        'default_multi_species_no_cont_100',
+        'default_multi_species_no_cont_250',
+        'default_multi_species_no_cont_500',
+        'default_multi_species_no_cont_500_tg',
+        'default_multi_species_no_cont_500_human'
     ]
     filename = 'compare_literature'
 
@@ -153,12 +153,10 @@ def get_for_tokenization_compare(type: DATATYPE):
 
 def get_for_all_compare_to_litereature(type: DATATYPE):
     group = [
-            'default_multi_species_untrained',
-            'default_multi_species_untrained_100',
-            'default_multi_species_untrained_250',
-            'default_multi_species_untrained_500',
-            'default_multi_species_untrained_500_tg',
-            'default_multi_species_untrained_500_human',
+            'default_multi_species_no_cont',
+            'default_multi_species_no_cont_100',
+            'default_multi_species_no_cont_250',
+            'default_multi_species_no_cont_500',
             'default_multi_species',
             'default_multi_species_2kb',
             'overlap_multi_species',
@@ -301,10 +299,10 @@ def get_for_best_logan_compare(type: DATATYPE):
 
 def get_for_reference_compare(type: DATATYPE):
     group = [
-        'ref_multi_species_untrained_500_human',
-        'ref_multi_species_untrained_500_tg',
-        'default_multi_species_untrained_500_tg',
-        'default_multi_species_untrained_500_human'
+        'ref_multi_species_no_cont_500_human',
+        'ref_multi_species_no_cont_500_tg',
+        'default_multi_species_no_cont_500_tg',
+        'default_multi_species_no_cont_500_human'
     ]
     filename = 'compare_logan'
 

@@ -89,7 +89,6 @@ if __name__ == "__main__":
 
     peft_config = LoraConfig(
         task_type=TaskType.SEQ_CLS,
-        r=16,
         lora_alpha=32,
         lora_dropout=0.1,
         bias="none",
@@ -133,19 +132,15 @@ if __name__ == "__main__":
 
     print("[RANDOM] Fixed length test set:")
     print("Pearson R:", pearsonr(y_pred_random_fixed, y_true_random_fixed)[0])
-    print("R² Score:", r2_score(y_true_random_fixed, y_pred_random_fixed))
     print()
     print("[RANDOM] Variable length test set:")
     print("Pearson R:", pearsonr(y_pred_random_var, y_true_random_var)[0])
-    print("R² Score:", r2_score(y_true_random_var, y_pred_random_var))
     print()
     print("[HUMAN] Fixed length test set:")
     print("Pearson R:", pearsonr(y_pred_human_fixed, y_true_human_fixed)[0])
-    print("R² Score:", r2_score(y_true_human_fixed, y_pred_human_fixed))
     print()
     print("[HUMAN] Variable length test set:")
     print("Pearson R:", pearsonr(y_pred_human_var, y_true_human_var)[0])
-    print("R² Score:", r2_score(y_true_human_var, y_pred_human_var))
 
 
     with open(file_name, "wb") as f:

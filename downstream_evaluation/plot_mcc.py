@@ -245,7 +245,7 @@ def get_mean_task_rank(data):
 
 if __name__ == '__main__':
     compare_group = get_for_all_compare_to_litereature
-    data_class = DATATYPE.BENCHMARK
+    data_class = DATATYPE.UTR_CLASS
     bootstrapped = True
 
     savedir = os.path.join(images_dir, 'benchmark')
