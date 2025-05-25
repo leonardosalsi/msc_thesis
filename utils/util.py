@@ -113,12 +113,12 @@ def shannon_entropy(sequence: str) -> float:
         return 0.0
 
     freqs = Counter(base for base in sequence if base in "ATCG")
-    informative_len = sum(freqs.values())
-    print(freqs)
-    if informative_len == 0:
+    total_bases = sum(freqs.values())
+
+    if total_bases == 0:
         return 0.0
 
-    probs = [count / informative_len for count in freqs.values()]
+    probs = [count / total_bases for count in freqs.values()]
     entropy = -sum(p * math.log2(p) for p in probs if p > 0)
     print(entropy)
     return entropy
@@ -133,8 +133,3 @@ def gc_content(sequence: str) -> float:
     full_len = sequence.count("A") + sequence.count("C") + sequence.count("T") + sequence.count("G")
     num_GC = sequence.count("G") + sequence.count("C")
     return num_GC / full_len
-
-if __name__ == '__main__':
-    text = "AACTGTCCNAGTGNCTTATAAACTGTCCNAGTGNCTTATAAACTGTCCNAGTGNCTTATAAACTGTCCNAGTGNCTTATA"
-    gc = gc_content(text)
-    print(gc)
