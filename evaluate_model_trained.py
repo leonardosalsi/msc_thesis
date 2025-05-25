@@ -82,14 +82,16 @@ def finetune_model_by_task_mcc(sample, args, device, task, timestamp):
     if args.pca:
         modules_to_save = ["pca_proj", "layernorm"]
 
-    peft_config = LoraConfig(
+    peft_config = IA3Config(
         task_type=TaskType.SEQ_CLS,
         inference_mode=False,
-        lora_alpha=32,
-        lora_dropout=0.1,
-        target_modules=["query", "value"],
+        #lora_alpha=32,
+        #lora_dropout=0.1,
+        target_modules=["query", "value","intermediate.dense", "output.dense"],
+        feedforward_modules=["intermediate.dense", "output.dense"],
         modules_to_save=modules_to_save
     )
+
 
     lora_classifier = get_peft_model(model, peft_config)
     lora_classifier.to(device)
@@ -213,9 +215,9 @@ def finetune_model_by_task_mcc(sample, args, device, task, timestamp):
 
 def get_output_dir(args):
     if args.task_id in [28]:
-        benchmark_dir = os.path.join(results_dir, f"class_5utr_lora")
+        benchmark_dir = os.path.join(results_dir, f"class_5utr")
     else:
-        benchmark_dir = os.path.join(results_dir, f"downstream_lora")
+        benchmark_dir = os.path.join(results_dir, f"downstream")
     os.makedirs(benchmark_dir, exist_ok=True)
     benchmark_dir = os.path.join(benchmark_dir, args.model_name)
     os.makedirs(benchmark_dir, exist_ok=True)
