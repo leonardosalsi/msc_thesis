@@ -229,7 +229,7 @@ def get_regresson_model(args, num_labels, device):
         if repo is None:
             raise ValueError(f"No model existing with {args.model_name}")
 
-        model = AutoModelFor.from_pretrained(
+        model = AutoModelForMaskedLM.from_pretrained(
             repo,
             cache_dir=models_cache_dir,
             num_labels=num_labels,

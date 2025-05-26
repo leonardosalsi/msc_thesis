@@ -53,10 +53,26 @@ def _mutate_sequence(seq, start, pos, ref, alt):
     local_pos = pos - start
     return seq[:local_pos] + alt + seq[local_pos + len(ref):]
 
+"""
+@article{RAYCHAUDHURI201157,
+title = {Mapping Rare and Common Causal Alleles for Complex Human Diseases},
+journal = {Cell},
+volume = {147},
+number = {1},
+pages = {57-69},
+year = {2011},
+issn = {0092-8674},
+doi = {https://doi.org/10.1016/j.cell.2011.09.011},
+url = {https://www.sciencedirect.com/science/article/pii/S0092867411010695},
+author = {Soumya Raychaudhuri},
+abstract = {Advances in genotyping and sequencing technologies have revolutionized the genetics of complex disease by locating rare and common variants that influence an individual's risk for diseases, such as diabetes, cancers, and psychiatric disorders. However, to capitalize on these data for prevention and therapies requires the identification of causal alleles and a mechanistic understanding for how these variants contribute to the disease. After discussing the strategies currently used to map variants for complex diseases, this Primer explores how variants may be prioritized for follow-up functional studies and the challenges and approaches for assessing the contributions of rare and common variants to disease phenotypes.}
+}
+"""
+
 def _get_label(af):
     if af >= 0.05:
         return 0
-    elif af <= 0.0001:
+    elif 0.00001 <= af < 0.01:
         return 1
     else:
         return None
@@ -77,7 +93,7 @@ def _process_sequences(args):
     seq_len = len(seq)
 
     for _, region_info in utr_group.iterrows():
-        start, end, strand = region_info["start"], region_info["end"], region_info["strand"]
+        start, end = region_info["start"], region_info["end"]
         reg_len = end - start + 1
         if reg_len > extend:
             continue

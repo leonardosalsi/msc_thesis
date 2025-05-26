@@ -64,10 +64,10 @@ def create_five_three_prime_bed_files(db):
     Separates UTR features into 5′ and 3′ UTRs based on their position
     relative to CDS regions within the same transcript.
 
-    - On the '+' strand:
+    - On the '+' strand (upstream):
         - UTRs before CDS = 5′ UTR
         - UTRs after CDS  = 3′ UTR
-    - On the '−' strand (reverse):
+    - On the '−' strand (downstream):
         - UTRs after CDS  = 5′ UTR
         - UTRs before CDS = 3′ UTR
     """

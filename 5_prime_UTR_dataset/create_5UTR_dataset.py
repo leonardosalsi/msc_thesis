@@ -17,7 +17,7 @@ Create UTR'5 Classification Dataset
 if __name__ == '__main__':
     length = 2000
     full = False
-    check_data = False
+    check_data = True
     include_likely = False
 
     full_class_dataset_filename = f"5_utr_classification_full"

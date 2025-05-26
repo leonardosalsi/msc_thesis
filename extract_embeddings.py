@@ -45,8 +45,6 @@ if __name__ == "__main__":
         if len(train_embeddings) > 0:
             with open(output_path, "wb") as f:
                 pickle.dump({
-                    "embeddings": np.vstack(embeddings),
-                    "meta": meta[layer],
                     "train_embeddings": np.vstack(train_embeddings[layer]),
                     "train_meta": train_meta[layer],
                     "test_embeddings": np.vstack(test_embeddings[layer]),

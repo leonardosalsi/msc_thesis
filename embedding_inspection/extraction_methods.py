@@ -133,20 +133,7 @@ def extract_region_embeddings_5_prime_UTR(args, device, dataset):
                 mut_embedding = mut_selected.mean(dim=0).cpu()
 
                 cos_similarity = F.cosine_similarity(ref_embedding.unsqueeze(0), mut_embedding.unsqueeze(0)).item()
-                dot_product = torch.dot(ref_embedding, mut_embedding).item()
-                ref_norm = F.normalize(ref_embedding.unsqueeze(0), dim=1)
-                mut_norm = F.normalize(mut_embedding.unsqueeze(0), dim=1)
-                dot_product_norm   = torch.dot(ref_norm.squeeze(), mut_norm.squeeze()).item()
                 pooled = mut_embedding.numpy()
-
-                all_embeddings[layer].append(pooled)
-                meta[layer].append({
-                    "label": batch["label"][j],
-                    "af": batch["af"][j],
-                    "cos_similarity": cos_similarity,
-                    "dot_product": dot_product,
-                    "dot_product_norm": dot_product_norm,
-                })
 
                 if split_set[j] == "train":
                     train_embeddings[layer].append(pooled)

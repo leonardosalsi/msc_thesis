@@ -36,8 +36,8 @@ def plot_benchmark_validity(data, savedir):
     ax_human.set_title("NT-HumanRef (500M)", loc="center")
     ax_human.set_ylim(0.4, 1)
     ax_human.set_xlim(0.4, 1)
-    ax_human.grid()
-    ax_human.plot([0, 1], [0, 1], "--", color="gray")
+    ax_human.grid(alpha=0.3)
+    ax_human.plot([0, 1], [0, 1], "--", color="gray", linewidth=0.5)
     ax_human.scatter(data_human['ref'], data_human['meas'], s=10, c='b', label='Reference')
     ax_human.set_xlabel("Reference MCC")
     ax_human.set_ylabel("Measured MCC")
@@ -58,8 +58,8 @@ def plot_benchmark_validity(data, savedir):
     ax_1000G.set_title("NT-1000G (500M)", loc="center")
     ax_1000G.set_ylim(0.4, 1)
     ax_1000G.set_xlim(0.4, 1)
-    ax_1000G.grid()
-    ax_1000G.plot([0, 1], [0, 1], "--", color="gray")
+    ax_1000G.grid(alpha=0.3)
+    ax_1000G.plot([0, 1], [0, 1], "--", color="gray", linewidth=0.5)
     ax_1000G.scatter(data_1000G['ref'], data_1000G['meas'], s=10, c='b', label='Reference')
     ax_1000G.set_xlabel("Reference MCC")
     ax_1000G.set_ylabel("")
@@ -106,11 +106,11 @@ def plot_downstream_results(data):
         task_results = data[task]
         task_alias = get_task_alias(task)
 
-        human_ref = task_results['ref_multi_species_untrained_500_human']
-        human_meas = task_results['default_multi_species_untrained_500_human']
+        human_ref = task_results['ref_multi_species_no_cont_500_human']
+        human_meas = task_results['default_multi_species_no_cont_500_human']
 
-        tg_ref = task_results['ref_multi_species_untrained_500_tg']
-        tg_meas = task_results['default_multi_species_untrained_500_tg']
+        tg_ref = task_results['ref_multi_species_no_cont_500_tg']
+        tg_meas = task_results['default_multi_species_no_cont_500_tg']
 
         ax = plt.subplot(gs[curr_y,curr_x])
         ax.set_ylim(0, 1)
@@ -136,10 +136,10 @@ def plot_downstream_results(data):
         ax.add_patch(human_var_rect)
 
         ax.bar(1, human_ref['mean'], 0.9, color=cmap(0.0))
-        ax.bar(2, human_meas['mean'], 0.9, yerr=human_meas['std'], capsize=2 ,color=cmap(0.33))
+        ax.bar(2, human_meas['mean'], 0.9, yerr=human_meas['std']*2, capsize=2 ,color=cmap(0.33))
         ax.bar(3, tg_ref['mean'], 0.9, color=cmap(0.66))
-        ax.bar(4, tg_meas['mean'], 0.9, yerr=tg_meas['std'], capsize=2, color=cmap(0.88))
-        ax.plot([2.5, 2.5], [0, 1], "--", color="black")
+        ax.bar(4, tg_meas['mean'], 0.9, yerr=tg_meas['std']*2, capsize=2, color=cmap(0.88))
+        ax.plot([2.5, 2.5], [0, 1], "--", color="black", linewidth=1)
 
 
         if  human_ref['mean'] < 0.49:
@@ -249,10 +249,10 @@ def get_result_vectors(data):
     ref_human = []
     meas_human = []
     for task in data:
-        ref_tg.append(data[task]['ref_multi_species_untrained_500_tg']['mean'])
-        meas_tg.append(data[task]['default_multi_species_untrained_500_tg']['mean'])
-        ref_human.append(data[task]['ref_multi_species_untrained_500_human']['mean'])
-        meas_human.append(data[task]['default_multi_species_untrained_500_human']['mean'])
+        ref_tg.append(data[task]['ref_multi_species_no_cont_500_tg']['mean'])
+        meas_tg.append(data[task]['default_multi_species_no_cont_500_tg']['mean'])
+        ref_human.append(data[task]['ref_multi_species_no_cont_500_human']['mean'])
+        meas_human.append(data[task]['default_multi_species_no_cont_500_human']['mean'])
 
     return {
         "human": {

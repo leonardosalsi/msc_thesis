@@ -77,19 +77,30 @@ def finetune_model_by_task_mcc(sample, args, device, task, timestamp):
 
     model, repo = get_classification_model(args, device, task['num_labels'])
 
-    """Employ LoRA """
+    """Employ PEFT """
     modules_to_save = None
     if args.pca:
         modules_to_save = ["pca_proj", "layernorm"]
 
-    peft_config = LoraConfig(
-        task_type=TaskType.SEQ_CLS,
-        inference_mode=False,
-        lora_alpha=32,
-        lora_dropout=0.1,
-        target_modules=["query", "value"],
-        modules_to_save=modules_to_save
-    )
+    if args.peft == "LoRA":
+        peft_config = LoraConfig(
+            task_type=TaskType.SEQ_CLS,
+            inference_mode=False,
+            lora_alpha=32,
+            lora_dropout=0.1,
+            target_modules=["query", "value"],
+            modules_to_save=modules_to_save
+        )
+    elif args.peft == "IA3":
+        peft_config = IA3Config(
+            task_type=TaskType.SEQ_CLS,
+            inference_mode=False,
+            target_modules=["query", "value", "intermediate.dense", "output.dense"],
+            feedforward_modules=["intermediate.dense", "output.dense"],
+            modules_to_save=modules_to_save
+        )
+    else:
+        raise f"PEFT {args.peft} is not supported, only use 'IA3' or 'LoRA'."
 
 
     lora_classifier = get_peft_model(model, peft_config)
@@ -237,6 +248,7 @@ class EvalConfig:
     pca: bool = False
     pca_embeddings: Optional[str] = None
     pca_dims: Optional[int] = None
+    peft: Optional[str] = 'IA3'
 
 def parse_args():
     parser = ArgumentParser(EvalConfig)

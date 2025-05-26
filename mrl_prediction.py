@@ -1,9 +1,11 @@
 import os
 from dataclasses import dataclass
 import pickle
+from typing import Optional
+
 from argparse_dataclass import ArgumentParser
 from datasets import load_from_disk
-from peft import LoraConfig, TaskType, get_peft_model
+from peft import LoraConfig, TaskType, get_peft_model, IA3Config
 from scipy.stats import pearsonr
 from sklearn.metrics import r2_score
 from transformers import TrainingArguments, Trainer
@@ -22,10 +24,16 @@ class MRLConfig:
     pca_dims: int = None
     pca_embeddings: str = None
     map_cache_dir: str = None
+    peft: Optional[str] = 'IA3'
 
 def parse_args():
     parser = ArgumentParser(MRLConfig)
     return parser.parse_args()
+
+def compute_pearsonr(eval_pred):
+    preds = eval_pred.predictions
+    references = eval_pred.label_ids
+    return pearsonr(references, preds)[0]
 
 if __name__ == "__main__":
     args = parse_args()
@@ -83,19 +91,33 @@ if __name__ == "__main__":
         learning_rate=2e-4,
         logging_dir=logs_dir,
         save_total_limit=2,
-        bf16=True,
         report_to="none",
     )
 
-    peft_config = LoraConfig(
-        task_type=TaskType.SEQ_CLS,
-        lora_alpha=32,
-        lora_dropout=0.1,
-        bias="none",
-        target_modules=[
-            "query", "key", "value"
-        ],
-    )
+    """Employ PEFT """
+    modules_to_save = None
+    if args.pca:
+        modules_to_save = ["pca_proj", "layernorm"]
+
+    if args.peft == "LoRA":
+        peft_config = LoraConfig(
+            task_type=TaskType.SEQ_CLS,
+            inference_mode=False,
+            lora_alpha=32,
+            lora_dropout=0.1,
+            target_modules=["query", "value"],
+            modules_to_save=modules_to_save
+        )
+    elif args.peft == "IA3":
+        peft_config = IA3Config(
+            task_type=TaskType.SEQ_CLS,
+            inference_mode=False,
+            target_modules=["query", "value", "intermediate.dense", "output.dense"],
+            feedforward_modules=["intermediate.dense", "output.dense"],
+            modules_to_save=modules_to_save
+        )
+    else:
+        raise f"PEFT {args.peft} is not supported, only use 'IA3' or 'LoRA'."
 
     model = get_peft_model(model, peft_config)
 

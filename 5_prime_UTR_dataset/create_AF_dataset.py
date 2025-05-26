@@ -18,28 +18,6 @@ def load_or_generate(get_fn, filename, length=None, return_af=False):
         print(f"Generating dataset: {filepath}")
         return get_from_gnomAD.get_generator(length, return_af)
 
-"""
-@article{RAYCHAUDHURI201157,
-title = {Mapping Rare and Common Causal Alleles for Complex Human Diseases},
-journal = {Cell},
-volume = {147},
-number = {1},
-pages = {57-69},
-year = {2011},
-issn = {0092-8674},
-doi = {https://doi.org/10.1016/j.cell.2011.09.011},
-url = {https://www.sciencedirect.com/science/article/pii/S0092867411010695},
-author = {Soumya Raychaudhuri},
-abstract = {Advances in genotyping and sequencing technologies have revolutionized the genetics of complex disease by locating rare and common variants that influence an individual's risk for diseases, such as diabetes, cancers, and psychiatric disorders. However, to capitalize on these data for prevention and therapies requires the identification of causal alleles and a mechanistic understanding for how these variants contribute to the disease. After discussing the strategies currently used to map variants for complex diseases, this Primer explores how variants may be prioritized for follow-up functional studies and the challenges and approaches for assessing the contributions of rare and common variants to disease phenotypes.}
-}
-"""
-def _get_label(af):
-    if af >= 0.05:
-        return 0
-    elif 0.00001 <= af < 0.01:
-        return 1
-    else:
-        return None
 
 
 """
@@ -75,14 +53,14 @@ if __name__ == '__main__':
             dataset = load_from_disk(
                 os.path.join(datasets_cache_dir, full_af_dataset_filename))
 
-        dataset = dataset.map(lambda x: {"label": _get_label(x["af"])})
+        dataset = dataset.map(lambda x: {"label": get_from_gnomAD._get_label(x["af"])})
         dataset = dataset.filter(lambda x: x["label"] != None)
 
         rare = dataset.filter(lambda x: x["label"] == 1).shuffle().select(range(7045))
         common = dataset.filter(lambda x: x["label"] == 0)
 
-        rare_split = rare.train_test_split(test_size=0.20)
-        common_split = common.train_test_split(test_size=0.20)
+        rare_split = rare.train_test_split(test_size=0.40)
+        common_split = common.train_test_split(test_size=0.40)
 
         rare_train = rare_split["train"]
         rare_test = rare_split["test"]
