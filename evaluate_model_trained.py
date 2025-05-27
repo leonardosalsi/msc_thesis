@@ -249,6 +249,7 @@ class EvalConfig:
     pca_embeddings: Optional[str] = None
     pca_dims: Optional[int] = None
     peft: Optional[str] = 'IA3'
+    random_init: Optional[bool] = False
 
 def parse_args():
     parser = ArgumentParser(EvalConfig)
