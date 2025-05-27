@@ -178,7 +178,7 @@ def get_classification_model(args, device, num_labels=2, regression=False):
 def get_emb_model(args, device):
     repo = None
     num_params = None
-    if 'untrained' in args.model_name:
+    if 'no_cont' in args.model_name:
         match = re.search(r'\d+', args.model_name)
         if match:
             number = int(match.group())
@@ -226,7 +226,7 @@ def get_emb_model(args, device):
 
 def get_regresson_model(args, num_labels, device):
     repo = None
-    if 'untrained' in args.model_name:
+    if 'no_cont' in args.model_name:
         match = re.search(r'\d+', args.model_name)
         if match:
             number = int(match.group())
