@@ -225,9 +225,9 @@ def finetune_model_by_task_mcc(sample, args, device, task, timestamp):
 
 def get_output_dir(args):
     if args.task_id in [28]:
-        benchmark_dir = os.path.join(results_dir, f"class_5utr_lora")
+        benchmark_dir = os.path.join(results_dir, f"class_5utr")
     else:
-        benchmark_dir = os.path.join(results_dir, f"downstream_lora")
+        benchmark_dir = os.path.join(results_dir, f"downstream")
     os.makedirs(benchmark_dir, exist_ok=True)
     benchmark_dir = os.path.join(benchmark_dir, args.model_name)
     os.makedirs(benchmark_dir, exist_ok=True)
