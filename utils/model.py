@@ -83,7 +83,9 @@ def get_classification_model(args, device, num_labels=2, regression=False):
                     local_files_only=True,
                     trust_remote_code=True,
                 )
-                model = AutoModelForSequenceClassification.from_config(config, problem_type='regression', num_labels=1)
+                config.num_labels = 1
+                config.problem_type = "regression"
+                model = AutoModelForSequenceClassification.from_config(config)
             else:
                 model = AutoModelForSequenceClassification.from_pretrained(
                     repo,
@@ -101,7 +103,8 @@ def get_classification_model(args, device, num_labels=2, regression=False):
                     local_files_only=True,
                     trust_remote_code=True,
                 )
-                model = AutoModelForSequenceClassification.from_config(config, num_labels=num_labels)
+                config.num_labels = num_labels
+                model = AutoModelForSequenceClassification.from_config(config)
             else:
                 model = AutoModelForSequenceClassification.from_pretrained(
                     repo,
