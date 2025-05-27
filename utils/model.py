@@ -54,7 +54,7 @@ def get_model(args, device):
 
 def get_classification_model(args, device, num_labels=2, regression=False):
     repo = None
-    if 'untrained' in args.model_name:
+    if 'no_cont' in args.model_name:
         match = re.search(r'\d+', args.model_name)
         if match:
             number = int(match.group())
@@ -76,22 +76,40 @@ def get_classification_model(args, device, num_labels=2, regression=False):
             raise ValueError(f"No model existing with {args.model_name}")
 
         if regression:
-            model = AutoModelForSequenceClassification.from_pretrained(
-                repo,
-                cache_dir=models_cache_dir,
-                num_labels=1,
-                trust_remote_code=True,
-                local_files_only=True,
-                problem_type="regression"
-            )
+            if args.random_init:
+                config = EsmConfig.from_pretrained(
+                    repo,
+                    cache_dir=models_cache_dir,
+                    local_files_only=True,
+                    trust_remote_code=True,
+                )
+                model = AutoModelForSequenceClassification.from_config(config, problem_type='regression', num_labels=1)
+            else:
+                model = AutoModelForSequenceClassification.from_pretrained(
+                    repo,
+                    cache_dir=models_cache_dir,
+                    num_labels=1,
+                    trust_remote_code=True,
+                    local_files_only=True,
+                    problem_type="regression"
+                )
         else:
-            model = AutoModelForSequenceClassification.from_pretrained(
-                repo,
-                cache_dir=models_cache_dir,
-                num_labels=num_labels,
-                trust_remote_code=True,
-                local_files_only=True,
-            )
+            if args.random_init:
+                config = EsmConfig.from_pretrained(
+                    repo,
+                    cache_dir=models_cache_dir,
+                    local_files_only=True,
+                    trust_remote_code=True,
+                )
+                model = AutoModelForSequenceClassification.from_config(config, num_labels=num_labels)
+            else:
+                model = AutoModelForSequenceClassification.from_pretrained(
+                    repo,
+                    cache_dir=models_cache_dir,
+                    num_labels=num_labels,
+                    trust_remote_code=True,
+                    local_files_only=True,
+                )
 
     else:
         model_dir = os.path.join(pretrained_models_cache_dir, f"{args.model_name}", f"checkpoint-{args.checkpoint}")
