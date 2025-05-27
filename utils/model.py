@@ -97,13 +97,16 @@ def get_classification_model(args, device, num_labels=2, regression=False):
                 )
         else:
             if args.random_init:
+                print("HERE")
                 config = EsmConfig.from_pretrained(
                     repo,
                     cache_dir=models_cache_dir,
                     local_files_only=True,
                     trust_remote_code=True,
                 )
+                print(config)
                 config.num_labels = num_labels
+                print(config)
                 model = AutoModelForSequenceClassification.from_config(config)
             else:
                 model = AutoModelForSequenceClassification.from_pretrained(
