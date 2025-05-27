@@ -1,26 +1,38 @@
-from datasets import load_dataset, DatasetDict
+import json
+
+from datasets import load_dataset, DatasetDict, Dataset
 import os
+
+from config import cache_dir
+
+
+
 
 if __name__ == "__main__":
 
     json_dir = "/cluster/scratch/salsil/datasets/logan_1200"
     json_files = [os.path.join(json_dir, f) for f in os.listdir(json_dir) if f.endswith(".json")]
 
-    dataset_full = load_dataset(
-        "json",
-        data_files=json_files,
-        block_size=1_000_000,  # ← add this!
-        cache_dir="/cluster/scratch/salsil/.cache/upload",
-    )
+    validation_size = 500000
 
-    # now split
-    split = dataset_full["train"].train_test_split(
-        test_size=500_000,  # or fraction: test_size=0.1
-        seed=101
-    )
+    def gen():
+        for file in json_files:
+            with open(file, 'r') as f:
+                data = json.load(f)
+                for item in data:
+                    yield {'sequence': item}
+
+    generator_cache_dir = os.path.join(cache_dir, "generator")
+    os.makedirs(generator_cache_dir, exist_ok=True)
+
+    dataset = Dataset.from_generator(gen, cache_dir=generator_cache_dir)
+    dataset = dataset.shuffle(seed=101)
+    dataset_train = dataset.select(range(validation_size, len(dataset)))
+    dataset_validation = dataset.select(range(validation_size))
+
     ds = DatasetDict({
-        "train": split["train"],
-        "validation": split["test"],
+        'train': dataset_train,
+        'validation': dataset_validation,
     })
 
     ds.push_to_hub(
