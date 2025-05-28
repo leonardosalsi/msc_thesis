@@ -23,20 +23,22 @@ if __name__ == "__main__":
     timestamp = print_args(args, "EMBEDDING EXTRACTION ARGUMENTS")
     device = get_device()
     dataset = load_from_disk(args.dataset_path)
-
+    out_folder = ""
     if 'genomic_regions_annotated' in args.dataset_path:
         extraction_function = extract_region_embeddings_genomic_elements
+        out_folder = 'genomic_regions_annotated'
     elif '5_utr_af_prediction' in args.dataset_path:
         extraction_function = extract_region_embeddings_5_prime_UTR
+        out_folder = '5_utr_af_prediction'
     else:
-        raise ValueError(f"Dataset {dataset.info.dataset_name} not supported")
+        raise ValueError(f"No compatible dataset found in given path")
 
     dataset = dataset.shuffle()
 
     train_embeddings, train_meta, test_embeddings, test_meta = extraction_function(args, device, dataset)
     embeddings_dir = os.path.join(results_dir, 'embeddings')
     os.makedirs(embeddings_dir, exist_ok=True)
-    dataset_emb_dir = os.path.join(embeddings_dir, dataset.info.dataset_name)
+    dataset_emb_dir = os.path.join(embeddings_dir, out_folder)
     os.makedirs(dataset_emb_dir, exist_ok=True)
     model_dir = os.path.join(dataset_emb_dir, args.model_name)
     os.makedirs(model_dir, exist_ok=True)
