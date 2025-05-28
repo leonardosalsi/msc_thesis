@@ -8,17 +8,7 @@ import torch.nn.functional as F
 def _get_kmer_offsets(sequence: str, kmer: int = 6):
     return [(i, i + kmer) for i in range(0, len(sequence) - kmer + 1, kmer)]
 
-def extract_region_embeddings_genomic_elements(args, device, dataset):
-    model, repo, num_params = get_emb_model(args, device)
-    model.eval()
-    tokenizer = get_eval_tokenizer(args, repo)
-    L = model.config.num_hidden_layers
-    print(dataset.features)
-    layers = sorted(set([0, int(L * 0.5), int(L -1)]))
-    if num_params <= 100:
-        batch_size = 32
-    else:
-        batch_size = 16
+def _inner_extraction_function(model, dataset, tokenizer, device, layers, batch_size):
     all_embeddings = {layer: [] for layer in layers}
     meta = {layer: [] for layer in layers}
 
@@ -48,7 +38,8 @@ def extract_region_embeddings_genomic_elements(args, device, dataset):
                 ]
 
                 if not token_indices:
-                    print(f"[WARN] No valid overlapping tokens for sample {i + j}, skipping. Len: {len(all_embeddings)}")
+                    print(
+                        f"[WARN] No valid overlapping tokens for sample {i + j}, skipping. Len: {len(all_embeddings)}")
                     continue
 
                 selected = embeddings[j, token_indices, :]
@@ -62,7 +53,28 @@ def extract_region_embeddings_genomic_elements(args, device, dataset):
                     "GC_full": batch["seq_gc"][j]
                 })
 
-    return all_embeddings, meta, [], [], [], []
+    return all_embeddings, meta
+
+
+def extract_region_embeddings_genomic_elements(args, device, dataset):
+    model, repo, num_params = get_emb_model(args, device)
+    model.eval()
+    tokenizer = get_eval_tokenizer(args, repo)
+    L = model.config.num_hidden_layers
+
+    dataset_train = dataset['train']
+    dataset_test = dataset['test']
+
+    layers = sorted(set([0, int(L * 0.5), int(L -1)]))
+    if num_params <= 100:
+        batch_size = 32
+    else:
+        batch_size = 16
+
+    train_embeddings, train_meta = _inner_extraction_function(model, dataset_train, tokenizer, device, layers, batch_size)
+    test_embeddings, test_meta = _inner_extraction_function(model, dataset_test, tokenizer, device, layers, batch_size)
+
+    return train_embeddings, train_meta, test_embeddings, test_meta
 
 def extract_region_embeddings_5_prime_UTR(args, device, dataset):
 
@@ -83,10 +95,9 @@ def extract_region_embeddings_5_prime_UTR(args, device, dataset):
     else:
         batch_size = 8
 
-    all_embeddings = {layer: [] for layer in layers}
     train_embeddings = {layer: [] for layer in layers}
     test_embeddings = {layer: [] for layer in layers}
-    meta = {layer: [] for layer in layers}
+
     train_meta = {layer: [] for layer in layers}
     test_meta = {layer: [] for layer in layers}
 
@@ -124,7 +135,7 @@ def extract_region_embeddings_5_prime_UTR(args, device, dataset):
                 ]
 
                 if not token_indices:
-                    print(f"[WARN] No valid overlapping tokens for sample {i + j}, skipping. Len: {len(all_embeddings)}")
+                    print(f"[WARN] No valid overlapping tokens for sample {i + j}, skipping.")
                     continue
 
                 ref_selected = embeddings[j, token_indices, :]
@@ -150,4 +161,4 @@ def extract_region_embeddings_5_prime_UTR(args, device, dataset):
                         "cos_similarity": cos_similarity,
                     })
 
-    return all_embeddings, meta, train_embeddings, train_meta, test_embeddings, test_meta
+    return train_embeddings, train_meta, test_embeddings, test_meta

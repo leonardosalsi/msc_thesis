@@ -139,13 +139,13 @@ def visualize_mcc_across_tasks(data, filename_base, data_class):
     ax.set_yticks(np.arange(len(model_names)))
     ax.set_yticklabels(clear_names, fontsize=8)
     ax.set_xlim(0, 1)
-    ax.set_xlabel("Mean MCC across Tasks", fontsize=12)
+    ax.set_xlabel("MCC", fontsize=12)
 
     title = ""
     if data_class == DATATYPE.UTR_CLASS:
         title = "MCC for 5'UTR Benign/Pathogenic Classification"
     elif data_class == DATATYPE.BENCHMARK:
-        title = "Mean MCC across Tasks"
+        title = "MCC"
 
     #ax.set_title(title, fontsize=18, pad=10, loc="center")
     ax.grid(axis='x')
@@ -261,7 +261,7 @@ def get_mean_task_rank(data):
 
 if __name__ == '__main__':
     compare_group = get_for_all_compare_to_litereature
-    data_class = DATATYPE.BENCHMARK
+    data_class = DATATYPE.UTR_CLASS
     bootstrapped = True
 
     savedir = os.path.join(images_dir, 'benchmark')

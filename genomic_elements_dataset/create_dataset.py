@@ -1,17 +1,18 @@
 import random
 import os
-from datasets import Dataset
+from datasets import Dataset, DatasetDict
 from tqdm import tqdm
 import pysam
 from config import generated_datasets_dir
 from genomic_elements_dataset.generate_bed_files import get_files
 from utils.util import gc_content
+from collections import Counter
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 FASTA_PATH = os.path.join(base_dir, "data/Homo_sapiens.GRCh38.dna.primary_assembly.fa")
 EXTEND_TO_NORM = True
 SEQUENCE_LENGTH = 6000
-SAMPLES_PER_REGION = 10000
+SAMPLES_PER_REGION = 20000
 MAX_SEQUENCE_LENGTH = 6000
 
 def parse_bed_file(file_path):
@@ -134,5 +135,20 @@ if __name__ == "__main__":
             print(f"Collected {sampled} sequences for {label}")
 
     dataset = Dataset.from_generator(gen)
-    dataset.info.dataset_name = f'genomic_elements'
-    dataset.save_to_disk(os.path.join(generated_datasets_dir, f'genomic_elements'))
+    dataset = dataset.class_encode_column("label")
+
+    split = dataset.train_test_split(
+        test_size=0.5,
+        seed=42,
+        stratify_by_column="label"
+    )
+
+    train_ds = split["train"]
+    test_ds = split["test"]
+
+    dataset = DatasetDict({
+        "train": train_ds,
+        "test": test_ds
+    })
+
+    dataset.save_to_disk(os.path.join(generated_datasets_dir, f'genomic_regions_annotated'))

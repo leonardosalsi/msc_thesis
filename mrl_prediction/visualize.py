@@ -52,7 +52,7 @@ def load_model_results(model_name, show_framepool_50, show_framepool_100, show_o
 def visualize_mrl(model_name, show_framepool_50=False, show_framepool_100=False, show_optimus_50=False, show_optimus_100=False):
     class_dir = os.path.join(images_dir, 'mrl_prediction')
     os.makedirs(class_dir, exist_ok=True)
-    figure_path = os.path.join(class_dir, f"{model_name}.png")
+    figure_path = os.path.join(class_dir, f"{model_name}.pdf")
 
     models = load_model_results(model_name, show_framepool_50, show_framepool_100, show_optimus_50, show_optimus_100)
 
@@ -265,6 +265,7 @@ def visualize_mrl(model_name, show_framepool_50=False, show_framepool_100=False,
             clip_on=False
         )
         ax_human_var.add_patch(rect_model_name)
+        print(f"{name}: R_random_fixed = {R_random_fixed:.3f}    R_random_var = {R_random_var:.3f}    R_human_fixed = {R_human_fixed:.3f}    R_human_var = {R_human_var:.3f}")
 
     cbar_ax = fig.add_axes([0.94, 0.3, 0.02, 0.4])  # [left, bottom, width, height]
     cbar = fig.colorbar(hb, cax=cbar_ax)
@@ -290,9 +291,9 @@ def visualize_mrl(model_name, show_framepool_50=False, show_framepool_100=False,
 
 if __name__ == "__main__":
     show_framepool_50 = True
-    show_framepool_100 = True
-    show_optimus_50 = True
-    show_optimus_100 = True
+    show_framepool_100 = False
+    show_optimus_50 = False
+    show_optimus_100 = False
     for model in tqdm(MODELS):
         visualize_mrl(
             model['name'],

@@ -1,8 +1,11 @@
 import os
+from pprint import pprint
+
 import numpy as np
 from matplotlib import gridspec, patches
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score, precision_recall_curve
 import pickle
 import pandas as pd
@@ -20,13 +23,12 @@ COLORMAP = 'viridis'
 def load_pkl(pkl_path):
     with open(pkl_path, "rb") as f:
         data = pickle.load(f)
-    embeddings = data["embeddings"]
-    meta_df = pd.DataFrame(data["meta"])
+
     train_embeddings = data["train_embeddings"]
     train_meta_df = pd.DataFrame(data["train_meta"])
     test_embeddings = data["test_embeddings"]
     test_meta_df = pd.DataFrame(data["test_meta"])
-    return embeddings, meta_df, train_embeddings, train_meta_df, test_embeddings, test_meta_df
+    return train_embeddings, train_meta_df, test_embeddings, test_meta_df
 
 
 
@@ -56,7 +58,7 @@ def visualize_embedding_predictions(
 
     for i, file in enumerate(file_list):
         layer_num = int(file.split("layer_")[-1].split(".")[0])
-        _, meta_df, train_embeddings, train_meta_df, test_embeddings, test_meta_df = load_pkl(file)
+        train_embeddings, train_meta_df, test_embeddings, test_meta_df = load_pkl(file)
 
         scaler = StandardScaler()
         train_embeddings_scaled = scaler.fit_transform(train_embeddings)
@@ -66,14 +68,13 @@ def visualize_embedding_predictions(
         X_2d = reducer.fit_transform(embeddings_scaled)
         X_2d_test = X_2d[len(train_embeddings_scaled):]
 
-        y_true = meta_df["label"]
         train_y_true = train_meta_df["label"]
         test_y_true = test_meta_df["label"]
 
-        precision_zero_shot, recall_zero_shot, _ = precision_recall_curve(y_true, 1  - meta_df["cos_similarity"])
-        ap_zero_shot = average_precision_score(y_true, 1  - meta_df["cos_similarity"])
+        precision_zero_shot, recall_zero_shot, _ = precision_recall_curve(test_y_true, 1  - test_meta_df["cos_similarity"])
+        ap_zero_shot = average_precision_score(test_y_true, 1  - test_meta_df["cos_similarity"])
 
-        model = RandomForestClassifier()
+        model = LogisticRegression(max_iter=5_000, solver='liblinear')
         model.fit(train_embeddings_scaled, train_y_true)
 
         y_prob = model.predict_proba(test_embeddings_scaled)[:,1]
@@ -198,7 +199,7 @@ def visualize_embedding_predictions(
     plt.show()
 
 if __name__ == "__main__":
-    embeddings_folder = '/shared/data/embeddings/5_utr_6000'
+    embeddings_folder = '/shared/data/embeddings/5_utr_af_prediction/'
 
     for model in tqdm(MODELS):
         model_name = model['name']
