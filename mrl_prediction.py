@@ -86,7 +86,7 @@ if __name__ == "__main__":
         save_strategy="epoch",
         metric_for_best_model="eval_loss",
         per_device_train_batch_size=64,
-        per_device_eval_batch_size=128,
+        per_device_eval_batch_size=64,
         load_best_model_at_end=True,
         greater_is_better=False,
         num_train_epochs=5,
