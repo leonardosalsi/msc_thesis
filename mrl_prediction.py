@@ -41,6 +41,12 @@ if __name__ == "__main__":
     timestamp = print_args(args, "LoRA FINETUNE & TEST MRL ARGUMENTS")
     device = get_device()
 
+    pred_folder = os.path.join(results_dir, 'mrl_predictions')
+    os.makedirs(pred_folder, exist_ok=True)
+    file_name = os.path.join(pred_folder, f"{args.model_name}.pkl")
+    if os.path.exists(file_name):
+        exit()
+
     if args.map_cache_dir:
         os.environ["HF_DATASETS_CACHE"] = args.map_cache_dir
 
@@ -150,9 +156,7 @@ if __name__ == "__main__":
     y_pred_human_var = preds_human_var.predictions.reshape(-1)
     y_true_human_var = preds_human_var.label_ids
 
-    pred_folder = os.path.join(results_dir, 'mrl_predictions')
-    os.makedirs(pred_folder, exist_ok=True)
-    file_name = os.path.join(pred_folder, f"{args.model_name}.pkl")
+
 
     print("[RANDOM] Fixed length test set:")
     print("Pearson R:", pearsonr(y_pred_random_fixed, y_true_random_fixed)[0])
