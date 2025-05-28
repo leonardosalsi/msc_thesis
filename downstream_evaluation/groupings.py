@@ -386,6 +386,23 @@ def get_for_reference_compare(type: DATATYPE):
     elif type == DATATYPE.UTR_CLASS:
         raise Exception("No UTR class results for reference comparison.")
 
+def get_for_validation_compare(type: DATATYPE):
+    group = [
+        'ref_multi_species_no_cont_500_human',
+        'ref_multi_species_no_cont_500_tg',
+        'default_multi_species_no_cont_500_tg',
+        'default_multi_species_no_cont_500_human',
+        'default_multi_species_no_cont_random_init_500_tg',
+        'default_multi_species_no_cont_random_init_500_human',
+    ]
+    filename = 'compare_logan'
+
+    if type == DATATYPE.TRAINING_CURVES:
+        raise Exception("No training curves for reference comparison.")
+    elif type == DATATYPE.BENCHMARK:
+        return _collect_benchmark_data(group, True), filename
+    elif type == DATATYPE.UTR_CLASS:
+        raise Exception("No UTR class results for reference comparison.")
 
 def get_for_pca_embedding_compare(type: DATATYPE):
     group = [

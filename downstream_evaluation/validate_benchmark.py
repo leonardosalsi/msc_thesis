@@ -10,7 +10,7 @@ from sklearn.metrics import matthews_corrcoef
 
 from downstream_evaluation.groupings import get_task_alias, get_model_alias_for_downstream, DATATYPE, \
     get_for_all_compare_to_litereature, get_for_all_compare, get_for_ewc_compare, get_for_best_logan_compare, \
-    get_for_context_length_compare, get_for_reference_compare
+    get_for_context_length_compare, get_for_reference_compare, get_for_validation_compare
 from config import results_dir, images_dir
 
 TASK_ORDER = [
@@ -301,7 +301,7 @@ def prepare_data_for_visualization(file_lists, bootstrapped=False):
 
 
 if __name__ == '__main__':
-    compare_group = get_for_reference_compare
+    compare_group = get_for_validation_compare
     data_class = DATATYPE.BENCHMARK
     bootstrapped = True
 
