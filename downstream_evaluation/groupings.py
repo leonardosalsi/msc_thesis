@@ -13,25 +13,6 @@ class DATATYPE(Enum):
     BENCHMARK = 2
     UTR_CLASS = 3
 
-def get_model_alias_for_downstream(model_name):
-    for m in MODELS:
-        if m['name'] == model_name:
-            tokenizer = 'n.o. 6-mer, ' if m['tokenizer'] == 'default' else 'overlapping, '
-            context = '1kb' if m['context'] == '1' else '2kb'
-            dataset = 'multi-species, ' if m['dataset'] == 'multi_species' else 'logan, '
-            ewc = f'ewc-lambda={m["ewc_lambda"]}, ' if m['ewc'] else ''
-            pca = f'pca-dim={m["pca_dim"]}:{m["pca_embed"]}, ' if m['pca'] else ''
-            sharon = f'sharon={m["sharon"]}, ' if m['sharon'] else ''
-            gc = f'gc={m["gc"]}, ' if m['gc'] else ''
-            return f'{tokenizer}{context}{dataset}{ewc}{pca}{sharon}{gc}'.rstrip(', ')
-    return None
-
-def get_model_entry(model_name):
-    for m in MODELS:
-        if m['name'] == model_name:
-            return m
-    return None
-
 def get_task_alias(task_name):
     for task in TASK_DEFINITIONS:
         if task['name'] == task_name:
@@ -81,12 +62,12 @@ def get_utr_class_data(name, baseline=False):
     return file_paths
 
 def check_model_existence():
-    for m in MODELS:
-        model_path = os.path.join(PRETRAINED_MODEL_DIR, m['name'])
+    for model_name in MODELS:
+        model_path = os.path.join(PRETRAINED_MODEL_DIR,model_name)
         if not os.path.exists(model_path):
-            print(f"Model {m['name']} is not available.")
+            print(f"Model {model_name} is not available.")
         else:
-            print(f"✅ Model {m['name']} is available.")
+            print(f"✅ Model {model_name} is available.")
 
 def _collect_benchmark_data(group, baseline=False):
     data = {}
@@ -149,49 +130,6 @@ def get_for_tokenization_compare(type: DATATYPE):
         return _collect_benchmark_data(group), filename
     elif type == DATATYPE.UTR_CLASS:
         return _collect_utr_class_data(group), filename
-
-MODEL_DICT = {
-    'default_multi_species_no_cont': 'NT-50M (no continual)',
-    'default_multi_species_no_cont_100': 'NT-100M (no continual)',
-    'default_multi_species_no_cont_250': 'NT-250M (no continual)',
-    'default_multi_species_no_cont_500': 'NT-500M (no continual)',
-    'default_multi_species': 'NT-50M (no overlap, multispecies)',
-    'default_multi_species_2kb': 'NT-50M (no overlap, multispecies, 2k ctx.)',
-    'overlap_multi_species': 'NT-50M (overlap, multispecies)',
-    'overlap_multi_species_2kb': 'NT-50M (overlap, multispecies, 2k ctx.)',
-    'overlap_logan_no_ewc': 'NT-50M (overlap, logan, no EWC)',
-    'overlap_logan_ewc_0_5': 'NT-50M (overlap, logan, EWC 0.5)',
-    'overlap_logan_ewc_1': 'NT-50M (overlap, logan, EWC 1)',
-    'overlap_logan_ewc_2': 'NT-50M (overlap, logan, EWC 2)',
-    'overlap_logan_ewc_5': 'NT-50M (overlap, logan, EWC 5)',
-    'overlap_logan_ewc_10': 'NT-50M (overlap, logan, EWC 10)',
-    'overlap_logan_ewc_25': 'NT-50M (overlap, logan, EWC 25)',
-    'default_multi_species_sh_gc': 'NT-50M (no overlap, multispecies, GC & Shannon)',
-    'default_multi_species_2kb_sh_gc': 'NT-50M (no overlap, multispecies, GC & Shannon, 2k ctx.)',
-    'overlap_multi_species_sh_gc': 'NT-50M (overlap, multispecies, GC & Shannon)',
-    'overlap_multi_species_2kb_sh_gc': 'NT-50M (overlap, multispecies, GC & Shannon, 2k ctx.)',
-    'overlap_multi_species_pca_cls_256': 'NT-50M (overlap, multispecies, contrastive CLS)',
-    'overlap_multi_species_pca_mean_256': 'NT-50M (overlap, multispecies, contrastive mean-pool)',
-    'default_logan_no_ewc': 'NT-50M (no overlap, logan, no EWC)',
-    'default_logan_ewc_0_5': 'NT-50M (no overlap, logan, EWC 0.5)',
-    'default_logan_ewc_1': 'NT-50M (no overlap, logan, EWC 1)',
-    'default_logan_ewc_2': 'NT-50M (no overlap, logan, EWC 2)',
-    'default_logan_ewc_5': 'NT-50M (no overlap, logan, EWC 5)',
-    'default_logan_ewc_10': 'NT-50M (no overlap, logan, EWC 10)',
-    'default_logan_ewc_25': 'NT-50M (no overlap, logan, EWC 25)',
-    'default_multi_species_pca_cls_256': 'NT-50M (no overlap, multispecies, contrastive CLS)',
-    'default_multi_species_pca_mean_256': 'NT-50M (no overlap, multispecies, contrastive mean-pool)',
-    'default_logan_ewc_5_2kb': 'NT-50M (no overlap, logan, EWC 5, 2k ctx.)',
-    'overlap_logan_ewc_5_pca_cls_256': 'NT-50M (overlap, logan, EWC 5, contrastive CLS)',
-    'overlap_logan_ewc_5_pca_mean_256': 'NT-50M (overlap, logan, EWC 5, contrastive mean-pool)',
-    'default_logan_ewc_5_pca_cls_256': 'NT-50M (no overlap, logan, EWC 5, contrastive CLS)',
-    'default_logan_ewc_5_pca_mean_256': 'NT-50M (no overlap, logan, EWC 5, contrastive mean-pool)',
-    'default_logan_ewc_5_sh_gc':  'NT-50M (no overlap, logan, EWC 5, GC & Shannon)',
-    'default_logan_ewc_5_2kb_sh_gc':  'NT-50M (no overlap, logan, EWC 5, GC & Shannon, 2k ctx.)',
-    'overlap_logan_ewc_5_sh_gc':  'NT-50M (overlap, logan, EWC 5, GC & Shannon)',
-    'overlap_logan_ewc_5_2kb_sh_gc':  'NT-50M (overlap, logan, EWC 5, GC & Shannon, 2k ctx.)',
-    'overlap_logan_ewc_5_2kb': 'NT-50M (overlap, logan, EWC 5, 2k ctx.)'
-}
 
 def get_for_all_compare_to_litereature(type: DATATYPE):
     group = [
@@ -442,8 +380,3 @@ def get_for_interesting_compare(type: DATATYPE):
         return _collect_benchmark_data(group), filename
     elif type == DATATYPE.UTR_CLASS:
         return _collect_utr_class_data(group), filename
-
-if __name__ == "__main__":
-    check_model_existence()
-    for m in MODELS:
-        print(f"MODEL={m['name']} sh evaluate_trained.sh")

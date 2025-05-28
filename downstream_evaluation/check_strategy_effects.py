@@ -3,9 +3,9 @@ from enum import Enum
 import numpy as np
 from matplotlib import pyplot as plt, gridspec, patches
 from config import images_dir
-from downstream_evaluation.groupings import MODEL_DICT, _collect_benchmark_data
+from downstream_evaluation.groupings import _collect_benchmark_data
 from downstream_evaluation.plot_mcc import prepare_data_for_visualization
-from utils.model_definitions import TASK_GROUPS, get_task_by_name
+from utils.model_definitions import TASK_GROUPS, get_task_by_name, MODELS
 
 SAVEDIR = os.path.join(images_dir, 'downstream_evaluation')
 os.makedirs(SAVEDIR, exist_ok=True)
@@ -125,8 +125,8 @@ def calc_percentual_change_from_a_to_b(a, b):
     return (b - a) / a * 100
 
 def get_normative_name(model_alias):
-    for m in MODEL_DICT:
-        if MODEL_DICT[m] == model_alias:
+    for m in MODELS:
+        if MODELS[m] == model_alias:
             return m
     print("Could not find model alias '{}'.".format(model_alias))
 

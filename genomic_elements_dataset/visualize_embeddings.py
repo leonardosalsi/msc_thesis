@@ -112,5 +112,5 @@ def visualize_embeddings(model_name):
     plt.show()
 
 if __name__ == "__main__":
-    for model in tqdm(MODELS):
-        visualize_embeddings(model['name'])
+    for model_name in tqdm(MODELS):
+        visualize_embeddings(model_name)

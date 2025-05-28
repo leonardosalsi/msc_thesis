@@ -7,7 +7,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.metrics import matthews_corrcoef
 
-from downstream_evaluation.groupings import get_task_alias, get_model_alias_for_downstream, DATATYPE, \
+from downstream_evaluation.groupings import get_task_alias, DATATYPE, \
     get_for_all_compare_to_litereature, get_for_all_compare
 from config import results_dir, images_dir
 
@@ -117,7 +117,6 @@ def visualize_mcc_across_tasks(data, filename_base):
 
     # Sort model names by mean MCC
     model_names = sorted(model_mcc, key=model_mcc.get, reverse=False)
-    model_aliases = [get_model_alias_for_downstream(m) for m in model_names]
     mean_mcc = [model_mcc[m] for m in model_names]
 
     # Sample viridis colormap

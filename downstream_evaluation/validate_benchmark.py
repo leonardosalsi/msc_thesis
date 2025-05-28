@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt, gridspec, colors, patches
 from scipy.stats import pearsonr
 from sklearn.metrics import matthews_corrcoef
 
-from downstream_evaluation.groupings import get_task_alias, get_model_alias_for_downstream, DATATYPE, \
+from downstream_evaluation.groupings import get_task_alias, DATATYPE, \
     get_for_all_compare_to_litereature, get_for_all_compare, get_for_ewc_compare, get_for_best_logan_compare, \
     get_for_context_length_compare, get_for_reference_compare, get_for_validation_compare
 from config import results_dir, images_dir

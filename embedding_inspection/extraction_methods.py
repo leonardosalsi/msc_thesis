@@ -65,7 +65,7 @@ def extract_region_embeddings_genomic_elements(args, device, dataset):
     dataset_train = dataset['train']
     dataset_test = dataset['test']
 
-    layers = sorted(set([0, int(L * 0.5), int(L -1)]))
+    layers = sorted(set([0, int(L * 0.5), int(L - 1)]))
     if num_params <= 100:
         batch_size = 32
     else:
@@ -89,7 +89,7 @@ def extract_region_embeddings_5_prime_UTR(args, device, dataset):
     tokenizer = get_eval_tokenizer(args, repo)
 
     L = model.config.num_hidden_layers
-    layers = sorted(set([0, int(L * 0.5), int(L -1)]))
+    layers = sorted(set([0, int(L * 0.5), int(L - 1)]))
     if num_params <= 100:
         batch_size = 16
     else:

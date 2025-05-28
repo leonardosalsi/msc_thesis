@@ -7,10 +7,12 @@ import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.metrics import matthews_corrcoef
 
-from downstream_evaluation.groupings import get_task_alias, get_model_alias_for_downstream, DATATYPE, \
+from downstream_evaluation.groupings import get_task_alias, DATATYPE, \
     get_for_all_compare_to_litereature, get_for_all_compare, get_for_ewc_compare, get_for_best_logan_compare, \
-    get_for_context_length_compare, get_for_reference_compare, MODEL_DICT
+    get_for_context_length_compare, get_for_reference_compare
 from config import results_dir, images_dir
+from utils.model_definitions import MODELS
+
 
 def visualize_mcc_per_task(data, colors, filename_base, model_names):
     num_tasks = len(data)
@@ -23,7 +25,7 @@ def visualize_mcc_per_task(data, colors, filename_base, model_names):
     axes = axes.flatten()
 
     for idx, (task_name, model_results) in enumerate(data.items()):
-        if idx >= len(axes):  # Safety check
+        if idx >= len(axes):
             break
 
         task_data_name = get_task_alias(task_name)
@@ -76,7 +78,7 @@ def visualize_mcc_per_task(data, colors, filename_base, model_names):
         is_last_row = idx >= (rows - 1) * cols or idx + cols >= num_tasks
         if is_last_row:
             ax.set_xticks(x)
-            clear_names = [MODEL_DICT[model_name] for model_name in model_names]
+            clear_names = [MODELS[model_name] for model_name in model_names]
             labels = ax.set_xticklabels(clear_names, rotation=90, ha="center", fontsize=16)
             for lbl in labels:
                 if "no continual" in lbl.get_text():
@@ -108,20 +110,17 @@ def visualize_mcc_across_tasks(data, filename_base, data_class):
 
     for model_name, scores in model_mcc.items():
         model_mcc[model_name] = np.mean(scores)
-        print(f"{MODEL_DICT[model_name]}: {np.mean(scores)}")
+        print(f"{MODELS[model_name]}: {np.mean(scores)}")
 
-    # Sort model names by mean MCC
     model_names = sorted(model_mcc, key=model_mcc.get, reverse=False)
-    model_aliases = [get_model_alias_for_downstream(m) for m in model_names]
     mean_mcc = [model_mcc[m] for m in model_names]
 
-    # Sample viridis colormap
     cmap = plt.cm.get_cmap('viridis', len(model_names))
     n_colors = len(model_names)
     colors = [cmap(0.0 + (0.85 - 0.0) * i / (n_colors - 1)) for i in range(n_colors)]
 
     fig, ax = plt.subplots(figsize=(10, 6), constrained_layout=True)
-    clear_names = [MODEL_DICT[model_name] for model_name in model_names]
+    clear_names = [MODELS[model_name] for model_name in model_names]
     bars = ax.barh(clear_names, mean_mcc, color=colors, height=0.9)
 
     for bar, value in zip(bars, mean_mcc):
@@ -140,17 +139,8 @@ def visualize_mcc_across_tasks(data, filename_base, data_class):
     ax.set_yticklabels(clear_names, fontsize=8)
     ax.set_xlim(0, 1)
     ax.set_xlabel("MCC", fontsize=12)
-
-    title = ""
-    if data_class == DATATYPE.UTR_CLASS:
-        title = "MCC for 5'UTR Benign/Pathogenic Classification"
-    elif data_class == DATATYPE.BENCHMARK:
-        title = "MCC"
-
-    #ax.set_title(title, fontsize=18, pad=10, loc="center")
     ax.grid(axis='x')
- 
-    # Bold specific label
+
     for label in ax.get_yticklabels():
         if "no continual" in label.get_text():
             label.set_fontweight("bold")
@@ -253,7 +243,6 @@ def get_mean_task_rank(data):
     sorted_scores = sorted(mean_scores.items(), key=lambda x: x[1], reverse=False)
     print(sorted_scores)
     filename = f'/shared/img/mcc_model_mean_ranking.txt'
-
 
     with open(filename, "w") as f:
         for i, p in enumerate(sorted_scores):

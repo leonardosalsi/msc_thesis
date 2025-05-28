@@ -294,9 +294,9 @@ if __name__ == "__main__":
     show_framepool_100 = False
     show_optimus_50 = False
     show_optimus_100 = False
-    for model in tqdm(MODELS):
+    for model_name in tqdm(MODELS):
         visualize_mrl(
-            model['name'],
+            model_name,
             show_framepool_50,
             show_framepool_100,
             show_optimus_50,
