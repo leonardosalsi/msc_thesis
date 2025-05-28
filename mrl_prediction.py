@@ -10,7 +10,7 @@ from scipy.stats import pearsonr
 from sklearn.metrics import r2_score
 from transformers import TrainingArguments, Trainer
 from transformers import EarlyStoppingCallback
-from config import results_dir, generated_datasets_dir, logs_dir
+from config import results_dir, generated_datasets_dir, logs_dir, cache_dir
 from utils.model import get_classification_model
 from utils.tokenizer import get_eval_tokenizer
 from utils.util import get_device, print_args
@@ -79,7 +79,8 @@ if __name__ == "__main__":
     tokenized_test_human_var = test_human_var.map(tokenize_function, batched=True)
 
     training_args = TrainingArguments(
-        output_dir=f"mrl_{timestamp}",
+        run_name=f"mrl_{args.model_name}_{timestamp}",
+        output_dir=os.path.join(cache_dir, 'eval_models', f"mrl_{args.model_name}_{timestamp}"),
         eval_strategy="epoch",
         save_strategy="epoch",
         metric_for_best_model="eval_loss",
