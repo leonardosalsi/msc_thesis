@@ -97,7 +97,7 @@ def get_classification_model(args, device, num_labels=2, regression=False):
                 )
         else:
             if args.random_init:
-                print("HERE")
+
                 config = EsmConfig.from_pretrained(
                     repo,
                     cache_dir=models_cache_dir,
@@ -157,7 +157,10 @@ def get_classification_model(args, device, num_labels=2, regression=False):
             if len(unexpected_keys) > 0:
                 print("Unexpected keys:", unexpected_keys)
 
-            model = EsmForSequenceClassificationPCA(pca_model=pca_model, num_labels=num_labels)
+            if regression:
+                model = EsmForSequenceClassificationPCA(pca_model=pca_model, num_labels=1)
+            else:
+                model = EsmForSequenceClassificationPCA(pca_model=pca_model, num_labels=num_labels)
         else:
             if regression:
                 model = AutoModelForSequenceClassification.from_pretrained(

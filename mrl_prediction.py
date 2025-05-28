@@ -25,6 +25,7 @@ class MRLConfig:
     pca_embeddings: str = None
     map_cache_dir: str = None
     peft: Optional[str] = 'IA3'
+    random_init: bool = False
 
 def parse_args():
     parser = ArgumentParser(MRLConfig)
