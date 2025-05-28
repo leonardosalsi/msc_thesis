@@ -9,7 +9,7 @@ from sklearn.metrics import matthews_corrcoef
 
 from downstream_evaluation.groupings import get_task_alias, get_model_alias_for_downstream, DATATYPE, \
     get_for_all_compare_to_litereature, get_for_all_compare, get_for_ewc_compare, get_for_best_logan_compare, \
-    get_for_context_length_compare, get_for_reference_compare
+    get_for_context_length_compare, get_for_reference_compare, MODEL_DICT
 from config import results_dir, images_dir
 
 def visualize_mcc_per_task(data, colors, filename_base, model_names):
@@ -19,7 +19,7 @@ def visualize_mcc_per_task(data, colors, filename_base, model_names):
     cols = 3
     rows = math.ceil(num_tasks / cols)
     width = max(len(model_names) * 2, 16)
-    fig, axes = plt.subplots(rows, cols, figsize=(width, rows * 5), constrained_layout=True)
+    fig, axes = plt.subplots(rows, cols, figsize=(width, rows * 4), constrained_layout=True)
     axes = axes.flatten()
 
     for idx, (task_name, model_results) in enumerate(data.items()):
@@ -76,7 +76,14 @@ def visualize_mcc_per_task(data, colors, filename_base, model_names):
         is_last_row = idx >= (rows - 1) * cols or idx + cols >= num_tasks
         if is_last_row:
             ax.set_xticks(x)
-            ax.set_xticklabels(model_names, rotation=90, ha="center", fontsize=16)
+            clear_names = [MODEL_DICT[model_name] for model_name in model_names]
+            labels = ax.set_xticklabels(clear_names, rotation=90, ha="center", fontsize=16)
+            for lbl in labels:
+                if "no continual" in lbl.get_text():
+                    lbl.set_fontweight("bold")
+                elif "NT-50M (no overlap, multispecies)" == lbl.get_text():
+                    lbl.set_fontweight("bold")
+                    lbl.set_color("red")
         else:
             ax.set_xticks([])
         for label in ax.get_xticklabels():
@@ -85,9 +92,11 @@ def visualize_mcc_per_task(data, colors, filename_base, model_names):
 
     for idx in range(num_tasks, len(axes)):
         fig.delaxes(axes[idx])
+
+    axes[len(axes) - 1].grid(axis='y')
     plt.grid(axis='y')
     plt.tight_layout()
-    plt.savefig(os.path.join(filename_base, f'mcc_per_tasks.png'))
+    plt.savefig(os.path.join(filename_base, f'mcc_per_tasks.pdf'))
     plt.show()
 
 
@@ -99,6 +108,7 @@ def visualize_mcc_across_tasks(data, filename_base, data_class):
 
     for model_name, scores in model_mcc.items():
         model_mcc[model_name] = np.mean(scores)
+        print(f"{MODEL_DICT[model_name]}: {np.mean(scores)}")
 
     # Sort model names by mean MCC
     model_names = sorted(model_mcc, key=model_mcc.get, reverse=False)
@@ -111,13 +121,14 @@ def visualize_mcc_across_tasks(data, filename_base, data_class):
     colors = [cmap(0.0 + (0.85 - 0.0) * i / (n_colors - 1)) for i in range(n_colors)]
 
     fig, ax = plt.subplots(figsize=(10, 6), constrained_layout=True)
-    bars = ax.barh(model_names, mean_mcc, color=colors, height=0.9)
+    clear_names = [MODEL_DICT[model_name] for model_name in model_names]
+    bars = ax.barh(clear_names, mean_mcc, color=colors, height=0.9)
 
     for bar, value in zip(bars, mean_mcc):
         ax.text(
             value + 0.02,
             bar.get_y() + bar.get_height() / 2,
-            f"{value:.5f}",
+            f"{value:.3f}",
             va="center",
             ha="left",
             fontsize=8,
@@ -126,9 +137,9 @@ def visualize_mcc_across_tasks(data, filename_base, data_class):
         )
 
     ax.set_yticks(np.arange(len(model_names)))
-    ax.set_yticklabels(model_names, fontsize=10)
+    ax.set_yticklabels(clear_names, fontsize=8)
     ax.set_xlim(0, 1)
-    ax.set_xlabel("Mean MCC", fontsize=14)
+    ax.set_xlabel("Mean MCC across Tasks", fontsize=12)
 
     title = ""
     if data_class == DATATYPE.UTR_CLASS:
@@ -136,17 +147,23 @@ def visualize_mcc_across_tasks(data, filename_base, data_class):
     elif data_class == DATATYPE.BENCHMARK:
         title = "Mean MCC across Tasks"
 
-    ax.set_title(title, fontsize=18, pad=10, loc="center")
+    #ax.set_title(title, fontsize=18, pad=10, loc="center")
     ax.grid(axis='x')
  
     # Bold specific label
     for label in ax.get_yticklabels():
-        if label.get_text() == "NT-MS V2 (50M)":
+        if "no continual" in label.get_text():
             label.set_fontweight("bold")
+        elif "NT-50M (no overlap, multispecies)" == label.get_text():
+            label.set_fontweight("bold")
+            label.set_color("red")
 
     plt.tight_layout()
-    plt.savefig(os.path.join(filename_base, f'mcc_across_tasks.png'))
+    plt.savefig(os.path.join(filename_base, f'mcc_across_tasks.pdf'))
     plt.show()
+
+    model_names = list(reversed(model_names))
+    colors = list(reversed(colors))
     return model_names, colors
 
 def evaluate_file(filepath, bootstrapped):
@@ -155,7 +172,7 @@ def evaluate_file(filepath, bootstrapped):
 
     if bootstrapped:
         """
-        Calculate Law of Total Variance (LOTV) for bootstrap results.
+        Calculate Law of Total Variance for bootstrap results.
         """
         try:
             b_mean = np.array(data['bootstrap_means'])
@@ -181,7 +198,6 @@ def prepare_data_for_visualization(file_lists, bootstrapped=False):
                 data[task] = {}
             mean, std = evaluate_file(file, bootstrapped)
             data[task][model_name] = {'mean': mean, 'std': std}
-            print(model_name, task,     mean, std)
     return data
 
 def get_ranking(data):

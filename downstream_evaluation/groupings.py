@@ -150,6 +150,48 @@ def get_for_tokenization_compare(type: DATATYPE):
     elif type == DATATYPE.UTR_CLASS:
         return _collect_utr_class_data(group), filename
 
+MODEL_DICT = {
+    'default_multi_species_no_cont': 'NT-50M (no continual)',
+    'default_multi_species_no_cont_100': 'NT-100M (no continual)',
+    'default_multi_species_no_cont_250': 'NT-250M (no continual)',
+    'default_multi_species_no_cont_500': 'NT-500M (no continual)',
+    'default_multi_species': 'NT-50M (no overlap, multispecies)',
+    'default_multi_species_2kb': 'NT-50M (no overlap, multispecies, 2k ctx.)',
+    'overlap_multi_species': 'NT-50M (overlap, multispecies)',
+    'overlap_multi_species_2kb': 'NT-50M (overlap, multispecies, 2k ctx.)',
+    'overlap_logan_no_ewc': 'NT-50M (overlap, logan, no EWC)',
+    'overlap_logan_ewc_0_5': 'NT-50M (overlap, logan, EWC 0.5)',
+    'overlap_logan_ewc_1': 'NT-50M (overlap, logan, EWC 1)',
+    'overlap_logan_ewc_2': 'NT-50M (overlap, logan, EWC 2)',
+    'overlap_logan_ewc_5': 'NT-50M (overlap, logan, EWC 5)',
+    'overlap_logan_ewc_10': 'NT-50M (overlap, logan, EWC 10)',
+    'overlap_logan_ewc_25': 'NT-50M (overlap, logan, EWC 25)',
+    'default_multi_species_sh_gc': 'NT-50M (no overlap, multispecies, GC & Shannon)',
+    'default_multi_species_2kb_sh_gc': 'NT-50M (no overlap, multispecies, GC & Shannon, 2k ctx.)',
+    'overlap_multi_species_sh_gc': 'NT-50M (overlap, multispecies, GC & Shannon)',
+    'overlap_multi_species_2kb_sh_gc': 'NT-50M (overlap, multispecies, GC & Shannon, 2k ctx.)',
+    'overlap_multi_species_pca_cls_256': 'NT-50M (overlap, multispecies, contrastive CLS)',
+    'overlap_multi_species_pca_mean_256': 'NT-50M (overlap, multispecies, contrastive mean-pool)',
+    'default_logan_no_ewc': 'NT-50M (no overlap, logan, no EWC)',
+    'default_logan_ewc_0_5': 'NT-50M (no overlap, logan, EWC 0.5)',
+    'default_logan_ewc_1': 'NT-50M (no overlap, logan, EWC 1)',
+    'default_logan_ewc_2': 'NT-50M (no overlap, logan, EWC 2)',
+    'default_logan_ewc_5': 'NT-50M (no overlap, logan, EWC 5)',
+    'default_logan_ewc_10': 'NT-50M (no overlap, logan, EWC 10)',
+    'default_logan_ewc_25': 'NT-50M (no overlap, logan, EWC 25)',
+    'default_multi_species_pca_cls_256': 'NT-50M (no overlap, multispecies, contrastive CLS)',
+    'default_multi_species_pca_mean_256': 'NT-50M (no overlap, multispecies, contrastive mean-pool)',
+    'default_logan_ewc_5_2kb': 'NT-50M (no overlap, logan, EWC 5, 2k ctx.)',
+    'overlap_logan_ewc_5_pca_cls_256': 'NT-50M (overlap, logan, EWC 5, contrastive CLS)',
+    'overlap_logan_ewc_5_pca_mean_256': 'NT-50M (overlap, logan, EWC 5, contrastive mean-pool)',
+    'default_logan_ewc_5_pca_cls_256': 'NT-50M (no overlap, logan, EWC 5, contrastive CLS)',
+    'default_logan_ewc_5_pca_mean_256': 'NT-50M (no overlap, logan, EWC 5, contrastive mean-pool)',
+    'default_logan_ewc_5_sh_gc':  'NT-50M (no overlap, logan, EWC 5, GC & Shannon)',
+    'default_logan_ewc_5_2kb_sh_gc':  'NT-50M (no overlap, logan, EWC 5, GC & Shannon, 2k ctx.)',
+    'overlap_logan_ewc_5_sh_gc':  'NT-50M (overlap, logan, EWC 5, GC & Shannon)',
+    'overlap_logan_ewc_5_2kb_sh_gc':  'NT-50M (overlap, logan, EWC 5, GC & Shannon, 2k ctx.)',
+    'overlap_logan_ewc_5_2kb': 'NT-50M (overlap, logan, EWC 5, 2k ctx.)'
+}
 
 def get_for_all_compare_to_litereature(type: DATATYPE):
     group = [
@@ -172,6 +214,8 @@ def get_for_all_compare_to_litereature(type: DATATYPE):
             'default_multi_species_2kb_sh_gc',
             'overlap_multi_species_sh_gc',
             'overlap_multi_species_2kb_sh_gc',
+            'default_multi_species_pca_cls_256',
+            'default_multi_species_pca_mean_256',
             'overlap_multi_species_pca_cls_256',
             'overlap_multi_species_pca_mean_256',
             'default_logan_no_ewc',
@@ -185,7 +229,12 @@ def get_for_all_compare_to_litereature(type: DATATYPE):
             'overlap_logan_ewc_5_pca_cls_256',
             'overlap_logan_ewc_5_pca_mean_256',
             'default_logan_ewc_5_pca_cls_256',
-            'default_logan_ewc_5_pca_mean_256'
+            'default_logan_ewc_5_pca_mean_256',
+            'default_logan_ewc_5_sh_gc',
+            'default_logan_ewc_5_2kb_sh_gc',
+            'overlap_logan_ewc_5_sh_gc',
+            'overlap_logan_ewc_5_2kb_sh_gc',
+            'overlap_logan_ewc_5_2kb'
     ]
     filename = 'compare_all_literature'
 
@@ -227,7 +276,12 @@ def get_for_all_compare(type: DATATYPE):
             'overlap_logan_ewc_5_pca_cls_256',
             'overlap_logan_ewc_5_pca_mean_256',
             'default_logan_ewc_5_pca_cls_256',
-            'default_logan_ewc_5_pca_mean_256'
+            'default_logan_ewc_5_pca_mean_256',
+            'default_logan_ewc_5_sh_gc',
+            'default_logan_ewc_5_2kb_sh_gc',
+            'overlap_logan_ewc_5_sh_gc',
+            'overlap_logan_ewc_5_2kb_sh_gc',
+            'overlap_logan_ewc_5_2kb'
     ]
     filename = 'compare_all'
 
@@ -240,6 +294,21 @@ def get_for_all_compare(type: DATATYPE):
     elif type == DATATYPE.UTR_CLASS:
         return _collect_utr_class_data(group), filename
 
+def get_for_dataset_compare(type: DATATYPE):
+    group = [
+        'overlap_multi_species',
+        'overlap_multi_species_2kb',
+        'default_logan_ewc_5',
+        'default_logan_ewc_5_2kb'
+    ]
+    filename = 'compare_context_length'
+
+    if type == DATATYPE.TRAINING_CURVES:
+        return _collect_training_data(group), filename
+    elif type == DATATYPE.BENCHMARK:
+        return _collect_benchmark_data(group), filename
+    elif type == DATATYPE.UTR_CLASS:
+        return _collect_utr_class_data(group), filename
 
 def get_for_context_length_compare(type: DATATYPE):
     group = [
@@ -272,7 +341,9 @@ def get_for_ewc_compare(type: DATATYPE):
         'default_logan_ewc_2',
         'default_logan_ewc_5',
         'default_logan_ewc_10',
-        'default_logan_ewc_25'
+        'default_logan_ewc_25',
+        'default_multi_species',
+        'overlap_multi_species'
     ]
     filename = 'compare_ewc'
 
@@ -282,6 +353,8 @@ def get_for_ewc_compare(type: DATATYPE):
         return _collect_benchmark_data(group), filename
     elif type == DATATYPE.UTR_CLASS:
         return _collect_utr_class_data(group), filename
+
+
 
 def get_for_best_logan_compare(type: DATATYPE):
     group = [
