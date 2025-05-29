@@ -3,7 +3,7 @@
 #SBATCH --output=/cluster/work/grlab/projects/projects2024-petagraph-input-optimisation-msc-thesis/out/%x.txt
 #SBATCH --cpus-per-task=2
 #SBATCH --time=8:00:00
-#SBATCH --mem-per-cpu=4G
+#SBATCH --mem-per-cpu=64G
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
 
