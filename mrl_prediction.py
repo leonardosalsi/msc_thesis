@@ -94,7 +94,7 @@ if __name__ == "__main__":
         metric_for_best_model="eval_loss",
         per_device_train_batch_size=64,
         per_device_eval_batch_size=16,
-        eval_accumulation_steps=200,
+        eval_accumulation_steps=100,
         load_best_model_at_end=True,
         greater_is_better=False,
         num_train_epochs=5,

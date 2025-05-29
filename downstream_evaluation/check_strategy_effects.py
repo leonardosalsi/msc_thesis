@@ -389,7 +389,7 @@ def compare_across_groups_one_fold(compare, filename):
     ymin = min(all_results)
     ymax = max(all_results)
     print(ymin, ymax)
-    padding = (ymax - ymin) * 0.1  # 10% padding
+    padding = (ymax - ymin) * 0.05  # 10% padding
     ymin, ymax = ymin - padding, ymax + padding  # 10% padding
 
     for ax_idx, task_group in enumerate(TASK_GROUPS):
@@ -399,13 +399,29 @@ def compare_across_groups_one_fold(compare, filename):
             for m in group_results[task_group]['means']
         ]
         n = len(means)
-        spacing = 3  # <- tweak this to taste
-        x = np.arange(n) * spacing  # now ticks are at 0, 1.5, 3.0, …
+        spacing = 3
+        x = np.arange(n) * spacing
+        stds_max = max(group_results[task_group]['stds'])
+        ax.bar(
+            x,
+            group_results[task_group]['means'],
+            color=colors,
+            width=0.8 * spacing
+        )
+        ax.errorbar(
+            x,
+            group_results[task_group]['means'],
+            yerr=group_results[task_group]['stds'],
+            fmt="none",  # no marker
+            ecolor="black",
+            elinewidth=1.5,
+            capsize=5,
+            capthick=1.5
+        )
 
-        ax.bar(x, group_results[task_group]['means'], color=colors, width=0.8 * spacing)
         ax.set_xticks(x)
         ax.set_xticklabels([f"C{i + 1}" for i in range(n)])
-        ax.set_ylim(ymin, ymax)
+        ax.set_ylim(ymin - stds_max, ymax + stds_max)
         ax.set_xlim(-0.5 * spacing, (n - 1) * spacing + 0.5 * spacing)
         ax.margins(x=0.1)
         ax.axhline(
@@ -562,9 +578,20 @@ def compare_across_groups_two_fold(compare, filename):
         x = np.arange(n) * spacing
 
         ax_cls.bar(x, group_results_cls[task_group]['means'], color=colors, width=0.8 * spacing)
+        ax_cls.errorbar(
+            x,
+            group_results_cls[task_group]['means'],
+            yerr=group_results_cls[task_group]['stds'],
+            fmt="none",
+            ecolor="black",
+            elinewidth=1.5,
+            capsize=5,
+            capthick=1.5
+        )
+        stds_max = max(group_results_cls[task_group]['stds'])
         ax_cls.set_xticks(x)
         ax_cls.set_xticklabels([f"C{i + 1}" for i in range(n)])
-        ax_cls.set_ylim(ymin_cls, ymax_cls)
+        ax_cls.set_ylim(ymin_cls - stds_max, ymax_cls + stds_max)
         ax_cls.set_xlim(-0.5 * spacing, (n - 1) * spacing + 0.5 * spacing)
         ax_cls.margins(x=0.1)
         ax_cls.axhline(
@@ -593,8 +620,6 @@ def compare_across_groups_two_fold(compare, filename):
         )
         ax_cls.add_patch(rect)
 
-
-
         ax_cls.set_xticks([])
         if ax_idx > 0:
             ax_cls.set_yticks([])
@@ -608,9 +633,20 @@ def compare_across_groups_two_fold(compare, filename):
         x = np.arange(n) * spacing
 
         ax_mean.bar(x, group_results_mean[task_group]['means'], color=colors, width=0.8 * spacing)
+        ax_mean.errorbar(
+            x,
+            group_results_mean[task_group]['means'],
+            yerr=group_results_mean[task_group]['stds'],
+            fmt="none",
+            ecolor="black",
+            elinewidth=1.5,
+            capsize=5,
+            capthick=1.5
+        )
+        stds_max = max(group_results_mean[task_group]['stds'])
         ax_mean.set_xticks(x)
         ax_mean.set_xticklabels([f"C{i + 1}" for i in range(n)])
-        ax_mean.set_ylim(ymin_mean, ymax_mean)
+        ax_mean.set_ylim(ymin_mean - stds_max, ymax_mean + stds_max)
         ax_mean.set_xlim(-0.5 * spacing, (n - 1) * spacing + 0.5 * spacing)
         ax_mean.margins(x=0.1)
         ax_mean.axhline(
@@ -660,11 +696,11 @@ def compare_across_groups_two_fold(compare, filename):
 
 
 class CompareHandler(Enum):
-    LOGAN = ('logan', compare_logan)
-    OVERLAP = ('overlap', compare_overlap)
-    SAMPLING = ('sh_gc', compare_sh_gc)
+    #LOGAN = ('logan', compare_logan)
+    #OVERLAP = ('overlap', compare_overlap)
+    #SAMPLING = ('sh_gc', compare_sh_gc)
     PCA = ('pca', compare_pca)
-    CONTEXT = ('context', compare_context)
+    #CONTEXT = ('context', compare_context)
 
 if __name__ == '__main__':
     for handler in CompareHandler:
