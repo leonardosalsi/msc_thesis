@@ -142,19 +142,19 @@ if __name__ == "__main__":
 
     _ = trainer.train()
 
-    preds_random_fixed = trainer.predict(tokenized_test_random_fixed)
+    preds_random_fixed = trainer.predict(tokenized_test_random_fixed, ignore_keys=["hidden_states","attentions"])
     y_pred_random_fixed = preds_random_fixed.predictions.reshape(-1)
     y_true_random_fixed = preds_random_fixed.label_ids
 
-    preds_random_var = trainer.predict(tokenized_test_random_var)
+    preds_random_var = trainer.predict(tokenized_test_random_var, ignore_keys=["hidden_states","attentions"])
     y_pred_random_var = preds_random_var.predictions.reshape(-1)
     y_true_random_var = preds_random_var.label_ids
 
-    preds_human_fixed = trainer.predict(tokenized_test_human_fixed)
+    preds_human_fixed = trainer.predict(tokenized_test_human_fixed, ignore_keys=["hidden_states","attentions"])
     y_pred_human_fixed = preds_human_fixed.predictions.reshape(-1)
     y_true_human_fixed = preds_human_fixed.label_ids
 
-    preds_human_var = trainer.predict(tokenized_test_human_var)
+    preds_human_var = trainer.predict(tokenized_test_human_var, ignore_keys=["hidden_states","attentions"])
     y_pred_human_var = preds_human_var.predictions.reshape(-1)
     y_true_human_var = preds_human_var.label_ids
 
