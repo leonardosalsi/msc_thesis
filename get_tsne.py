@@ -21,7 +21,7 @@ def visualize_embeddings(model_name, embeddings_type, files):
         with open(fpath, "rb") as f:
             data = pickle.load(f)
 
-        embeddings = data["embeddings"]
+        embeddings = data["test_embeddings"]
         tsne_results = TSNE(n_components=2, perplexity=40, random_state=42).fit_transform(embeddings)
         with open(tsne_path, "wb") as f:
             pickle.dump(tsne_results, f)
