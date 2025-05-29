@@ -92,8 +92,8 @@ if __name__ == "__main__":
         eval_strategy="epoch",
         save_strategy="epoch",
         metric_for_best_model="eval_loss",
-        per_device_train_batch_size=64,
-        per_device_eval_batch_size=16,
+        per_device_train_batch_size=128,
+        per_device_eval_batch_size=32,
         eval_accumulation_steps=100,
         load_best_model_at_end=True,
         greater_is_better=False,
@@ -157,8 +157,6 @@ if __name__ == "__main__":
     preds_human_var = trainer.predict(tokenized_test_human_var)
     y_pred_human_var = preds_human_var.predictions.reshape(-1)
     y_true_human_var = preds_human_var.label_ids
-
-
 
     print("[RANDOM] Fixed length test set:")
     print("Pearson R:", pearsonr(y_pred_random_fixed, y_true_random_fixed)[0])
