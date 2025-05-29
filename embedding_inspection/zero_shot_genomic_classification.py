@@ -317,7 +317,6 @@ def evaluate_class_prediction(model_name, file_list):
         bottom=0.10,
         top=0.95,
     )
-    plt.show()
     plt.savefig(figure_path)
     plt.close(fig)
 
