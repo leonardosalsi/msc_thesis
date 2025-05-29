@@ -86,13 +86,13 @@ if __name__ == "__main__":
     tokenized_test_human_var = test_human_var.map(tokenize_function, batched=True)
 
     training_args = TrainingArguments(
-        run_name=f"mrl_{args.model_name}_{timestamp}",
-        output_dir=os.path.join(cache_dir, 'eval_models', f"mrl_{args.model_name}_{timestamp}"),
+        run_name=f"mrl_{args.model_name}",
+        output_dir=os.path.join(cache_dir, 'eval_models', f"mrl_{args.model_name}"),
         eval_strategy="epoch",
         save_strategy="epoch",
         metric_for_best_model="eval_loss",
         per_device_train_batch_size=64,
-        per_device_eval_batch_size=64,
+        per_device_eval_batch_size=16,
         load_best_model_at_end=True,
         greater_is_better=False,
         num_train_epochs=5,
