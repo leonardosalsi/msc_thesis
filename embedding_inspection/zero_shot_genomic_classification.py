@@ -9,6 +9,7 @@ import pandas as pd
 from matplotlib import patches, gridspec, MatplotlibDeprecationWarning
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import matplotlib.pyplot as plt
+from sklearn.manifold import TSNE
 from sklearn.metrics import accuracy_score, confusion_matrix, average_precision_score, precision_recall_curve
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import normalize, label_binarize
@@ -276,12 +277,14 @@ def few_shot_prediction(train_embeddings, train_labels, test_embeddings, test_la
 def evaluate_class_prediction(model_name, file_list):
     class_dir = os.path.join(images_dir, 'class_genomic_regions')
     figure_path = os.path.join(class_dir, f"{model_name}.pdf")
+    tsne_dir = os.path.join(results_dir, 'tSNE', 'genomic_regions_annotated', model_name)
 
     if os.path.exists(figure_path):
         return
 
     results = {file.split("layer_")[-1].split(".")[0]: {} for file in file_list}
     all_results = []
+    last_layer = 0
 
     for i, file in enumerate(file_list):
         layer_num = int(file.split("layer_")[-1].split(".")[0])
@@ -292,6 +295,12 @@ def evaluate_class_prediction(model_name, file_list):
 
         train_y_true = train_meta["label"]
         test_y_true = test_meta["label"]
+
+        tsne_file = os.path.join(tsne_dir, f"layer_{layer_num}.pkl")
+        if not os.path.exists(tsne_file):
+            tsne_results = TSNE(n_components=2, perplexity=40, random_state=42).fit_transform(test_embeddings)
+            with open(tsne_file, "wb") as f:
+                pickle.dump(tsne_results, f)
 
         intermediate_results_file = os.path.join(INTERMEDIATE_FILE_CACHE, f"{model_name}_{layer_num}.json")
 
@@ -334,15 +343,22 @@ def evaluate_class_prediction(model_name, file_list):
         for a in precision_per_class_few_shot:
             all_results += precision_per_class_few_shot[a]
         results[str(layer_num)] = intermediate_results
+        last_layer = str(layer_num)
 
     ymin = min(all_results)
     ymax = max(all_results)
     padding = (ymax - ymin) * 0.1
     ymin, ymax = ymin - padding, ymax + padding
 
-    figsize = (5 * len(results), 5)
+    figsize = (18, 4 * len(results))
     fig = plt.figure(figsize=figsize)
-    gs = gridspec.GridSpec(1, len(results), width_ratios=[1] * len(results), wspace=0.05, hspace=0.05)
+    gs = gridspec.GridSpec(2, 2, width_ratios=[1, 1], wspace=0.05, hspace=0.05)
+
+
+
+    last_layer_result = results[last_layer]
+
+
 
     for i, result in enumerate(results):
         layer = result
@@ -359,7 +375,11 @@ def evaluate_class_prediction(model_name, file_list):
         recall_per_class_few_shot = np.array(few_shot_res["recall_per_class_few_shot"])
         classes_few_shot = np.array(few_shot_res["classes_few_shot"])
 
+        tsne_file = os.path.join(tsne_dir, f"layer_{layer}.pkl")
+        with open(tsne_file, "rb") as f:
+            X_2d = pickle.load(f)
 
+        pprint(X_2d)
         exit()
         ax_auprc = fig.add_subplot(gs[i])
         ax_auprc.set_ylim(ymin, ymax)
