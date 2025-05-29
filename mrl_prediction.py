@@ -88,7 +88,7 @@ if __name__ == "__main__":
 
     training_args = TrainingArguments(
         run_name=f"mrl_{args.model_name}",
-        output_dir=os.path.join(cache_dir, 'eval_models', f"mrl_{args.model_name}"),
+        output_dir=os.path.join(cache_dir, 'eval_models', f"mrl_{args.model_name}_{timestamp}"),
         eval_strategy="epoch",
         save_strategy="epoch",
         metric_for_best_model="eval_loss",
