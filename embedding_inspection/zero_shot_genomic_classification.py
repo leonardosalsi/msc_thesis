@@ -223,7 +223,7 @@ def evaluate_class_prediction(model_name, file_list):
     ax_class.set_xlabel("")
     ax_class.set_ylabel("Dimension 2", fontsize=14)
     handles, labels = ax_class.get_legend_handles_labels()
-    ax_class.legend(handles=handles[0:], labels=labels[0:])
+    ax_class.legend(handles=handles[0:], labels=labels[0:], markerscale=4, fontsize=14)
 
 
     """
@@ -294,7 +294,8 @@ def evaluate_class_prediction(model_name, file_list):
     ax_auprc_zero.set_title("Zero-Shot auPRC", fontsize=18)
     ax_auprc_zero.set_xlabel("")
     ax_auprc_zero.grid()
-    ax_auprc_zero.legend()
+    handles, labels = ax_auprc_zero.get_legend_handles_labels()
+    ax_auprc_zero.legend(handles=handles, labels=labels, markerscale=4, fontsize=14)
 
     for c in label_order:
         ax_auprc_few.plot(recall_per_class_few_shot[c], precision_per_class_few_shot[c], lw=1,
@@ -305,8 +306,10 @@ def evaluate_class_prediction(model_name, file_list):
     ax_auprc_few.set_xlabel("")
     ax_auprc_few.set_yticklabels([])
     ax_auprc_few.tick_params(left=False, bottom=False)
-    ax_auprc_few.legend()
     ax_auprc_few.grid()
+    handles, labels = ax_auprc_few.get_legend_handles_labels()
+    ax_auprc_few.legend(handles=handles, labels=labels, markerscale=4, fontsize=14)
+
     fig.supxlabel("Recall",
                   x=0.812,
                   y=0.045,
@@ -318,6 +321,7 @@ def evaluate_class_prediction(model_name, file_list):
         top=0.95,
     )
     plt.savefig(figure_path)
+    plt.savefig(figure_path.replace(".pdf", ".png"), dpi=300)
     plt.close(fig)
 
 if __name__ == "__main__":
