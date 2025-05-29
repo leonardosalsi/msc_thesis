@@ -100,7 +100,6 @@ if __name__ == "__main__":
         num_train_epochs=5,
         learning_rate=2e-4,
         logging_dir=logs_dir,
-        save_total_limit=2,
         report_to="none",
     )
 
