@@ -16,10 +16,15 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 
-from config import images_dir
+from config import images_dir, results_dir
 from utils.model_definitions import MODELS
 
 COLORMAP = 'viridis'
+warnings.filterwarnings(
+    "ignore",
+    category=MatplotlibDeprecationWarning,
+    message=".*get_cmap function was deprecated.*"
+)
 
 def load_pkl(pkl_path):
     with open(pkl_path, "rb") as f:
@@ -31,13 +36,20 @@ def load_pkl(pkl_path):
     test_meta_df = pd.DataFrame(data["test_meta"])
     return train_embeddings, train_meta_df, test_embeddings, test_meta_df
 
-warnings.filterwarnings(
-    "ignore",
-    category=MatplotlibDeprecationWarning,
-    message=".*get_cmap function was deprecated.*"
-)
+def zero_shot_prediction(y_true, cos_similarity):
+    precision, recall, _ = precision_recall_curve(y_true, 1 - cos_similarity)
+    ap = average_precision_score(y_true, 1 - cos_similarity)
+    return ap, precision, recall
 
-def visualize_embedding_predictions(
+def few_shot_prediction(train_embeddings, train_labels, test_embeddings, test_labels):
+    model = LogisticRegression(max_iter=5_000, solver='liblinear')
+    model.fit(train_embeddings, train_labels)
+    y_prob = model.predict_proba(test_embeddings)[:, 1]
+    precision, recall, _ = precision_recall_curve(test_labels, y_prob)
+    ap = average_precision_score(test_labels, y_prob)
+    return ap, precision, recall
+
+def evaluate_af_prediction(
         model_name,
         file_list,
 ):
@@ -53,33 +65,26 @@ def visualize_embedding_predictions(
 
     for i, file in enumerate(file_list):
         layer_num = int(file.split("layer_")[-1].split(".")[0])
-        train_embeddings, train_meta_df, test_embeddings, test_meta_df = load_pkl(file)
+        train_embeddings, train_meta, test_embeddings, test_meta = load_pkl(file)
 
         scaler = StandardScaler()
         train_embeddings_scaled = scaler.fit_transform(train_embeddings)
         test_embeddings_scaled = scaler.transform(test_embeddings)
 
-        train_y_true = train_meta_df["label"]
-        test_y_true = test_meta_df["label"]
+        train_y_true = train_meta["label"]
+        test_y_true = test_meta["label"]
+        test_cosime_similarity = test_meta["cos_similarity"]
 
-        precision_zero_shot, recall_zero_shot, _ = precision_recall_curve(test_y_true, 1  - test_meta_df["cos_similarity"])
-        ap_zero_shot = average_precision_score(test_y_true, 1  - test_meta_df["cos_similarity"])
+        ap_zero_shot, precision_zero_shot, recall_zero_shot = zero_shot_prediction(test_y_true, test_cosime_similarity)
+        ap_few_shot, precision_few_shot, recall_few_shot = few_shot_prediction(train_embeddings_scaled, train_y_true, test_embeddings_scaled, test_y_true)
 
-        model = LogisticRegression(max_iter=5_000, solver='liblinear')
-        model.fit(train_embeddings_scaled, train_y_true)
-
-        y_prob = model.predict_proba(test_embeddings_scaled)[:,1]
-
-        precision_class, recall_class, _ = precision_recall_curve(test_y_true, y_prob)
-        ap_class = average_precision_score(test_y_true, y_prob)
-
-        all_results += list(precision_zero_shot) + list(precision_class)
+        all_results += list(precision_zero_shot) + list(precision_few_shot)
         results[str(layer_num)]["precision_zero_shot"] = precision_zero_shot
         results[str(layer_num)]["recall_zero_shot"] = recall_zero_shot
         results[str(layer_num)]["ap_zero_shot"] = ap_zero_shot
-        results[str(layer_num)]["precision_class"] = precision_class
-        results[str(layer_num)]["recall_class"] = recall_class
-        results[str(layer_num)]["ap_class"] = ap_class
+        results[str(layer_num)]["precision_few_shot"] = precision_few_shot
+        results[str(layer_num)]["recall_few_shot"] = recall_few_shot
+        results[str(layer_num)]["ap_few_shot"] = ap_few_shot
 
     ymin = min(all_results)
     ymax = max(all_results)
@@ -95,17 +100,17 @@ def visualize_embedding_predictions(
         precision_zero_shot = results[layer]["precision_zero_shot"]
         recall_zero_shot = results[layer]["recall_zero_shot"]
         ap_zero_shot = results[layer]["ap_zero_shot"]
-        precision_class = results[layer]["precision_class"]
-        recall_class = results[layer]["recall_class"]
-        ap_class = results[layer]["ap_class"]
-        print(f"{model_name}\t{layer}\t{ap_zero_shot}\t{ap_class}")
+        precision_few_shot = results[layer]["precision_few_shot"]
+        recall_few_shot = results[layer]["recall_few_shot"]
+        ap_few_shot = results[layer]["ap_few_shot"]
+        print(f"{model_name}\t{layer}\t{ap_zero_shot}\t{ap_few_shot}")
         ax_auprc = fig.add_subplot(gs[i])
         ax_auprc.set_ylim(ymin, ymax)
         auprc_cmap = plt.cm.get_cmap(COLORMAP)
         ax_auprc.plot(recall_zero_shot, precision_zero_shot, color=auprc_cmap(0.3), lw=2,
                       label=f"auPRC Zero-Shot= {ap_zero_shot:.3f}")
-        ax_auprc.plot(recall_class, precision_class, color=auprc_cmap(0.6), lw=2,
-                      label=f"auPRC Regression= {ap_class:.3f}")
+        ax_auprc.plot(recall_few_shot, precision_few_shot, color=auprc_cmap(0.6), lw=2,
+                      label=f"auPRC Regression= {ap_few_shot:.3f}")
 
         if i == 0:
             ax_auprc.set_ylabel("Precision", fontsize=14)
@@ -143,7 +148,7 @@ def visualize_embedding_predictions(
     plt.close(fig)
 
 if __name__ == "__main__":
-    embeddings_folder = '/shared/data/embeddings/5_utr_af_prediction/'
+    embeddings_folder = os.path.join(results_dir, 'embeddings', 'genomic_regions_annotated')
     print(f"MODEL NAME\tLAYER\tZERO SHOT\tFITTED")
     for model_name in MODELS:
         model_folder = os.path.join(embeddings_folder, model_name)
@@ -153,7 +158,4 @@ if __name__ == "__main__":
                            key=lambda f: int(f.split("layer_")[-1].split(".")[0]))
         except:
             continue
-        visualize_embedding_predictions(
-            model_name=model_name,
-            file_list=files
-        )
+        evaluate_af_prediction(model_name, files)

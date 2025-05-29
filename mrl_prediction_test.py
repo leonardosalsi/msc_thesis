@@ -3,11 +3,13 @@ from dataclasses import dataclass
 import pickle
 from typing import Optional
 
+import torch
 from argparse_dataclass import ArgumentParser
 from datasets import load_from_disk
 from peft import LoraConfig, TaskType, get_peft_model, IA3Config
 from scipy.stats import pearsonr
 from sklearn.metrics import r2_score
+from torch.utils.data import DataLoader
 from transformers import TrainingArguments, Trainer
 from transformers import EarlyStoppingCallback
 from config import results_dir, generated_datasets_dir, logs_dir, cache_dir
@@ -51,8 +53,9 @@ if __name__ == "__main__":
         os.environ["HF_DATASETS_CACHE"] = args.map_cache_dir
 
     dataset = load_from_disk(os.path.join(generated_datasets_dir, 'mrl_prediction'), keep_in_memory=args.keep_in_memory)
-
     train_set = dataset['train'].shuffle()
+    train_splits = train_set.train_test_split(test_size=0.1, seed=42)
+
     test_random_fixed = dataset['test_random_fixed'].shuffle()
     test_random_var = dataset['test_random_var'].shuffle()
     test_human_fixed = dataset['test_human_fixed'].shuffle()
@@ -73,7 +76,6 @@ if __name__ == "__main__":
         return tokens
 
 
-    train_splits = train_set.train_test_split(test_size=0.1, seed=42)
     train_dataset = train_splits['train']
     eval_dataset = train_splits['test']
 
@@ -88,12 +90,12 @@ if __name__ == "__main__":
 
     training_args = TrainingArguments(
         run_name=f"mrl_{args.model_name}",
-        output_dir=os.path.join(cache_dir, 'eval_models', f"mrl_{args.model_name}"),
+        output_dir=f'/home/leonardo/Desktop/models/{args.model_name}/checkpoint-22245/',
         eval_strategy="epoch",
         save_strategy="epoch",
         metric_for_best_model="eval_loss",
         per_device_train_batch_size=64,
-        per_device_eval_batch_size=16,
+        per_device_eval_batch_size=1,
         eval_accumulation_steps=200,
         load_best_model_at_end=True,
         greater_is_better=False,
@@ -134,13 +136,10 @@ if __name__ == "__main__":
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=tokenized_train,
         eval_dataset=tokenized_eval,
         tokenizer=tokenizer,
         callbacks=[EarlyStoppingCallback(early_stopping_patience=2)],
     )
-
-    _ = trainer.train()
 
     preds_random_fixed = trainer.predict(tokenized_test_random_fixed)
     y_pred_random_fixed = preds_random_fixed.predictions.reshape(-1)
@@ -158,8 +157,6 @@ if __name__ == "__main__":
     y_pred_human_var = preds_human_var.predictions.reshape(-1)
     y_true_human_var = preds_human_var.label_ids
 
-
-
     print("[RANDOM] Fixed length test set:")
     print("Pearson R:", pearsonr(y_pred_random_fixed, y_true_random_fixed)[0])
     print()
@@ -171,16 +168,3 @@ if __name__ == "__main__":
     print()
     print("[HUMAN] Variable length test set:")
     print("Pearson R:", pearsonr(y_pred_human_var, y_true_human_var)[0])
-
-
-    with open(file_name, "wb") as f:
-        pickle.dump({
-            "y_pred_random_fixed": y_pred_random_fixed,
-            "y_true_random_fixed": y_true_random_fixed,
-            "y_pred_random_var": y_pred_random_var,
-            "y_true_random_var": y_true_random_var,
-            "y_pred_human_fixed": y_pred_human_fixed,
-            "y_true_human_fixed": y_true_human_fixed,
-            "y_pred_human_var": y_pred_human_var,
-            "y_true_human_var": y_true_human_var,
-        }, f)
