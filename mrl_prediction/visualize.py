@@ -1,6 +1,8 @@
 import os
 import pickle
-from matplotlib import patches, gridspec
+import warnings
+
+from matplotlib import patches, gridspec, MatplotlibDeprecationWarning
 import matplotlib.pyplot as plt
 from scipy.stats import pearsonr
 from tqdm import tqdm
@@ -10,6 +12,12 @@ from utils.model_definitions import MODELS
 
 COLORMAP = 'viridis'
 GRIDSIZE = 180
+
+warnings.filterwarnings(
+    "ignore",
+    category=MatplotlibDeprecationWarning,
+    message=".*get_cmap function was deprecated.*"
+)
 
 def load_model_results(model_name, show_framepool_50, show_framepool_100, show_optimus_50, show_optimus_100):
     valuated_models = []
@@ -265,7 +273,8 @@ def visualize_mrl(model_name, show_framepool_50=False, show_framepool_100=False,
             clip_on=False
         )
         ax_human_var.add_patch(rect_model_name)
-        print(f"{name}: R_random_fixed = {R_random_fixed:.3f}    R_random_var = {R_random_var:.3f}    R_human_fixed = {R_human_fixed:.3f}    R_human_var = {R_human_var:.3f}")
+        if not 'Framepool' in name and not 'Optimus' in name:
+            print(f"{MODELS[name]}\t{R_random_fixed:.3f}\t{R_random_var:.3f} \t{R_human_fixed:.3f}\t{R_human_var:.3f}")
 
     cbar_ax = fig.add_axes([0.94, 0.3, 0.02, 0.4])  # [left, bottom, width, height]
     cbar = fig.colorbar(hb, cax=cbar_ax)
@@ -286,15 +295,15 @@ def visualize_mrl(model_name, show_framepool_50=False, show_framepool_100=False,
     fig.text(0.01, 0.5, 'Predicted MRL', va='center', rotation='vertical', fontsize=16)
     fig.text(0.5, 0.02, 'Observed MRL', ha='center', fontsize=16)
     plt.subplots_adjust(left=0.04, right=0.90, top=0.96, bottom=bottom_pad)
-    plt.tight_layout()
     plt.savefig(figure_path)
+    plt.close()
 
 if __name__ == "__main__":
     show_framepool_50 = True
     show_framepool_100 = False
     show_optimus_50 = False
     show_optimus_100 = False
-    for model_name in tqdm(MODELS):
+    for model_name in MODELS:
         visualize_mrl(
             model_name,
             show_framepool_50,

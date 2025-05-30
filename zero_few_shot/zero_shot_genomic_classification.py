@@ -95,7 +95,8 @@ def few_shot_prediction(train_embeddings, train_labels, test_embeddings, test_la
 def evaluate_class_prediction(model_name, file_list):
     class_dir = os.path.join(images_dir, 'class_genomic_regions')
     os.makedirs(class_dir, exist_ok=True)
-    figure_path = os.path.join(class_dir, f"{model_name}.pdf")
+    figure_path = os.path.join(class_dir, f"gen_region_{model_name}_tsne.pdf")
+    figure_path_auprc = os.path.join(class_dir, f"gen_region_{model_name}_auprc.pdf")
     tsne_dir = os.path.join(results_dir, 'tSNE', 'genomic_regions_annotated', model_name)
 
     if os.path.exists(figure_path):
@@ -184,20 +185,16 @@ def evaluate_class_prediction(model_name, file_list):
     precision_per_class_few_shot = few_shot_res["precision_per_class_few_shot"]
     recall_per_class_few_shot = few_shot_res["recall_per_class_few_shot"]
 
-    figsize = (45, 8)
+    figsize = (25, 8)
     fig = plt.figure(figsize=figsize)
-    gs = gridspec.GridSpec(1, 7, width_ratios=[1, 1, 0.1, 1, 0.2, 1, 1], wspace=0.05, hspace=0.05)
+    gs = gridspec.GridSpec(1, 4, width_ratios=[1, 1, 0.1, 1], wspace=0.05, hspace=0.05)
 
     ax_class = fig.add_subplot(gs[0])
     ax_gc = fig.add_subplot(gs[1])
     ax_length = fig.add_subplot(gs[3])
-    ax_auprc_zero = fig.add_subplot(gs[5])
-    ax_auprc_few = fig.add_subplot(gs[6])
-
     spacer_1 = fig.add_subplot(gs[2])
-    spacer_2 = fig.add_subplot(gs[4])
     spacer_1.axis('off')
-    spacer_2.axis('off')
+
 
     df = pd.DataFrame(test_meta)
     df["Dimension 1"] = X_2d[:, 0]
@@ -281,8 +278,25 @@ def evaluate_class_prediction(model_name, file_list):
     ax_length.set_yticks([])
     ax_length.set_ylabel("")
     ax_length.set_title("Colored by Region Length", fontsize=18)
-    ax_length.set_xlabel(""
-                         )
+    ax_length.set_xlabel("")
+
+    fig.subplots_adjust(
+        left=0.05,
+        right=0.95,
+        bottom=0.10,
+        top=0.95,
+    )
+
+    plt.savefig(figure_path.replace(".pdf", ".png"), dpi=300)
+    plt.close(fig)
+
+    figsize = (16, 8)
+    fig = plt.figure(figsize=figsize)
+    gs = gridspec.GridSpec(1, 2, width_ratios=[1, 1], wspace=0.05, hspace=0.05)
+
+    ax_auprc_zero = fig.add_subplot(gs[0])
+    ax_auprc_few = fig.add_subplot(gs[1])
+
     """
     Plot Class auPRC
     """
@@ -311,17 +325,17 @@ def evaluate_class_prediction(model_name, file_list):
     ax_auprc_few.legend(handles=handles, labels=labels, markerscale=4, fontsize=14)
 
     fig.supxlabel("Recall",
-                  x=0.812,
+                  x=0.5,
                   y=0.045,
                   fontsize=14)
     fig.subplots_adjust(
-        left=0.02,
-        right=0.99,
+        left=0.05,
+        right=0.95,
         bottom=0.10,
         top=0.95,
     )
-    plt.savefig(figure_path)
-    plt.savefig(figure_path.replace(".pdf", ".png"), dpi=300)
+
+    plt.savefig(figure_path_auprc.replace(".pdf", ".png"), dpi=300)
     plt.close(fig)
 
 if __name__ == "__main__":

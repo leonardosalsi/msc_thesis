@@ -1,9 +1,15 @@
 import os
+import pickle
 from enum import Enum
+from pprint import pprint
+
 import numpy as np
 from matplotlib import pyplot as plt, gridspec, patches
+from scipy.stats import pearsonr
+
 from config import images_dir
-from downstream_evaluation.groupings import _collect_benchmark_data
+from downstream_evaluation.groupings import _collect_benchmark_data, DATATYPE, _collect_utr_class_data, \
+    _collect_mrl_class_data
 from downstream_evaluation.plot_mcc import prepare_data_for_visualization
 from utils.model_definitions import TASK_GROUPS, get_task_by_name, MODELS
 
@@ -13,48 +19,6 @@ os.makedirs(SAVEDIR, exist_ok=True)
 """
 Avoid recalculation, might be implemented later.
 """
-MCCRES = {
-    'NT-50M (no continual)': 0.6629566369022641,
-    'NT-100M (no continual)': 0.6688366794294678,
-    'NT-250M (no continual)': 0.6822685828857774,
-    'NT-500M (no continual)': 0.6890571709601603,
-    'NT-50M (no overlap, multispecies)': 0.6662839020426587,
-    'NT-50M (no overlap, multispecies, 2k ctx.)': 0.6675417422572667,
-    'NT-50M (overlap, multispecies)': 0.6613914573274892,
-    'NT-50M (overlap, multispecies, 2k ctx.)': 0.6624570634557607,
-    'NT-50M (overlap, logan, no EWC)': 0.6638213120747101,
-    'NT-50M (overlap, logan, EWC 0.5)': 0.6596238867948331,
-    'NT-50M (overlap, logan, EWC 1)': 0.6616211280861498,
-    'NT-50M (overlap, logan, EWC 2)': 0.6587640708513566,
-    'NT-50M (overlap, logan, EWC 5)': 0.6614948389026848,
-    'NT-50M (overlap, logan, EWC 10)': 0.6610889769046829,
-    'NT-50M (overlap, logan, EWC 25)': 0.6658175478751497,
-    'NT-50M (no overlap, multispecies, GC & Shannon)': 0.6660513633716081,
-    'NT-50M (no overlap, multispecies, GC & Shannon, 2k ctx.)': 0.667852625929835,
-    'NT-50M (overlap, multispecies, GC & Shannon)': 0.6562630444391516,
-    'NT-50M (overlap, multispecies, GC & Shannon, 2k ctx.)': 0.661293194091659,
-    'NT-50M (no overlap, multispecies, contrastive CLS)': 0.6726701713891627,
-    'NT-50M (no overlap, multispecies, contrastive mean-pool)': 0.6592191915966387,
-    'NT-50M (overlap, multispecies, contrastive CLS)': 0.6626690524094649,
-    'NT-50M (overlap, multispecies, contrastive mean-pool)': 0.6598921815072202,
-    'NT-50M (no overlap, logan, no EWC)': 0.6700147541151964,
-    'NT-50M (no overlap, logan, EWC 0.5)': 0.6696880592281658,
-    'NT-50M (no overlap, logan, EWC 1)': 0.667828340649412,
-    'NT-50M (no overlap, logan, EWC 2)': 0.6676896318309892,
-    'NT-50M (no overlap, logan, EWC 5)': 0.6707952652565227,
-    'NT-50M (no overlap, logan, EWC 10)': 0.6700759206998628,
-    'NT-50M (no overlap, logan, EWC 25)': 0.6670971334968067,
-    'NT-50M (no overlap, logan, EWC 5, 2k ctx.)': 0.6619595012383651,
-    'NT-50M (overlap, logan, EWC 5, contrastive CLS)': 0.6661911357899541,
-    'NT-50M (overlap, logan, EWC 5, contrastive mean-pool)': 0.6640817023875969,
-    'NT-50M (no overlap, logan, EWC 5, contrastive CLS)': 0.6751144701353696,
-    'NT-50M (no overlap, logan, EWC 5, contrastive mean-pool)': 0.6673329424574441,
-    'NT-50M (no overlap, logan, EWC 5, GC & Shannon)': 0.670079008369739,
-    'NT-50M (no overlap, logan, EWC 5, GC & Shannon, 2k ctx.)': 0.6629377348882154,
-    'NT-50M (overlap, logan, EWC 5, GC & Shannon)': 0.6581823078434047,
-    'NT-50M (overlap, logan, EWC 5, GC & Shannon, 2k ctx.)': 0.6608261275028725,
-    'NT-50M (overlap, logan, EWC 5, 2k ctx.)': 0.6569398898137684
-}
 
 compare_logan = [
     ('NT-50M (no overlap, multispecies)', 'NT-50M (no overlap, logan, EWC 5)'),
@@ -130,10 +94,23 @@ def get_normative_name(model_alias):
             return m
     print("Could not find model alias '{}'.".format(model_alias))
 
-def compare_one_fold(compare, filename):
+def compare_one_fold(compare, filename, datahandler):
     compare = dict(enumerate(compare))
     compare_results = {key: [] for key in compare.keys()}
     group = [get_normative_name(a) for a, b in compare.values()] + [get_normative_name(b) for a, b in compare.values()]
+
+    if datahandler == DATATYPE.UTR_CLASS:
+        benchmark_files = _collect_utr_class_data(group)
+        data = prepare_data_for_visualization(benchmark_files, True)
+        means = []
+        for idx, c in compare.items():
+            c_1 = get_normative_name(c[0])
+            c_2 = get_normative_name(c[1])
+            task = data['utr5_ben_pat']
+            r_1 = task[c_1]['mean']
+            r_2 = task[c_2]['mean']
+            means.append(r_2 - r_1)
+        return np.mean(np.array(means)), np.std(np.array(means))
 
     benchmark_files = _collect_benchmark_data(group)
     data = prepare_data_for_visualization(benchmark_files, True)
@@ -201,13 +178,29 @@ def compare_one_fold(compare, filename):
     plt.savefig(os.path.join(SAVEDIR, f"compare_{filename}_mcc.pdf"))
     plt.show()
 
-def compare_two_fold(compare, filename):
+def compare_two_fold(compare, filename, datahandler):
     compare = dict(enumerate(compare))
     compare_results_cls = {key: [] for key in compare.keys()}
     compare_results_mean = {key: [] for key in compare.keys()}
     compare_results = {key: [] for key in compare.keys()}
 
     group = [get_normative_name(a) for a, b, c in compare.values()] + [get_normative_name(b) for a, b, c in compare.values()] + [get_normative_name(c) for a, b, c in compare.values()]
+    if datahandler == DATATYPE.UTR_CLASS:
+        benchmark_files = _collect_utr_class_data(group)
+        data = prepare_data_for_visualization(benchmark_files, True)
+        means_cls = []
+        means_mean = []
+        for idx, c in compare.items():
+            c_1 = get_normative_name(c[0])
+            c_2 = get_normative_name(c[1])
+            c_3 = get_normative_name(c[2])
+            task = data['utr5_ben_pat']
+            r_1 = task[c_1]['mean']
+            r_2 = task[c_2]['mean']
+            r_3 = task[c_3]['mean']
+            means_cls.append(r_2 - r_1)
+            means_mean.append(r_3 - r_1)
+        return (np.mean(np.array(means_cls)), np.mean(np.array(means_mean))), (np.std(np.array(means_cls)), np.std(np.array(means_mean)))
 
     benchmark_files = _collect_benchmark_data(group)
     data = prepare_data_for_visualization(benchmark_files, True)
@@ -342,7 +335,9 @@ def compare_two_fold(compare, filename):
     plt.savefig(os.path.join(SAVEDIR, f"compare_{filename}_mcc.pdf"))
     plt.show()
 
-def compare_across_groups_one_fold(compare, filename):
+def compare_across_groups_one_fold(compare, filename, datahandler):
+    if datahandler == DATATYPE.UTR_CLASS:
+        return
     compare = dict(enumerate(compare))
     group = [get_normative_name(a) for a, b in compare.values()] + [get_normative_name(b) for a, b in compare.values()]
 
@@ -458,10 +453,10 @@ def compare_across_groups_one_fold(compare, filename):
     plt.savefig(os.path.join(SAVEDIR, f"compare_{filename}_mcc_grouped.pdf"))
     plt.show()
 
-def compare_across_groups_two_fold(compare, filename):
+def compare_across_groups_two_fold(compare, filename, datahandler):
+    if datahandler == DATATYPE.UTR_CLASS:
+        return
     compare = dict(enumerate(compare))
-
-
     group = [get_normative_name(a) for a, b, c in compare.values()] + [get_normative_name(b) for a, b, c in compare.values()] + [get_normative_name(c) for a, b, c in compare.values()]
 
     benchmark_files = _collect_benchmark_data(group)
@@ -694,25 +689,369 @@ def compare_across_groups_two_fold(compare, filename):
     plt.savefig(os.path.join(SAVEDIR, f"compare_{filename}_mcc_grouped.pdf"))
     plt.show()
 
+def plot_5_utr(data, ylabel, filename):
+    figsize = (16, 6)
+    fig, ax = plt.subplots(figsize=figsize)
+    labels = [x for x in data.keys()]
+    x = np.arange(len(labels))
+    for i, l in enumerate(labels):
+        mean = data[l]['means']
+        std = data[l]['stds']
+        ax.bar(i, mean, label=l, color='green' if mean > 0 else 'crimson')
+        ax.errorbar(
+            i,
+            mean,
+            yerr=std,
+            fmt="none",  # no marker
+            ecolor="black",
+            elinewidth=1.5,
+            capsize=5,
+            capthick=1.5
+        )
+    ax.axhline(
+        y=0,
+        color='black',
+        linestyle='-',
+        linewidth=1.2,
+        alpha=0.7
+    )
+    ax.set_ylabel(ylabel, fontsize=14)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=90, fontsize=14)
+    fig.subplots_adjust(
+        left=0.05,
+        right=0.98,
+        bottom=0.45,
+        top=0.95,
+    )
+    plt.savefig(os.path.join(SAVEDIR, f"compare_{filename}.pdf"))
+
+
+def collect_mrl_data(compare, type):
+
+    def prepare_mrl_data(files):
+        data = {}
+        for model_name, file_list in files.items():
+            for file in file_list:
+                with open(file, "rb") as f:
+                    model_results = pickle.load(f)
+                if not model_name in model_results:
+                    data[model_name] = {}
+                y_pred_random_fixed = model_results['y_pred_random_fixed']
+                y_true_random_fixed = model_results['y_true_random_fixed']
+                y_pred_random_var = model_results['y_pred_random_var']
+                y_true_random_var = model_results['y_true_random_var']
+                y_pred_human_fixed = model_results['y_pred_human_fixed']
+                y_true_human_fixed = model_results['y_true_human_fixed']
+                y_pred_human_var = model_results['y_pred_human_var']
+                y_true_human_var = model_results['y_true_human_var']
+
+                R_random_fixed = pearsonr(y_true_random_fixed, y_pred_random_fixed)[0]
+                R_random_var = pearsonr(y_true_random_var, y_pred_random_var)[0]
+                R_human_fixed = pearsonr(y_true_human_fixed, y_pred_human_fixed)[0]
+                R_human_var = pearsonr(y_true_human_var, y_pred_human_var)[0]
+
+                data[model_name] = {
+                    'R_random_fixed': R_random_fixed,
+                    'R_random_var': R_random_var,
+                    'R_human_fixed': R_human_fixed,
+                    'R_human_var': R_human_var,
+                }
+        return data
+
+    compare = dict(enumerate(compare))
+    if type == 'pca':
+        group = [get_normative_name(a) for a, b, c in compare.values()] + [get_normative_name(b) for a, b, c in compare.values()] + [get_normative_name(c) for a, b, c in compare.values()]
+        benchmark_files = _collect_mrl_class_data(group)
+        data = prepare_mrl_data(benchmark_files)
+
+        R_all_cls = []
+        R_human_fixed_cls = []
+        R_human_var_cls = []
+        R_random_fixed_cls = []
+        R_random_var_cls = []
+        R_all_mean = []
+        R_human_fixed_mean = []
+        R_human_var_mean = []
+        R_random_fixed_mean = []
+        R_random_var_mean = []
+
+        for idx, c in compare.items():
+            c_1 = get_normative_name(c[0])
+            c_2 = get_normative_name(c[1])
+            c_3 = get_normative_name(c[2])
+            r_1 = data[c_1]
+            r_2 = data[c_2]
+            r_3 = data[c_3]
+
+            R_human_fixed_cls.append(r_2['R_human_fixed'] - r_1['R_human_fixed'])
+            R_human_var_cls.append(r_2['R_human_var'] - r_1['R_human_var'])
+            R_random_fixed_cls.append(r_2['R_random_fixed'] - r_1['R_random_fixed'])
+            R_random_var_cls.append(r_2['R_random_var'] - r_1['R_random_var'])
+            R_all_cls.append(r_2['R_human_fixed'] - r_1['R_human_fixed'])
+            R_all_cls.append(r_2['R_human_var'] - r_1['R_human_var'])
+            R_all_cls.append(r_2['R_random_fixed'] - r_1['R_random_fixed'])
+            R_all_cls.append(r_2['R_random_var'] - r_1['R_random_var'])
+
+            R_human_fixed_mean.append(r_3['R_human_fixed'] - r_1['R_human_fixed'])
+            R_human_var_mean.append(r_3['R_human_var'] - r_1['R_human_var'])
+            R_random_fixed_mean.append(r_3['R_random_fixed'] - r_1['R_random_fixed'])
+            R_random_var_mean.append(r_3['R_random_var'] - r_1['R_random_var'])
+            R_all_mean.append(r_3['R_human_fixed'] - r_1['R_human_fixed'])
+            R_all_mean.append(r_3['R_human_var'] - r_1['R_human_var'])
+            R_all_mean.append(r_3['R_random_fixed'] - r_1['R_random_fixed'])
+            R_all_mean.append(r_3['R_random_var'] - r_1['R_random_var'])
+
+        return (np.mean(np.array(R_all_cls)), np.std(np.array(R_all_cls))), \
+            (np.mean(np.array(R_human_fixed_cls)), np.std(np.array(R_human_fixed_cls))), \
+            (np.mean(np.array(R_human_var_cls)), np.std(np.array(R_human_var_cls))), \
+            (np.mean(np.array(R_random_fixed_cls)), np.std(np.array(R_random_fixed_cls))), \
+            (np.mean(np.array(R_random_var_cls)), np.std(np.array(R_random_var_cls))), \
+            (np.mean(np.array(R_all_mean)), np.std(np.array(R_all_mean))), \
+            (np.mean(np.array(R_human_fixed_mean)), np.std(np.array(R_human_fixed_mean))), \
+            (np.mean(np.array(R_human_var_mean)), np.std(np.array(R_human_var_mean))), \
+            (np.mean(np.array(R_random_fixed_mean)), np.std(np.array(R_random_fixed_mean))), \
+            (np.mean(np.array(R_random_var_mean)), np.std(np.array(R_random_var_mean))),
+
+
+    else:
+        group = [get_normative_name(a) for a, b in compare.values()] + [get_normative_name(b) for a, b in
+                                                                        compare.values()]
+
+        benchmark_files = _collect_mrl_class_data(group)
+        data = prepare_mrl_data(benchmark_files)
+
+        R_all = []
+        R_human_fixed = []
+        R_human_var = []
+        R_random_fixed = []
+        R_random_var = []
+
+        for idx, c in compare.items():
+            c_1 = get_normative_name(c[0])
+            c_2 = get_normative_name(c[1])
+            r_1 = data[c_1]
+            r_2 = data[c_2]
+
+            R_human_fixed.append(r_2['R_human_fixed'] - r_1['R_human_fixed'])
+            R_human_var.append(r_2['R_human_var'] - r_1['R_human_var'])
+            R_random_fixed.append(r_2['R_random_fixed'] - r_1['R_random_fixed'])
+            R_random_var.append(r_2['R_random_var'] - r_1['R_random_var'])
+            R_all.append(r_2['R_human_fixed'] - r_1['R_human_fixed'])
+            R_all.append(r_2['R_human_var'] - r_1['R_human_var'])
+            R_all.append(r_2['R_random_fixed'] - r_1['R_random_fixed'])
+            R_all.append(r_2['R_random_var'] - r_1['R_random_var'])
+
+        return (np.mean(np.array(R_all)), np.std(np.array(R_all))), \
+            (np.mean(np.array(R_human_fixed)), np.std(np.array(R_human_fixed))), \
+            (np.mean(np.array(R_human_var)), np.std(np.array(R_human_var))), \
+            (np.mean(np.array(R_random_fixed)), np.std(np.array(R_random_fixed))), \
+            (np.mean(np.array(R_random_var)), np.std(np.array(R_random_var))),
+
+def plot_mrl(plot_res):
+    print(plot_res)
+    figsize = (10, 2 * len(plot_res))
+    fig = plt.figure(figsize=figsize)
+
+    gs = gridspec.GridSpec(5, 1, width_ratios=[1], wspace=0.05, hspace=0.1)
+
+    labels = [x for x in plot_res.keys()]
+    x = np.arange(len(labels))
+
+    ax_all = fig.add_subplot(gs[0])
+    ax_human_fixed = fig.add_subplot(gs[1])
+    ax_human_var = fig.add_subplot(gs[2])
+    ax_random_fixed = fig.add_subplot(gs[3])
+    ax_random_var = fig.add_subplot(gs[4])
+
+    ax_all.set_ylabel("")
+    ax_human_fixed.set_ylabel("")
+    ax_human_var.set_ylabel("ΔR")
+    ax_random_fixed.set_ylabel("")
+    ax_random_var.set_ylabel("")
+    fig.text(0.975, 0.88, "All Data",
+             va="center", rotation="vertical", fontsize=10)
+    fig.text(0.975, 0.73, "Human (50bp) MPRA",
+             va="center", rotation="vertical", fontsize=10)
+    fig.text(0.975, 0.57, "Human (25-100bp) MPRA",
+             va="center", rotation="vertical", fontsize=10)
+    fig.text(0.975, 0.41, "Random (50bp) MPRA",
+             va="center", rotation="vertical", fontsize=10)
+    fig.text(0.975, 0.25, "Random (25-100bp) MPRA",
+             va="center", rotation="vertical", fontsize=10)
+    ax_all.set_xticks([])
+    ax_human_fixed.set_xticks([])
+    ax_human_var.set_xticks([])
+    ax_random_fixed.set_xticks([])
+    ax_random_var.set_xticks(x)
+    ax_random_var.set_xticklabels(labels, rotation=90)
+
+    lim = [-0.4, 0.4]
+    ax_all.set_ylim(lim)
+    ax_human_fixed.set_ylim(lim)
+    ax_human_var.set_ylim(lim)
+    ax_random_fixed.set_ylim(lim)
+    ax_random_var.set_ylim(lim)
+    ax_all.axhline(
+        y=0,
+        color='black',
+        linestyle='-',
+        linewidth=1.2,
+        alpha=0.7
+    )
+
+    ax_human_fixed.axhline(
+        y=0,
+        color='black',
+        linestyle='-',
+        linewidth=1.2,
+        alpha=0.7
+    )
+
+    ax_human_var.axhline(
+        y=0,
+        color='black',
+        linestyle='-',
+        linewidth=1.2,
+        alpha=0.7
+    )
+
+    ax_random_fixed.axhline(
+        y=0,
+        color='black',
+        linestyle='-',
+        linewidth=1.2,
+        alpha=0.7
+    )
+
+    ax_random_var.axhline(
+        y=0,
+        color='black',
+        linestyle='-',
+        linewidth=1.2,
+        alpha=0.7
+    )
+
+    for i, model_group in enumerate(plot_res):
+        ax_all.bar(i, plot_res[model_group]['R_all']['means'], color='green' if plot_res[model_group]['R_all']['means'] > 0 else 'crimson')
+        ax_human_fixed.bar(i, plot_res[model_group]['R_human_fixed']['means'], color='green' if plot_res[model_group]['R_human_fixed']['means'] > 0 else 'crimson')
+        ax_human_var.bar(i, plot_res[model_group]['R_human_var']['means'], color='green' if plot_res[model_group]['R_human_var']['means'] > 0 else 'crimson')
+        ax_random_fixed.bar(i, plot_res[model_group]['R_random_fixed']['means'], color='green' if plot_res[model_group]['R_random_fixed']['means'] > 0 else 'crimson')
+        ax_random_var.bar(i, plot_res[model_group]['R_random_var']['means'], color='green' if plot_res[model_group]['R_random_var']['means'] > 0 else 'crimson')
+        ax_all.errorbar(
+            i,
+            plot_res[model_group]['R_all']['means'],
+            yerr=plot_res[model_group]['R_all']['stds'],
+            fmt="none",  # no marker
+            ecolor="black",
+            elinewidth=1.5,
+            capsize=5,
+            capthick=1.5
+        )
+        ax_human_fixed.errorbar(
+            i,
+            plot_res[model_group]['R_human_fixed']['means'],
+            yerr=plot_res[model_group]['R_human_fixed']['stds'],
+            fmt="none",  # no marker
+            ecolor="black",
+            elinewidth=1.5,
+            capsize=5,
+            capthick=1.5
+        )
+        ax_human_var.errorbar(
+            i,
+            plot_res[model_group]['R_human_var']['means'],
+            yerr=plot_res[model_group]['R_human_var']['stds'],
+            fmt="none",  # no marker
+            ecolor="black",
+            elinewidth=1.5,
+            capsize=5,
+            capthick=1.5
+        )
+        ax_random_fixed.errorbar(
+            i,
+            plot_res[model_group]['R_random_fixed']['means'],
+            yerr=plot_res[model_group]['R_random_fixed']['stds'],
+            fmt="none",  # no marker
+            ecolor="black",
+            elinewidth=1.5,
+            capsize=5,
+            capthick=1.5
+        )
+        ax_random_var.errorbar(
+            i,
+            plot_res[model_group]['R_random_var']['means'],
+            yerr=plot_res[model_group]['R_random_var']['stds'],
+            fmt="none",  # no marker
+            ecolor="black",
+            elinewidth=1.5,
+            capsize=5,
+            capthick=1.5
+        )
+    plt.subplots_adjust(left=0.1, right=0.96, top=0.96, bottom=0.18)
+    plt.savefig(os.path.join(SAVEDIR, f"compare_mrl.pdf"))
 
 class CompareHandler(Enum):
-    #LOGAN = ('logan', compare_logan)
-    #OVERLAP = ('overlap', compare_overlap)
-    #SAMPLING = ('sh_gc', compare_sh_gc)
-    PCA = ('pca', compare_pca)
-    #CONTEXT = ('context', compare_context)
+    LOGAN = ('logan', compare_logan, "Logan")
+    OVERLAP = ('overlap', compare_overlap, "Overlapping")
+    SAMPLING = ('sh_gc', compare_sh_gc, "GC & Shannon")
+    PCA = ('pca', compare_pca, "Contrastive")
+    CONTEXT = ('context', compare_context, "2k Context")
 
 if __name__ == '__main__':
-    for handler in CompareHandler:
-        filename, compare = handler.value
-        if len(compare[0]) == 2:
-            compare_fn = compare_one_fold
-            grp_compare_fn = compare_across_groups_one_fold
-        elif len(compare[0]) == 3:
-            compare_fn = compare_two_fold
-            grp_compare_fn = compare_across_groups_two_fold
-        else:
-            raise NotImplementedError
-        compare_fn(compare, filename)
-        grp_compare_fn(compare, filename)
+    datahandler = DATATYPE.MRL_PRED
+    plot_res = {}
 
+    if datahandler != DATATYPE.MRL_PRED:
+        for handler in CompareHandler:
+            filename, compare, clearname = handler.value
+            if len(compare[0]) == 2:
+                compare_fn = compare_one_fold
+                grp_compare_fn = compare_across_groups_one_fold
+            elif len(compare[0]) == 3:
+                compare_fn = compare_two_fold
+                grp_compare_fn = compare_across_groups_two_fold
+            else:
+                raise NotImplementedError
+            res = compare_fn(compare, filename, datahandler)
+            grp_compare_fn(compare, filename, datahandler)
+            if res is not None:
+                means, stds = res
+                if isinstance(means, tuple):
+                    means_cls, means_mean = means
+                    stds_cls, stds_mean = stds
+                    plot_res['Contrastive (CLS)'] = {"means": means_cls, "stds": stds_cls}
+                    plot_res['Contrastive (mean-pool)'] = {"means": means_mean, "stds": stds_mean}
+                else:
+                    plot_res[clearname] = {"means": means, "stds": stds}
+        if plot_res != {}:
+            plot_5_utr(plot_res, "ΔMCC", '5_utr')
+    else:
+        for handler in CompareHandler:
+            filename, compare, clearname = handler.value
+            res = collect_mrl_data(compare, filename)
+
+            if len(res) == 10:
+                plot_res['Contrastive (CLS)'] = {
+                    "R_all": {'means': res[0][0], "stds": res[0][1]},
+                    "R_human_fixed": {'means': res[1][0], "stds": res[1][1]},
+                    "R_human_var": {'means': res[2][0], "stds": res[2][1]},
+                    "R_random_fixed": {'means': res[3][0], "stds": res[3][1]},
+                    "R_random_var": {'means': res[4][0], "stds": res[4][1]},
+                }
+                plot_res['Contrastive (mean-pool)'] = {
+                    "R_all": {'means': res[5][0], "stds": res[5][1]},
+                    "R_human_fixed": {'means': res[6][0], "stds": res[6][1]},
+                    "R_human_var": {'means': res[7][0], "stds": res[7][1]},
+                    "R_random_fixed": {'means': res[8][0], "stds": res[8][1]},
+                    "R_random_var": {'means': res[9][0], "stds": res[9][1]},
+                }
+            else:
+                plot_res[clearname] = {
+                    "R_all": {'means': res[0][0], "stds": res[0][1]},
+                    "R_human_fixed": {'means': res[1][0], "stds": res[1][1]},
+                    "R_human_var": {'means': res[2][0], "stds": res[2][1]},
+                    "R_random_fixed": {'means': res[3][0], "stds": res[3][1]},
+                    "R_random_var": {'means': res[4][0], "stds": res[4][1]},
+                }
+        plot_mrl(plot_res)

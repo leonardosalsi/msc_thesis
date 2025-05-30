@@ -5,7 +5,7 @@ import numpy as np
 from argparse_dataclass import ArgumentParser
 from datasets import load_from_disk
 from config import results_dir
-from embedding_inspection.embedding_extraction_methods import extract_region_embeddings_genomic_elements, \
+from zero_few_shot.embedding_extraction_methods import extract_region_embeddings_genomic_elements, \
     extract_region_embeddings_5_prime_UTR
 
 from utils.util import get_device, print_args

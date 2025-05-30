@@ -4,7 +4,6 @@ from utils.model import get_emb_model
 from utils.tokenizer import get_eval_tokenizer
 import torch.nn.functional as F
 
-
 def _get_kmer_offsets(sequence: str, kmer: int = 6):
     return [(i, i + kmer) for i in range(0, len(sequence) - kmer + 1, kmer)]
 

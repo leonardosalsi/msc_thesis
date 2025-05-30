@@ -2,6 +2,7 @@ import json
 import os
 from enum import Enum
 
+from config import results_dir
 from utils.model_definitions import TASK_DEFINITIONS, MODELS
 
 PRETRAINED_MODEL_DIR = '/shared/pretrained_models'
@@ -12,6 +13,7 @@ class DATATYPE(Enum):
     TRAINING_CURVES = 1
     BENCHMARK = 2
     UTR_CLASS = 3
+    MRL_PRED = 4
 
 def get_task_alias(task_name):
     for task in TASK_DEFINITIONS:
@@ -61,6 +63,15 @@ def get_utr_class_data(name, baseline=False):
     file_paths = [os.path.join(utr_class_folder, f) for f in files]
     return file_paths
 
+def get_mrl_class_data(name, baseline=False):
+    result_folder = os.path.join(results_dir, "mrl_predictions")
+    result_file = os.path.join(result_folder, f"{name}.pkl")
+    if not os.path.exists(result_file):
+        print(f"Benchmark results for {name} is not available.")
+        return None
+    file_paths = [result_file]
+    return file_paths
+
 def check_model_existence():
     for model_name in MODELS:
         model_path = os.path.join(PRETRAINED_MODEL_DIR,model_name)
@@ -84,6 +95,16 @@ def _collect_utr_class_data(group, baseline=False):
     data = {}
     for g in group:
         benchmark_data = get_utr_class_data(g, baseline)
+
+        if benchmark_data is not None:
+            data[g] = benchmark_data
+
+    return data
+
+def _collect_mrl_class_data(group, baseline=False):
+    data = {}
+    for g in group:
+        benchmark_data = get_mrl_class_data(g, baseline)
 
         if benchmark_data is not None:
             data[g] = benchmark_data

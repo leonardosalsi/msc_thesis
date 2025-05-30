@@ -95,7 +95,6 @@ if __name__ == "__main__":
         per_device_train_batch_size=128,
         per_device_eval_batch_size=16,
         eval_accumulation_steps=200,
-        load_best_model_at_end=True,
         greater_is_better=False,
         num_train_epochs=5,
         learning_rate=2e-4,
