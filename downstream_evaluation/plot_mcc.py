@@ -104,9 +104,13 @@ def visualize_mcc_per_task(data, colors, filename_base, model_names):
 
 def visualize_mcc_across_tasks(data, filename_base, data_class):
     model_mcc = {}
+    model_std = {}
+
     for task_name, model_results in data.items():
         for model_name, scores in model_results.items():
             model_mcc.setdefault(model_name, []).append(scores['mean'])
+            if data_class == DATATYPE.UTR_CLASS:
+                model_std.setdefault(model_name, []).append(scores['std'])
 
     for model_name, scores in model_mcc.items():
         model_mcc[model_name] = np.mean(scores)
@@ -114,6 +118,9 @@ def visualize_mcc_across_tasks(data, filename_base, data_class):
 
     model_names = sorted(model_mcc, key=model_mcc.get, reverse=False)
     mean_mcc = [model_mcc[m] for m in model_names]
+    if data_class == DATATYPE.UTR_CLASS:
+        model_std = [model_std[m][0] for m in model_names]
+
 
     cmap = plt.cm.get_cmap('viridis', len(model_names))
     n_colors = len(model_names)
@@ -121,19 +128,34 @@ def visualize_mcc_across_tasks(data, filename_base, data_class):
 
     fig, ax = plt.subplots(figsize=(10, 6), constrained_layout=True)
     clear_names = [MODELS[model_name] for model_name in model_names]
-    bars = ax.barh(clear_names, mean_mcc, color=colors, height=0.9)
+    print(len(clear_names), len(model_mcc), len(model_std))
 
-    for bar, value in zip(bars, mean_mcc):
-        ax.text(
-            value + 0.02,
-            bar.get_y() + bar.get_height() / 2,
-            f"{value:.3f}",
-            va="center",
-            ha="left",
-            fontsize=8,
-            color="black",
-            weight="bold"
-        )
+    if data_class == DATATYPE.UTR_CLASS:
+        bars = ax.barh(clear_names, mean_mcc, color=colors, height=0.9, xerr=model_std,error_kw=dict(capsize=2),)
+        for bar, value, std in zip(bars, mean_mcc, model_std):
+            ax.text(
+                value + std + 0.01,
+                bar.get_y() + bar.get_height() / 2,
+                f"{value:.3f}",
+                va="center",
+                ha="left",
+                fontsize=8,
+                color="black",
+                weight="bold"
+            )
+    else:
+        bars = ax.barh(clear_names, mean_mcc, color=colors, height=0.9)
+        for bar, value in zip(bars, mean_mcc):
+            ax.text(
+                value + 0.02,
+                bar.get_y() + bar.get_height() / 2,
+                f"{value:.3f}",
+                va="center",
+                ha="left",
+                fontsize=8,
+                color="black",
+                weight="bold"
+            )
 
     ax.set_yticks(np.arange(len(model_names)))
     ax.set_yticklabels(clear_names, fontsize=8)

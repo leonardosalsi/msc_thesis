@@ -56,8 +56,8 @@ def evaluate_af_prediction(
     class_dir = os.path.join(images_dir, 'class_by_rarity')
     figure_path = os.path.join(class_dir, f"{model_name}.pdf")
 
-    if os.path.exists(figure_path):
-        return
+    """if os.path.exists(figure_path):
+        return"""
 
     results = {file.split("layer_")[-1].split(".")[0]: {} for file in file_list}
 
@@ -107,11 +107,15 @@ def evaluate_af_prediction(
         ax_auprc = fig.add_subplot(gs[i])
         ax_auprc.set_ylim(ymin, ymax)
         auprc_cmap = plt.cm.get_cmap(COLORMAP)
-        ax_auprc.plot(recall_zero_shot, precision_zero_shot, color=auprc_cmap(0.3), lw=2,
+        pos_rate = np.mean(test_meta["label"])
+        ax_auprc.hlines(y=pos_rate, xmin=-1, xmax=2, colors='black', linestyles='--', label=None, lw=2)
+        ax_auprc.plot(recall_zero_shot, precision_zero_shot, color=auprc_cmap(0.3), lw=1,
                       label=f"auPRC Zero-Shot= {ap_zero_shot:.3f}")
-        ax_auprc.plot(recall_few_shot, precision_few_shot, color=auprc_cmap(0.6), lw=2,
+        ax_auprc.plot(recall_few_shot, precision_few_shot, color=auprc_cmap(0.6), lw=1,
                       label=f"auPRC Regression= {ap_few_shot:.3f}")
 
+
+        ax_auprc.set_xlim([-0.02, 1.02])
         if i == 0:
             ax_auprc.set_ylabel("Precision", fontsize=14)
         else:
@@ -148,7 +152,7 @@ def evaluate_af_prediction(
     plt.close(fig)
 
 if __name__ == "__main__":
-    embeddings_folder = os.path.join(results_dir, 'embeddings', 'genomic_regions_annotated')
+    embeddings_folder = os.path.join(results_dir, 'embeddings', '5_utr_af_prediction')
     print(f"MODEL NAME\tLAYER\tZERO SHOT\tFITTED")
     for model_name in MODELS:
         model_folder = os.path.join(embeddings_folder, model_name)

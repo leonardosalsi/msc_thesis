@@ -287,7 +287,7 @@ def evaluate_class_prediction(model_name, file_list):
         top=0.95,
     )
 
-    plt.savefig(figure_path.replace(".pdf", ".png"), dpi=300)
+    plt.savefig(figure_path, dpi=300)
     plt.close(fig)
 
     figsize = (16, 8)
@@ -300,9 +300,18 @@ def evaluate_class_prediction(model_name, file_list):
     """
     Plot Class auPRC
     """
+
+
+    ax_auprc_zero.hlines(
+        y=0.2, xmin=-1, xmax=2,
+        linestyles='--', colors='black', alpha=1, lw=2,
+        label=None
+    )
     for c in label_order:
         ax_auprc_zero.plot(recall_per_class_zero_shot[c], precision_per_class_zero_shot[c], lw=1,
                   label=f"auPRC {c} = {ap_per_class_zero_shot[c]:.3f}")
+    ax_auprc_zero.set_xlim([-0.02, 1.02])
+    ax_auprc_zero.set_ylim([-0.02, 1.02])
 
     ax_auprc_zero.set_ylabel("Precision", fontsize=14)
     ax_auprc_zero.set_title("Zero-Shot auPRC", fontsize=18)
@@ -311,9 +320,17 @@ def evaluate_class_prediction(model_name, file_list):
     handles, labels = ax_auprc_zero.get_legend_handles_labels()
     ax_auprc_zero.legend(handles=handles, labels=labels, markerscale=4, fontsize=14)
 
+
+    ax_auprc_few.hlines(
+        y=0.2, xmin=-1, xmax=2,
+        linestyles='--', colors='black', alpha=1, lw=2,
+        label=None
+    )
     for c in label_order:
         ax_auprc_few.plot(recall_per_class_few_shot[c], precision_per_class_few_shot[c], lw=1,
                   label=f"auPRC {c} = {ap_per_class_few_shot[c]:.3f}")
+    ax_auprc_few.set_xlim([-0.02, 1.02])
+    ax_auprc_few.set_ylim([-0.02, 1.02])
 
     ax_auprc_few.set_ylabel("")
     ax_auprc_few.set_title("Regressive auPRC", fontsize=18)
@@ -335,7 +352,7 @@ def evaluate_class_prediction(model_name, file_list):
         top=0.95,
     )
 
-    plt.savefig(figure_path_auprc.replace(".pdf", ".png"), dpi=300)
+    plt.savefig(figure_path_auprc, dpi=300)
     plt.close(fig)
 
 if __name__ == "__main__":
