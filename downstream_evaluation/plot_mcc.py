@@ -126,9 +126,12 @@ def visualize_mcc_across_tasks(data, filename_base, data_class):
     n_colors = len(model_names)
     colors = [cmap(0.0 + (0.85 - 0.0) * i / (n_colors - 1)) for i in range(n_colors)]
 
-    fig, ax = plt.subplots(figsize=(10, 6), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(10, 10), constrained_layout=True)
     clear_names = [MODELS[model_name] for model_name in model_names]
-    print(len(clear_names), len(model_mcc), len(model_std))
+    spacing = 0.95
+    height = 0.9
+    n = len(clear_names)
+    y_pos = np.arange(n) * spacing
 
     if data_class == DATATYPE.UTR_CLASS:
         bars = ax.barh(clear_names, mean_mcc, color=colors, height=0.9, xerr=model_std,error_kw=dict(capsize=2),)
@@ -144,23 +147,29 @@ def visualize_mcc_across_tasks(data, filename_base, data_class):
                 weight="bold"
             )
     else:
-        bars = ax.barh(clear_names, mean_mcc, color=colors, height=0.9)
-        for bar, value in zip(bars, mean_mcc):
+        bars = ax.barh(
+            y=y_pos,
+            width=mean_mcc,
+            height=height,
+            color=colors,
+        )
+        for bar, val in zip(bars, mean_mcc):
             ax.text(
-                value + 0.02,
-                bar.get_y() + bar.get_height() / 2,
-                f"{value:.3f}",
-                va="center",
-                ha="left",
-                fontsize=8,
-                color="black",
-                weight="bold"
+                val + 0.02,
+                bar.get_y() + height / 2,
+                f"{val:.3f}",
+                va="center", ha="left",
+                fontsize=10, weight="bold"
             )
 
-    ax.set_yticks(np.arange(len(model_names)))
-    ax.set_yticklabels(clear_names, fontsize=8)
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(clear_names, fontsize=10)
     ax.set_xlim(0, 1)
-    ax.set_xlabel("MCC", fontsize=12)
+    y_min = y_pos[0] - height / 2 - 0.1
+    y_max = y_pos[-1] + height / 2 + 0.1
+
+    ax.set_ylim(y_min, y_max)
+    ax.set_xlabel("Mean MCC across Tasks", fontsize=12)
     ax.grid(axis='x')
 
     for label in ax.get_yticklabels():
@@ -272,7 +281,7 @@ def get_mean_task_rank(data):
 
 if __name__ == '__main__':
     compare_group = get_for_all_compare_to_litereature
-    data_class = DATATYPE.UTR_CLASS
+    data_class = DATATYPE.BENCHMARK
     bootstrapped = True
 
     savedir = os.path.join(images_dir, 'benchmark')
@@ -283,7 +292,7 @@ if __name__ == '__main__':
     os.makedirs(filename_base, exist_ok=True)
     #get_mean_task_rank(data)
     model_names, colors = visualize_mcc_across_tasks(data, filename_base, data_class)
-    if data_class == DATATYPE.BENCHMARK:
-        visualize_mcc_per_task(data, colors, filename_base, model_names)
+    """if data_class == DATATYPE.BENCHMARK:
+        visualize_mcc_per_task(data, colors, filename_base, model_names)"""
 
 

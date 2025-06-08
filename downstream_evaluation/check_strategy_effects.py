@@ -85,6 +85,8 @@ compare_context = [
     ('NT-50M (overlap, logan, EWC 5, GC & Shannon)', 'NT-50M (overlap, logan, EWC 5, GC & Shannon, 2k ctx.)'),
 ]
 
+
+
 def calc_percentual_change_from_a_to_b(a, b):
     return (b - a) / a * 100
 
@@ -94,7 +96,7 @@ def get_normative_name(model_alias):
             return m
     print("Could not find model alias '{}'.".format(model_alias))
 
-def compare_one_fold(compare, filename, datahandler):
+def compare_one_fold(compare, filename, datahandler, clearname):
     compare = dict(enumerate(compare))
     compare_results = {key: [] for key in compare.keys()}
     group = [get_normative_name(a) for a, b in compare.values()] + [get_normative_name(b) for a, b in compare.values()]
@@ -114,17 +116,18 @@ def compare_one_fold(compare, filename, datahandler):
 
     benchmark_files = _collect_benchmark_data(group)
     data = prepare_data_for_visualization(benchmark_files, True)
-
+    diffs = []
     for idx, c in compare.items():
         c_1 = get_normative_name(c[0])
         c_2 = get_normative_name(c[1])
+
         for task in data:
             r_1 = data[task][c_1]['mean']
             r_2 = data[task][c_2]['mean']
             diff = calc_percentual_change_from_a_to_b(r_1, r_2)
-            print(f"[{task}] {c_1} -> {c_2}: {diff:.2f}%")
+            diffs.append(diff)
             compare_results[idx].append(diff)
-
+    print(f"[{clearname}] : {float(np.mean(diffs)):.2f}%")
     means = []
     stds = []
 
@@ -178,7 +181,7 @@ def compare_one_fold(compare, filename, datahandler):
     plt.savefig(os.path.join(SAVEDIR, f"compare_{filename}_mcc.pdf"))
     plt.show()
 
-def compare_two_fold(compare, filename, datahandler):
+def compare_two_fold(compare, filename, datahandler, clearname):
     compare = dict(enumerate(compare))
     compare_results_cls = {key: [] for key in compare.keys()}
     compare_results_mean = {key: [] for key in compare.keys()}
@@ -335,7 +338,7 @@ def compare_two_fold(compare, filename, datahandler):
     plt.savefig(os.path.join(SAVEDIR, f"compare_{filename}_mcc.pdf"))
     plt.show()
 
-def compare_across_groups_one_fold(compare, filename, datahandler):
+def compare_across_groups_one_fold(compare, filename, datahandler, clearname):
     if datahandler == DATATYPE.UTR_CLASS:
         return
     compare = dict(enumerate(compare))
@@ -384,8 +387,8 @@ def compare_across_groups_one_fold(compare, filename, datahandler):
     ymin = min(all_results)
     ymax = max(all_results)
     print(ymin, ymax)
-    padding = (ymax - ymin) * 0.05  # 10% padding
-    ymin, ymax = ymin - padding, ymax + padding  # 10% padding
+    padding = (ymax - ymin) * 0.05
+    ymin, ymax = ymin - padding, ymax + padding
 
     for ax_idx, task_group in enumerate(TASK_GROUPS):
         ax = fig.add_subplot(axes[ax_idx])
@@ -415,7 +418,12 @@ def compare_across_groups_one_fold(compare, filename, datahandler):
         )
 
         ax.set_xticks(x)
-        ax.set_xticklabels([f"C{i + 1}" for i in range(n)])
+        ax.set_xticklabels([f"C{i + 1}" for i in range(n)], fontsize=18)
+        if (len(x) > 15):
+            for idx, label in enumerate(ax.get_xticklabels()):
+                offset = 0.01 if idx % 2 == 0 else 0.0001  # alternating offset
+                label.set_y(offset)
+        ax.set_yticklabels(ax.get_yticklabels(), fontsize=18)
         ax.set_ylim(ymin - stds_max, ymax + stds_max)
         ax.set_xlim(-0.5 * spacing, (n - 1) * spacing + 0.5 * spacing)
         ax.margins(x=0.1)
@@ -426,26 +434,26 @@ def compare_across_groups_one_fold(compare, filename, datahandler):
             linewidth=1.2,
             alpha=0.7
         )
-        rect = patches.FancyBboxPatch(
+        """rect = patches.FancyBboxPatch(
             (0.0, 1.0),
-            1.0, 0.1,
+            1.0, 0.15,
             boxstyle="round,pad=0.00",
             transform=ax.transAxes,
             linewidth=0.5,
             edgecolor='black',
             facecolor='white',
             clip_on=False
-        )
+        )"""
         ax.text(
-            0.5, 1.05, task_group,
+            0.5, 1.07, task_group,
             transform=ax.transAxes,
             ha='center',
             va='center',
-            fontsize=16
+            fontsize=24
         )
         if ax_idx == 0:
-            ax.set_ylabel('ΔMCC', fontsize=16)
-        ax.add_patch(rect)
+            ax.set_ylabel('ΔMCC', fontsize=24)
+        #ax.add_patch(rect)
         if ax_idx > 0:
             ax.set_yticks([])
 
@@ -453,7 +461,7 @@ def compare_across_groups_one_fold(compare, filename, datahandler):
     plt.savefig(os.path.join(SAVEDIR, f"compare_{filename}_mcc_grouped.pdf"))
     plt.show()
 
-def compare_across_groups_two_fold(compare, filename, datahandler):
+def compare_across_groups_two_fold(compare, filename, datahandler, clearname):
     if datahandler == DATATYPE.UTR_CLASS:
         return
     compare = dict(enumerate(compare))
@@ -596,7 +604,7 @@ def compare_across_groups_two_fold(compare, filename, datahandler):
             linewidth=1.2,
             alpha=0.7
         )
-        rect = patches.FancyBboxPatch(
+        """rect = patches.FancyBboxPatch(
             (0.0, 1.0),
             1.0, 0.12,
             boxstyle="round,pad=0.00",
@@ -605,15 +613,15 @@ def compare_across_groups_two_fold(compare, filename, datahandler):
             edgecolor='black',
             facecolor='white',
             clip_on=False
-        )
+        )"""
         ax_cls.text(
             0.5, 1.05, task_group,
             transform=ax_cls.transAxes,
             ha='center',
             va='center',
-            fontsize=16
+            fontsize=24
         )
-        ax_cls.add_patch(rect)
+        #ax_cls.add_patch(rect)
 
         ax_cls.set_xticks([])
         if ax_idx > 0:
@@ -640,7 +648,10 @@ def compare_across_groups_two_fold(compare, filename, datahandler):
         )
         stds_max = max(group_results_mean[task_group]['stds'])
         ax_mean.set_xticks(x)
-        ax_mean.set_xticklabels([f"C{i + 1}" for i in range(n)])
+
+        ax_mean.set_xticklabels([f"C{i + 1}" for i in range(n)], fontsize=18)
+        ax_mean.set_yticklabels(ax_mean.get_yticklabels(), fontsize=18)
+        ax_cls.set_yticklabels(ax_cls.get_yticklabels(), fontsize=18)
         ax_mean.set_ylim(ymin_mean - stds_max, ymax_mean + stds_max)
         ax_mean.set_xlim(-0.5 * spacing, (n - 1) * spacing + 0.5 * spacing)
         ax_mean.margins(x=0.1)
@@ -654,9 +665,9 @@ def compare_across_groups_two_fold(compare, filename, datahandler):
 
         if ax_idx == len(TASK_GROUPS) - 1:
             ax_cls.text(1.0, 0.5, f"CLS", transform=ax_cls.transAxes,
-                        rotation=270, va='center', ha='left', fontsize=16)
+                        rotation=270, va='center', ha='left', fontsize=24)
 
-            rect = patches.FancyBboxPatch(
+            """rect = patches.FancyBboxPatch(
                 (1.00, -0.002),
                 0.06, 1.0,
                 transform=ax_cls.transAxes,
@@ -665,12 +676,12 @@ def compare_across_groups_two_fold(compare, filename, datahandler):
                 edgecolor='black',
                 facecolor='white',
                 clip_on=False
-            )
-            ax_cls.add_patch(rect)
+            )"""
+            #ax_cls.add_patch(rect)
             ax_mean.text(1.00, 0.5, f"Mean-Pool", transform=ax_mean.transAxes,
-                        rotation=270, va='center', ha='left', fontsize=16)
+                        rotation=270, va='center', ha='left', fontsize=24)
 
-            rect = patches.FancyBboxPatch(
+            """rect = patches.FancyBboxPatch(
                 (1.00, -0.002),
                 0.06, 1.0,
                 transform=ax_mean.transAxes,
@@ -679,18 +690,18 @@ def compare_across_groups_two_fold(compare, filename, datahandler):
                 edgecolor='black',
                 facecolor='white',
                 clip_on=False
-            )
-            ax_mean.add_patch(rect)
+            )"""
+            #ax_mean.add_patch(rect)
 
         if ax_idx > 0:
             ax_mean.set_yticks([])
-    fig.text(0.095, 0.5, 'ΔMCC', va='center', rotation='vertical', fontsize=16)
+    fig.text(0.08, 0.5, 'ΔMCC', va='center', rotation='vertical', fontsize=24)
     plt.tight_layout()
     plt.savefig(os.path.join(SAVEDIR, f"compare_{filename}_mcc_grouped.pdf"))
     plt.show()
 
 def plot_5_utr(data, ylabel, filename):
-    figsize = (16, 6)
+    figsize = (20, 6)
     fig, ax = plt.subplots(figsize=figsize)
     labels = [x for x in data.keys()]
     x = np.arange(len(labels))
@@ -715,9 +726,11 @@ def plot_5_utr(data, ylabel, filename):
         linewidth=1.2,
         alpha=0.7
     )
-    ax.set_ylabel(ylabel, fontsize=14)
+
+    ax.set_yticklabels(ax.get_yticklabels(), fontsize=18)
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, rotation=90, fontsize=14)
+    ax.set_ylabel(ylabel, fontsize=24)
+    ax.set_xticklabels(labels, rotation=45, fontsize=18, ha='right')
     fig.subplots_adjust(
         left=0.05,
         right=0.98,
@@ -725,6 +738,7 @@ def plot_5_utr(data, ylabel, filename):
         top=0.95,
     )
     plt.savefig(os.path.join(SAVEDIR, f"compare_{filename}.pdf"))
+    plt.show()
 
 
 def collect_mrl_data(compare, type):
@@ -999,7 +1013,7 @@ class CompareHandler(Enum):
     CONTEXT = ('context', compare_context, "2k Context")
 
 if __name__ == '__main__':
-    datahandler = DATATYPE.MRL_PRED
+    datahandler = DATATYPE.UTR_CLASS
     plot_res = {}
 
     if datahandler != DATATYPE.MRL_PRED:
@@ -1013,8 +1027,8 @@ if __name__ == '__main__':
                 grp_compare_fn = compare_across_groups_two_fold
             else:
                 raise NotImplementedError
-            res = compare_fn(compare, filename, datahandler)
-            grp_compare_fn(compare, filename, datahandler)
+            res = compare_fn(compare, filename, datahandler, clearname)
+            grp_compare_fn(compare, filename, datahandler, clearname)
             if res is not None:
                 means, stds = res
                 if isinstance(means, tuple):
