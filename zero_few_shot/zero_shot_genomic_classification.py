@@ -187,14 +187,15 @@ def evaluate_class_prediction(model_name, file_list):
 
     figsize = (25, 8)
     fig = plt.figure(figsize=figsize)
-    gs = gridspec.GridSpec(1, 4, width_ratios=[1, 1, 0.1, 1], wspace=0.05, hspace=0.05)
+    gs = gridspec.GridSpec(1, 5, width_ratios=[1, 0.02, 1, 0.2, 1], wspace=0.05, hspace=0.05)
 
     ax_class = fig.add_subplot(gs[0])
-    ax_gc = fig.add_subplot(gs[1])
-    ax_length = fig.add_subplot(gs[3])
-    spacer_1 = fig.add_subplot(gs[2])
+    ax_gc = fig.add_subplot(gs[2])
+    ax_length = fig.add_subplot(gs[4])
+    spacer_1 = fig.add_subplot(gs[3])
     spacer_1.axis('off')
-
+    spacer_1 = fig.add_subplot(gs[1])
+    spacer_1.axis('off')
 
     df = pd.DataFrame(test_meta)
     df["Dimension 1"] = X_2d[:, 0]
@@ -216,13 +217,15 @@ def evaluate_class_prediction(model_name, file_list):
         palette=sns.color_palette(class_colormap, n_colors=len(label_order)),
         legend=True
     )
-    ax_class.set_title("Genomic Classes", fontsize=18)
+    ax_class.set_title("Genomic Classes", fontsize=24)
     ax_class.set_xlabel("")
-    ax_class.set_ylabel("Dimension 2", fontsize=14)
+    ax_class.set_ylabel("Dimension 2", fontsize=20)
     handles, labels = ax_class.get_legend_handles_labels()
     ax_class.legend(handles=handles[0:], labels=labels[0:], markerscale=4, fontsize=14)
-
-
+    ax_class.set_xticks(ax_class.get_xticks())
+    ax_class.set_xticklabels(ax_class.get_xticklabels(), fontsize=14)
+    ax_class.set_yticks(ax_class.get_yticks())
+    ax_class.set_yticklabels(ax_class.get_yticklabels(), fontsize=14)
     """
     Plot By GC content
     """
@@ -245,13 +248,15 @@ def evaluate_class_prediction(model_name, file_list):
     )
 
     cbar = plt.colorbar(sc_gc, ax=ax_gc, cax=cax_gc)
+    cbar.ax.tick_params(labelsize=14)
     cbar.set_label('')
 
     ax_gc.set_yticks([])
     ax_gc.set_ylabel("")
-    ax_gc.set_title("Colored by GC content", fontsize=18)
-    ax_gc.set_xlabel("Dimension 1", fontsize=14)
-
+    ax_gc.set_title("Colored by GC content", fontsize=24)
+    ax_gc.set_xlabel("Dimension 1", fontsize=20)
+    ax_gc.set_xticks(ax_gc.get_xticks())
+    ax_gc.set_xticklabels(ax_gc.get_xticklabels(), fontsize=14)
     """
     Plot By Sequence Length
     """
@@ -275,11 +280,14 @@ def evaluate_class_prediction(model_name, file_list):
 
     cbar = plt.colorbar(sc_len, ax=ax_length, cax=cax_len)
     cbar.set_label('')
+    cbar.ax.tick_params(labelsize=14)
+    cbar.ax.set_yticks([0, 1000, 2000, 3000, 4000, 5000, 6000])
     ax_length.set_yticks([])
     ax_length.set_ylabel("")
-    ax_length.set_title("Colored by Region Length", fontsize=18)
+    ax_length.set_title("Colored by Region Length", fontsize=24)
     ax_length.set_xlabel("")
-
+    ax_length.set_xticks(ax_length.get_xticks())
+    ax_length.set_xticklabels(ax_length.get_xticklabels(), fontsize=14)
     fig.subplots_adjust(
         left=0.05,
         right=0.95,
@@ -288,6 +296,7 @@ def evaluate_class_prediction(model_name, file_list):
     )
 
     plt.savefig(figure_path, dpi=300)
+    plt.show()
     plt.close(fig)
 
     figsize = (16, 8)
@@ -313,14 +322,18 @@ def evaluate_class_prediction(model_name, file_list):
     ax_auprc_zero.set_xlim([-0.02, 1.02])
     ax_auprc_zero.set_ylim([-0.02, 1.02])
 
-    ax_auprc_zero.set_ylabel("Precision", fontsize=14)
-    ax_auprc_zero.set_title("Zero-Shot auPRC", fontsize=18)
+    ax_auprc_zero.set_ylabel("Precision", fontsize=18)
+    ax_auprc_zero.set_title("Zero-Shot auPRC", fontsize=20)
     ax_auprc_zero.set_xlabel("")
     ax_auprc_zero.grid()
     handles, labels = ax_auprc_zero.get_legend_handles_labels()
-    ax_auprc_zero.legend(handles=handles, labels=labels, markerscale=4, fontsize=14)
-
-
+    ax_auprc_zero.legend(handles=handles, labels=labels, markerscale=4, fontsize=16)
+    ax_auprc_zero.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    ax_auprc_zero.set_yticklabels(["0.0", "0.2", "0.4", "0.6", "0.8", "1.0"], fontsize=14)
+    ax_auprc_zero.set_xticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    ax_auprc_zero.set_xticklabels(["0.0", "0.2", "0.4", "0.6", "0.8", "1.0"], fontsize=14)
+    ax_auprc_few.set_xticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    ax_auprc_few.set_xticklabels(["0.0", "0.2", "0.4", "0.6", "0.8", "1.0"], fontsize=14)
     ax_auprc_few.hlines(
         y=0.2, xmin=-1, xmax=2,
         linestyles='--', colors='black', alpha=1, lw=2,
@@ -333,18 +346,18 @@ def evaluate_class_prediction(model_name, file_list):
     ax_auprc_few.set_ylim([-0.02, 1.02])
 
     ax_auprc_few.set_ylabel("")
-    ax_auprc_few.set_title("Regressive auPRC", fontsize=18)
+    ax_auprc_few.set_title("Regressive auPRC", fontsize=20)
     ax_auprc_few.set_xlabel("")
     ax_auprc_few.set_yticklabels([])
     ax_auprc_few.tick_params(left=False, bottom=False)
     ax_auprc_few.grid()
     handles, labels = ax_auprc_few.get_legend_handles_labels()
-    ax_auprc_few.legend(handles=handles, labels=labels, markerscale=4, fontsize=14)
+    ax_auprc_few.legend(handles=handles, labels=labels, markerscale=4, fontsize=16)
 
     fig.supxlabel("Recall",
                   x=0.5,
-                  y=0.045,
-                  fontsize=14)
+                  y=0.020,
+                  fontsize=18)
     fig.subplots_adjust(
         left=0.05,
         right=0.95,
@@ -353,6 +366,7 @@ def evaluate_class_prediction(model_name, file_list):
     )
 
     plt.savefig(figure_path_auprc, dpi=300)
+    plt.show()
     plt.close(fig)
 
 if __name__ == "__main__":

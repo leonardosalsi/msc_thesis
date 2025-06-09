@@ -877,10 +877,11 @@ def plot_mrl(plot_res):
     ax_human_var = fig.add_subplot(gs[2])
     ax_random_fixed = fig.add_subplot(gs[3])
     ax_random_var = fig.add_subplot(gs[4])
+    label_fontsize = 12
 
     ax_all.set_ylabel("")
     ax_human_fixed.set_ylabel("")
-    ax_human_var.set_ylabel("ΔR")
+    ax_human_var.set_ylabel("ΔR", fontsize=18)
     ax_random_fixed.set_ylabel("")
     ax_random_var.set_ylabel("")
     fig.text(0.975, 0.88, "All Data",
@@ -898,7 +899,7 @@ def plot_mrl(plot_res):
     ax_human_var.set_xticks([])
     ax_random_fixed.set_xticks([])
     ax_random_var.set_xticks(x)
-    ax_random_var.set_xticklabels(labels, rotation=90)
+    ax_random_var.set_xticklabels(labels, rotation=45, fontsize=14, ha='right')
 
     lim = [-0.4, 0.4]
     ax_all.set_ylim(lim)
@@ -1004,6 +1005,7 @@ def plot_mrl(plot_res):
         )
     plt.subplots_adjust(left=0.1, right=0.96, top=0.96, bottom=0.18)
     plt.savefig(os.path.join(SAVEDIR, f"compare_mrl.pdf"))
+    plt.show()
 
 class CompareHandler(Enum):
     LOGAN = ('logan', compare_logan, "Logan")
@@ -1013,7 +1015,7 @@ class CompareHandler(Enum):
     CONTEXT = ('context', compare_context, "2k Context")
 
 if __name__ == '__main__':
-    datahandler = DATATYPE.UTR_CLASS
+    datahandler = DATATYPE.MRL_PRED
     plot_res = {}
 
     if datahandler != DATATYPE.MRL_PRED:
